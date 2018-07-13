@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "toggl",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "moment": "^2.22.2"
+  },
+  "devDependencies": {
+    "@types/node": "^10.5.2"
+  }
+}

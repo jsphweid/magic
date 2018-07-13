@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "name": "symbols",
+  "devDependencies": {
+    "@types/node": "^10.5.2"
+  }
+}
