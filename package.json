@@ -1,13 +1,22 @@
 {
   "private": true,
   "scripts": {
-    "dev:server-with-project": "nodemon --watch packages/$PACKAGE/src --ext ts,tsx --exec \"ts-node --project $TSCONFIG --require tsconfig-paths/register packages/$PACKAGE/src/index.ts\"",
-    "dev:server": "if-env TSCONFIG=default && TSCONFIG=tsconfig.json npm run dev:server-with-project || npm run dev:server-with-project",
-    "dev:backup": "PACKAGE=backup TSCONFIG=packages/backup/tsconfig.json npm run dev:server",
-    "dev:symbols": "PACKAGE=symbols TSCONFIG=default npm run dev:server"
+    "tst": "tst --all",
+    "tst:dev:server": "nodemon --watch packages/$PACKAGE/src --ext ts,tsx --exec \"ts-node --project $TSCONFIG --require tsconfig-paths/register packages/$PACKAGE/src/index.ts\"",
+    "test:backup": "cross-env PACKAGE=backup jest",
+    "test:lights": "cross-env PACKAGE=lights jest",
+    "test:symbols": "cross-env PACKAGE=symbols jest",
+    "test:toggl": "cross-env PACKAGE=toggl jest",
+    "test:wand": "cross-env PACKAGE=wand jest",
+    "dev:backup": "cross-env PACKAGE=backup TSCONFIG=tsconfig.json npm run tst:dev:server",
+    "dev:lights": "cross-env PACKAGE=lights TSCONFIG=tsconfig.json npm run tst:dev:server",
+    "dev:symbols": "cross-env PACKAGE=symbols TSCONFIG=tsconfig.json npm run tst:dev:server",
+    "dev:toggl": "cross-env PACKAGE=symbols TSCONFIG=tsconfig.json npm run tst:dev:server",
+    "dev:wand": "cross-env PACKAGE=wand TSCONFIG=tsconfig.json npm run tst:dev:server"
   },
   "devDependencies": {
     "@types/jest": "^23.0.0",
+    "cross-env": "^5.2.0",
     "if-env": "^1.0.4",
     "jest": "^23.1.0",
     "lerna": "^2.11.0",

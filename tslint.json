@@ -6,7 +6,7 @@
     "no-implicit-dependencies": false,
     "object-literal-sort-keys": false,
     "interface-name": false,
-    "variable-name": [true, "allow-leading-underscore", "allow-pascal-case"],
+    "variable-name": [true, "allow-leading-underscore"],
     "no-unused-variable": [true, { "ignore-pattern": "^_" }]
   }
 }
