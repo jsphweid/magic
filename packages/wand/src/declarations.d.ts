@@ -1,6 +1,6 @@
 declare module "angles" {
   const angles: any;
-  export default angles;
+  export = angles;
 }
 
 declare module "hsl-to-hex" {

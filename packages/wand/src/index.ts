@@ -1,61 +1,99 @@
-import * as angles from "angles";
+import * as Lights from "~/Lights";
 
+import * as World from "./World";
 import * as Device from "./Device";
+import * as Color from "./Color";
 
 interface State {
-  touching: boolean;
+  light?: World.BoundedLight;
   color: {
-    hue: number;
-    saturation: number;
-    luminosity: number;
+    current: Color.HSL;
+    onDeviceOrientation?: Color.HSL;
   };
   deviceOrientation: {
-    current?: Device.Orientation;
+    current: Device.Orientation;
     onTouchStart?: Device.Orientation;
+  };
+  timeSince: {
+    touchStart: Date;
+    lastRequest: Date;
   };
 }
 
 const state: State = {
-  touching: false,
   color: {
-    hue: 50,
-    saturation: 50,
-    luminosity: 100
+    current: {
+      hue: 0,
+      saturation: 100,
+      luminosity: 50
+    }
   },
-  deviceOrientation: {}
+  deviceOrientation: {
+    current: {
+      alpha: 0,
+      beta: 0,
+      gamma: 0
+    }
+  },
+  timeSince: {
+    touchStart: new Date(),
+    lastRequest: new Date()
+  }
 };
 
 const onTouchStart = () => {
-  state.touching = true;
   state.deviceOrientation.onTouchStart = state.deviceOrientation.current;
+  state.timeSince.touchStart = new Date();
 };
 
 const onTouchEnd = () => {
-  state.touching = false;
+  if (state.color.onDeviceOrientation) {
+    state.color.current = state.color.onDeviceOrientation;
+  }
+
   delete state.deviceOrientation.onTouchStart;
+  delete state.timeSince.touchStart;
 };
 
 const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
   state.deviceOrientation.current = { alpha, beta, gamma };
 
   if (!state.deviceOrientation.onTouchStart) {
+    state.light = World.lightFromAngle(360 - alpha);
     return;
   }
 
-  const dAlpha = state.deviceOrientation.onTouchStart.alpha - alpha;
+  const now = new Date();
 
-  document.body.innerHTML = [
-    alpha,
-    beta,
-    gamma,
-    state.deviceOrientation.onTouchStart.alpha,
-    state.deviceOrientation.onTouchStart.beta,
-    state.deviceOrientation.onTouchStart.gamma,
-    dAlpha
-  ]
-    .map(angle => angle.toFixed(2))
-    .join("<br>");
+  if (!state.timeSince.touchStart) {
+    state.timeSince.touchStart = new Date();
+    return;
+  }
+
+  if (now.getTime() - state.timeSince.touchStart.getTime() >= 200) {
+    state.color.onDeviceOrientation = Color.withOrientationShift(
+      state.color.current,
+      Device.orientationDeltas(
+        state.deviceOrientation.onTouchStart,
+        state.deviceOrientation.current
+      )
+    );
+
+    document.body.style.backgroundColor = Color.toHex(
+      state.color.onDeviceOrientation
+    );
+  }
+
+  if (
+    state.light &&
+    now.getTime() - state.timeSince.lastRequest.getTime() >= 200
+  ) {
+    state.timeSince.lastRequest = now;
+    Lights.set(state.light.id, { color: document.body.style.backgroundColor });
+  }
 };
+
+document.body.style.backgroundColor = "#ff0000";
 
 window.addEventListener("touchstart", onTouchStart as any, true);
 window.addEventListener("touchend", onTouchEnd as any, true);
