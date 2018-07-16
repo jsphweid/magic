@@ -12,13 +12,13 @@ export interface HSL {
 export const toHex = ({ hue, saturation, luminosity }: HSL): string =>
   hsl(hue, saturation, luminosity);
 
-const speed = 2;
+const speed = 1.5;
 
 export const withOrientationShift = (
   { hue, saturation, luminosity }: HSL,
   { dAlpha, dBeta, dGamma }: Device.OrientationDeltas
 ): HSL => ({
-  hue: hue + dGamma * speed,
-  saturation: _.clamp(saturation + dAlpha * speed, 0, 100),
+  hue: hue + dAlpha * speed,
+  saturation: _.clamp(saturation - dGamma * speed * 0.25, 0, 100),
   luminosity: _.clamp(luminosity - dBeta * speed, 0, 100)
 });

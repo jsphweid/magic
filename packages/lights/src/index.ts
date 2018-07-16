@@ -25,6 +25,6 @@ export const all = async () => {
 
 export const set = async (id: string, state: object) =>
   client.mutate({
-    variables: { id, state: { ...state, on: true } },
+    variables: { id, state },
     mutation: Queries.setLight
   });

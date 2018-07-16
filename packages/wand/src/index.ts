@@ -25,7 +25,7 @@ const state: State = {
     current: {
       hue: 0,
       saturation: 100,
-      luminosity: 50
+      luminosity: 0
     }
   },
   deviceOrientation: {
@@ -53,6 +53,21 @@ const onTouchEnd = () => {
 
   delete state.deviceOrientation.onTouchStart;
   delete state.timeSince.touchStart;
+
+  if (!state.light) {
+    return;
+  }
+
+  const lightId = `${state.light.id}`;
+
+  setTimeout(
+    () =>
+      Lights.set(lightId, {
+        transition: 2000,
+        on: false
+      }),
+    200
+  );
 };
 
 const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
@@ -86,14 +101,20 @@ const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
 
   if (
     state.light &&
+    state.color.onDeviceOrientation &&
     now.getTime() - state.timeSince.lastRequest.getTime() >= 200
   ) {
     state.timeSince.lastRequest = now;
-    Lights.set(state.light.id, { color: document.body.style.backgroundColor });
+
+    Lights.set(state.light.id, {
+      transition: 200,
+      color: document.body.style.backgroundColor,
+      on: state.color.onDeviceOrientation.luminosity !== 0
+    });
   }
 };
 
-document.body.style.backgroundColor = "#ff0000";
+document.body.style.backgroundColor = "#000000";
 
 window.addEventListener("touchstart", onTouchStart as any, true);
 window.addEventListener("touchend", onTouchEnd as any, true);
