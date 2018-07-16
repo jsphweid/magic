@@ -58,16 +58,10 @@ const onTouchEnd = () => {
     return;
   }
 
-  const lightId = `${state.light.id}`;
-
-  setTimeout(
-    () =>
-      Lights.set(lightId, {
-        transition: 2000,
-        on: false
-      }),
-    200
-  );
+  Lights.set(state.light.id, {
+    transition: 2000,
+    on: false
+  });
 };
 
 const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
@@ -115,6 +109,7 @@ const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
 };
 
 document.body.style.backgroundColor = "#000000";
+document.body.style.userSelect = "none";
 
 window.addEventListener("touchstart", onTouchStart as any, true);
 window.addEventListener("touchend", onTouchEnd as any, true);
