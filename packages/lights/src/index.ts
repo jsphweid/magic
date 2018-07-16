@@ -4,23 +4,19 @@ import ApolloClient from "apollo-boost";
 
 import * as Queries from "./Queries";
 
+export interface Light {
+  id: string;
+  name: string;
+}
+
 const client = new ApolloClient({
   uri: "http://192.168.1.17:8080"
 });
 
-// TODO: use codegen
-interface AllLights {
-  lights: Array<{
-    id: string;
-    name: string;
-    __typename: string;
-  }>;
-}
-
 export const all = async () => {
   const {
     data: { lights }
-  } = await client.query<AllLights>({
+  } = await client.query<{ lights: Light[] }>({
     query: Queries.allLights
   });
 
@@ -29,6 +25,6 @@ export const all = async () => {
 
 export const set = async (id: string, state: object) =>
   client.mutate({
-    variables: { id, state },
+    variables: { id, state: { ...state, on: true } },
     mutation: Queries.setLight
   });

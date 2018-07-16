@@ -47,12 +47,11 @@ export const getTimeEntry = async (id: string): Promise<TimeEntry> =>
   togglRequest(`/time_entries/${id}`);
 
 export const getTimeEntries = async (): Promise<TimeEntry[]> => {
-  const from = moment().subtract(30, "days");
-  const to = moment();
+  const { from, to } = dateRange();
 
   const timeEntries = (await togglRequest("/time_entries", {
-    start_date: from.toISOString(),
-    end_date: to.toISOString()
+    start_date: from,
+    end_date: to
   })) as TimeEntry[];
 
   return timeEntries.sort((a, b) => moment(a.start).diff(moment(b.start)));
@@ -89,3 +88,11 @@ const togglRequest = async (
 
   return data;
 };
+
+const dateRange = () => ({
+  from: moment()
+    .subtract(60, "days")
+    .toISOString(),
+
+  to: moment().toISOString()
+});
