@@ -1,6 +1,5 @@
 {
   "private": true,
-  "name": "symbols",
   "devDependencies": {
     "@types/lodash": "^4.14.111",
     "@types/node": "^10.5.2"

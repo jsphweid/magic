@@ -1,6 +1,5 @@
 {
   "private": true,
-  "name": "backup",
   "devDependencies": {
     "@types/node": "^10.5.2"
   }
