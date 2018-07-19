@@ -54,14 +54,14 @@ const onTouchEnd = () => {
   delete state.deviceOrientation.onTouchStart;
   delete state.timeSince.touchStart;
 
-  if (!state.light) {
-    return;
-  }
+  // if (!state.light) {
+  //   return;
+  // }
 
-  Lights.set(state.light.id, {
-    transition: 2000,
-    on: false
-  });
+  // Lights.set(state.light.id, {
+  //   transition: 2000,
+  //   on: false
+  // });
 };
 
 const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {

@@ -18,7 +18,7 @@ export const withOrientationShift = (
   { hue, saturation, luminosity }: HSL,
   { dAlpha, dBeta, dGamma }: Device.OrientationDeltas
 ): HSL => ({
-  hue: hue + dAlpha * speed,
-  saturation: _.clamp(saturation - dGamma * speed * 0.25, 0, 100),
+  hue: hue + dGamma * speed,
+  saturation: _.clamp(saturation + dAlpha * speed * 0.25, 0, 100),
   luminosity: _.clamp(luminosity - dBeta * speed, 0, 100)
 });
