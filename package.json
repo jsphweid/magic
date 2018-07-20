@@ -1,8 +1,8 @@
 {
+  "private": true,
   "scripts": {
     "tst": "tst"
   },
-  "private": true,
   "devDependencies": {
     "@types/jest": "^23.3.0",
     "jest": "^23.4.1",
