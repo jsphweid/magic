@@ -1,16 +1,16 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as FS from "fs";
+import * as Path from "path";
 
-import * as Toggl from "~/Toggl";
-import * as Symbols from "~/Symbols";
+import * as Toggl from "~/toggl";
+import * as Symbols from "~/symbols";
 
 const writeAsJSON = (filePath: string, contents: object) =>
-  fs.writeFileSync(
-    path.resolve(__dirname, filePath),
+  FS.writeFileSync(
+    Path.resolve(__dirname, filePath),
     JSON.stringify(contents, null, 2)
   );
 
-writeAsJSON("../data/symbols.json", Symbols.all());
+writeAsJSON("../data/symbols.json", Symbols.all);
 
 (async () => {
   const timeEntries = await Toggl.getTimeEntries();

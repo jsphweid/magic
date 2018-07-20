@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-import * as Toggl from "~/Toggl";
+import * as Toggl from "~/toggl";
 import symbols from "../data/symbols.json";
 
 interface SymbolData {
@@ -9,11 +9,9 @@ interface SymbolData {
   value?: number;
 }
 
-export const all = () => symbols as SymbolData[];
+export const all = symbols as SymbolData[];
 
-export const missingFromTags = async (): Promise<string[]> => {
-  const tags = await Toggl.getTags();
-  return _
-    .xorBy(tags, all() as Array<{ name: string }>, "name")
-    .map(_.property("name"));
-};
+export const missingFromTags = (tags: Toggl.Tag[]): string[] =>
+  _
+    .xorBy<{ name: string }>(tags, all, ({ name }) => name)
+    .map(({ name }) => name);

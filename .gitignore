@@ -4,5 +4,6 @@ dist
 data
 generated
 
+.tst
 .cache
 .vscode

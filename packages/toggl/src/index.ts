@@ -1,5 +1,5 @@
 import { default as Axios } from "axios";
-import moment from "moment";
+import Moment from "moment";
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/projects.md
 
@@ -54,7 +54,7 @@ export const getTimeEntries = async (): Promise<TimeEntry[]> => {
     end_date: to
   })) as TimeEntry[];
 
-  return timeEntries.sort((a, b) => moment(a.start).diff(moment(b.start)));
+  return timeEntries.sort((a, b) => Moment(a.start).diff(Moment(b.start)));
 };
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/tags.md
@@ -90,9 +90,9 @@ const togglRequest = async (
 };
 
 const dateRange = () => ({
-  from: moment()
+  from: Moment()
     .subtract(60, "days")
     .toISOString(),
 
-  to: moment().toISOString()
+  to: Moment().toISOString()
 });

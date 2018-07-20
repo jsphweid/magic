@@ -1,14 +1,3 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "lib": ["es2018"],
-    "baseUrl": "./packages",
-    "paths": { "~/*": ["./*/src"] },
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "sourceMap": true
-  }
+  "extends": "./.tst/tsconfig.json"
 }

@@ -1,4 +1,4 @@
-import * as Lights from "~/Lights";
+import * as Lights from "~/lights";
 
 import * as World from "./World";
 import * as Device from "./Device";
