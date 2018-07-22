@@ -10,7 +10,7 @@ export interface Light {
 }
 
 const client = new ApolloClient({
-  uri: "http://192.168.1.17:8080"
+  uri: "http://192.168.1.7:8080"
 });
 
 export const all = async () => {

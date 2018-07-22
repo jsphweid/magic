@@ -1,7 +1,28 @@
 {
   "private": true,
   "scripts": {
-    "tst": "tst"
+    "tst": "tst",
+    "backup:test": "npm run tst test backup",
+    "backup:dev": "npm run tst dev backup",
+    "backup:build": "npm run tst build backup",
+    "lights:test": "npm run tst test lights",
+    "lights:dev": "npm run tst dev lights",
+    "lights:build": "npm run tst build lights",
+    "sleep:test": "npm run tst test sleep",
+    "sleep:dev": "npm run tst dev sleep",
+    "sleep:build": "npm run tst build sleep",
+    "symbols:test": "npm run tst test symbols",
+    "symbols:dev": "npm run tst dev symbols",
+    "symbols:build": "npm run tst build symbols",
+    "testing:test": "npm run tst test testing",
+    "testing:dev": "npm run tst dev testing",
+    "testing:build": "npm run tst build testing",
+    "toggl:test": "npm run tst test toggl",
+    "toggl:dev": "npm run tst dev toggl",
+    "toggl:build": "npm run tst build toggl",
+    "wand:test": "npm run tst test wand",
+    "wand:dev": "npm run tst dev wand",
+    "wand:build": "npm run tst build wand"
   },
   "devDependencies": {
     "@types/jest": "^23.3.0",
@@ -11,7 +32,7 @@
     "ts-node": "^7.0.0",
     "tsconfig-paths": "^3.4.2",
     "tslint": "^5.11.0",
-    "tslint-config-prettier": "^1.13.0",
+    "tslint-config-prettier": "^1.14.0",
     "typescript": "^2.9.2",
     "typescript-tooling": "file:../typescript-tooling/packages/typescript-tooling"
   }

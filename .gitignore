@@ -7,3 +7,5 @@ generated
 .tst
 .cache
 .vscode
+
+*.log

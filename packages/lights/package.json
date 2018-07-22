@@ -1,5 +1,6 @@
 {
   "private": true,
+  "name": "lights",
   "dependencies": {
     "apollo-boost": "^0.1.10",
     "cross-fetch": "^2.2.2",
