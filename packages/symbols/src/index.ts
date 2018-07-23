@@ -3,7 +3,7 @@ import _ from "lodash";
 import * as Toggl from "~/toggl";
 import symbols from "../data/symbols.json";
 
-interface SymbolData {
+export interface SymbolData {
   name: string;
   connections?: string[];
   value?: number;
