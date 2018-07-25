@@ -56,6 +56,7 @@ export const getTimeEntries = async (): Promise<TimeEntry[]> => {
 };
 
 export const createTimeEntry = async (timeEntry: {
+  project?: Project;
   start: Moment.Moment;
   stop: Moment.Moment;
   description: string;
@@ -66,6 +67,7 @@ export const createTimeEntry = async (timeEntry: {
     JSON.stringify({
       time_entry: {
         created_with: "magic",
+        pid: (timeEntry.project && timeEntry.project.id) || null,
         start: timeEntry.start.toISOString(),
         duration: Math.round(
           Moment.duration(timeEntry.stop.diff(timeEntry.start)).asSeconds()
