@@ -1,11 +1,11 @@
-import * as Lights from "~/lights";
+// import * as Lights from "~/lights";
 
-import * as World from "./World";
+// import * as World from "./World";
 import * as Device from "./Device";
 import * as Color from "./Color";
 
 interface State {
-  light?: World.BoundedLight;
+  light?: null; // World.BoundedLight;
   color: {
     current: Color.HSL;
     onDeviceOrientation?: Color.HSL;
@@ -68,7 +68,7 @@ const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
   state.deviceOrientation.current = { alpha, beta, gamma };
 
   if (!state.deviceOrientation.onTouchStart) {
-    state.light = World.lightFromAngle(360 - alpha);
+    // state.light = World.lightFromAngle(360 - alpha);
     return;
   }
 
@@ -100,11 +100,11 @@ const onOrientation = ({ alpha, beta, gamma }: Device.Orientation) => {
   ) {
     state.timeSince.lastRequest = now;
 
-    Lights.set(state.light.id, {
-      transition: 200,
-      color: document.body.style.backgroundColor,
-      on: state.color.onDeviceOrientation.luminosity !== 0
-    });
+    // Lights.set(state.light.id, {
+    //   transition: 200,
+    //   color: document.body.style.backgroundColor,
+    //   on: state.color.onDeviceOrientation.luminosity !== 0
+    // });
   }
 };
 
