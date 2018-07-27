@@ -34,5 +34,3 @@ export const parseTimeEntryText = (
 (async () => {
   console.log(parseTimeEntryText(await Toggl.getProjects(), "test"));
 })();
-
-console.log(Symbols.all);

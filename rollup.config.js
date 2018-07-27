@@ -6,13 +6,18 @@ import sourceMaps from "rollup-plugin-sourcemaps";
 
 const plugins = [
   sourceMaps(),
+
   typescript({
     tsconfigOverride: {
+      include: [".tst/declarations.d.ts"],
       compilerOptions: { resolveJsonModule: false }
     }
   }),
 
-  resolve({ preferBuiltins: true }),
+  resolve({
+    preferBuiltins: true
+  }),
+
   commonjs(),
   json()
 ];
