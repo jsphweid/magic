@@ -13,18 +13,26 @@ export const parseTimeEntryText = (
 } => {
   const [narrative] = text.split(".");
 
-  const symbols = Symbols.all.reduce<string[]>(
-    (acc, symbol) =>
-      text
-        .replace(/ /g, "-")
-        .toLowerCase()
-        .includes(symbol.name)
-        ? [...acc, symbol.name]
-        : acc,
-    []
+  const symbols = _.uniq(
+    Symbols.all.reduce<string[]>(
+      (acc, symbol) =>
+        text
+          .replace(/ /g, "-")
+          .toLowerCase()
+          .includes(symbol.name)
+          ? [...acc, symbol.name]
+          : acc,
+      []
+    )
   );
 
   const project = projects.find(({ name }) => symbols.join("").includes(name));
 
-  return { project, narrative, symbols: _.uniq(symbols) };
+  return { project, narrative, symbols };
 };
+
+(async () => {
+  console.log(parseTimeEntryText(await Toggl.getProjects(), "test"));
+})();
+
+console.log(Symbols.all);

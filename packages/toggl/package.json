@@ -3,6 +3,7 @@
   "name": "toggl",
   "dependencies": {
     "axios": "^0.18.0",
+    "cross-fetch": "^2.2.2",
     "moment": "^2.22.2"
   },
   "devDependencies": {
