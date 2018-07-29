@@ -47,6 +47,6 @@
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.14.0",
     "typescript": "^2.9.2",
-    "typescript-tooling": "file:../../../../Users/Conner/Documents/GitHub/typescript-tooling/packages/typescript-tooling"
+    "typescript-tooling": "file:../typescript-tooling/packages/typescript-tooling"
   }
 }
