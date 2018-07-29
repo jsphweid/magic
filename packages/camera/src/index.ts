@@ -1,9 +1,9 @@
-const videoElement: HTMLVideoElement = document.getElementById(
-  "videoElement"
-) as HTMLVideoElement;
-
 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-  const videoSettings = {
+  const video: HTMLVideoElement = document.getElementById(
+    "video"
+  ) as HTMLVideoElement;
+
+  const videoSettings: MediaStreamConstraints = {
     video: true,
     audio: true
   };
@@ -11,7 +11,22 @@ if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
   navigator.mediaDevices
     .getUserMedia(videoSettings)
     .then((stream: MediaStream): void => {
-      videoElement.setAttribute("src", window.URL.createObjectURL(stream));
-      videoElement.play();
+      video.setAttribute("src", window.URL.createObjectURL(stream));
+      video.play();
     });
+
+  const canvas: HTMLCanvasElement = document.getElementById(
+    "canvas"
+  ) as HTMLCanvasElement;
+  const context: CanvasRenderingContext2D = canvas.getContext("2d");
+
+  // Automatic screenshots
+  // setInterval(() => {
+  //   context.drawImage(video, 0, 0, 640, 480);
+  // }, 1000);
+
+  // Manual screenshots via button
+  // document.getElementById("snap").addEventListener("click", (): void => {
+  //   context.drawImage(video, 0, 0, 640, 480);
+  // });
 }
