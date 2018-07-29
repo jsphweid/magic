@@ -30,24 +30,23 @@
     "wand:build": "tst build wand"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.0",
-    "@types/node": "^10.5.3",
-    "jest": "^23.4.1",
+    "@types/jest": "^23.3.1",
+    "@types/node": "^10.5.4",
+    "jest": "^23.4.2",
+    "lerna": "^3.0.0-rc.0",
     "nodemon": "^1.18.3",
     "rollup": "^0.63.4",
-    "rollup-plugin-alias": "^1.4.0",
     "rollup-plugin-commonjs": "^9.1.4",
-    "rollup-plugin-insert": "^0.1.1",
     "rollup-plugin-json": "^3.0.0",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-sourcemaps": "^0.4.2",
     "rollup-plugin-typescript2": "^0.16.1",
     "ts-jest": "^23.0.1",
     "ts-node": "^7.0.0",
-    "tsconfig-paths": "^3.4.2",
+    "tsconfig-paths": "^3.5.0",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.14.0",
-    "typescript": "^3.1.0-dev.20180726",
-    "typescript-tooling": "file:../typescript-tooling/packages/typescript-tooling"
+    "typescript": "^2.9.2",
+    "typescript-tooling": "file:../../../../Users/Conner/Documents/GitHub/typescript-tooling/packages/typescript-tooling"
   }
 }

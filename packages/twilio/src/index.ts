@@ -13,15 +13,12 @@ export const parseTimeEntryText = (
 } => {
   const [narrative] = text.split(".");
 
+  const formattedText = text.replace(/ /g, "-").toLowerCase();
+
   const symbols = _.uniq(
     Symbols.all.reduce<string[]>(
       (acc, symbol) =>
-        text
-          .replace(/ /g, "-")
-          .toLowerCase()
-          .includes(symbol.name)
-          ? [...acc, symbol.name]
-          : acc,
+        formattedText.includes(symbol.name) ? [...acc, symbol.name] : acc,
       []
     )
   );

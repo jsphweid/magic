@@ -61,7 +61,7 @@ export const createTimeEntry = async (timeEntry: {
   stop: Moment.Moment;
   description: string;
   tags?: string[];
-}): Promise<TimeEntry> =>
+}): Promise<void> =>
   post(
     `/time_entries`,
     JSON.stringify({

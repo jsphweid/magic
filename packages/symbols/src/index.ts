@@ -21,15 +21,14 @@ export const expandConnections = (symbolNames: string[]): SymbolData[] =>
     .chain(
       symbolNames.map(symbolName => {
         const symbol = all.find(({ name }) => name === symbolName);
-
-        if (!symbol) {
-          return [];
-        }
-
-        return [
-          symbol,
-          ...(symbol.connections ? expandConnections(symbol.connections) : [])
-        ];
+        return !symbol
+          ? []
+          : [
+              symbol,
+              ...(symbol.connections
+                ? expandConnections(symbol.connections)
+                : [])
+            ];
       })
     )
     .flatten()
