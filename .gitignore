@@ -8,5 +8,7 @@ generated
 .cache
 .vscode
 .rpt2_cache
+.idea
 
+*.iml
 *.log
