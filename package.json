@@ -1,4 +1,5 @@
 {
+  "name": "magic",
   "private": true,
   "scripts": {
     "tst:init": "tst init --install false",
@@ -26,8 +27,8 @@
     "twilio:dev": "tst dev twilio",
     "twilio:build": "tst build twilio",
     "wand:test": "tst test wand",
-    "wand:dev": "tst dev wand",
-    "wand:build": "tst build wand"
+    "wand:dev": "lerna run dev --stream --scope wand",
+    "wand:build": "lerna run build --stream --scope wand"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",

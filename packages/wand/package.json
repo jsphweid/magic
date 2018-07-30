@@ -1,6 +1,10 @@
 {
   "private": true,
   "name": "wand",
+  "scripts": {
+    "dev": "parcel public/index.html --out-dir dist --hmr-hostname 0.0.0.0",
+    "build": "parcel build public/index.html --out-dir dist"
+  },
   "devDependencies": {
     "@types/lodash": "^4.14.111",
     "parcel-bundler": "^1.9.6",
