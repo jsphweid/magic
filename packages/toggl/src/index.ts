@@ -55,23 +55,17 @@ export const getTimeEntries = async (): Promise<TimeEntry[]> => {
   return timeEntries.sort((a, b) => Moment(a.start).diff(Moment(b.start)));
 };
 
-export const createTimeEntry = async (timeEntry: {
+export const startTimeEntry = async (timeEntry: {
   project?: Project;
-  start: Moment.Moment;
-  stop: Moment.Moment;
   description: string;
   tags?: string[];
 }): Promise<void> =>
   post(
-    `/time_entries`,
+    `/time_entries/start`,
     JSON.stringify({
       time_entry: {
         created_with: "magic",
         pid: (timeEntry.project && timeEntry.project.id) || null,
-        start: timeEntry.start.toISOString(),
-        duration: Math.round(
-          Moment.duration(timeEntry.stop.diff(timeEntry.start)).asSeconds()
-        ),
         description: timeEntry.description,
         tags: timeEntry.tags || []
       }

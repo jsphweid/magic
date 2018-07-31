@@ -1,33 +1,21 @@
-import _ from "lodash";
+import * as Functions from "firebase-functions";
 
 import * as Toggl from "~/toggl";
-import * as Symbols from "~/symbols";
 
-export const parseTimeEntryText = (
-  projects: Toggl.Project[],
-  text: string
-): {
-  project?: Toggl.Project;
-  narrative: string;
-  symbols: string[];
-} => {
-  const [narrative] = text.split(".");
+import * as SMS from "./SMS";
 
-  const formattedText = text.replace(/ /g, "-").toLowerCase();
+const {
+  toggl: { token: TOGGL_TOKEN, workspace: TOGGL_WORKSPACE }
+} = Functions.config();
 
-  const symbols = _.uniq(
-    Symbols.all.reduce<string[]>(
-      (acc, symbol) =>
-        formattedText.includes(symbol.name) ? [...acc, symbol.name] : acc,
-      []
-    )
-  );
+process.env = { ...process.env, TOGGL_TOKEN, TOGGL_WORKSPACE };
 
-  const project = projects.find(({ name }) => symbols.join("").includes(name));
+export const incomingTextMessage = Functions.https.onRequest(
+  async (req, res) => {
+    const projects = await Toggl.getProjects();
+    const timeEntry = SMS.toTimeEntry(projects, req.body.Body);
 
-  return { project, narrative, symbols };
-};
-
-(async () => {
-  console.log(parseTimeEntryText(await Toggl.getProjects(), "test"));
-})();
+    await Toggl.startTimeEntry(timeEntry);
+    return res.status(200);
+  }
+);

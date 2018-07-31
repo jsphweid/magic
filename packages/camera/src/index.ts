@@ -1,23 +1,23 @@
-const video: HTMLVideoElement = document.getElementById(
-  "video"
-) as HTMLVideoElement;
+// const video: HTMLVideoElement = document.getElementById(
+//   "video"
+// ) as HTMLVideoElement;
 
-const videoSettings: MediaStreamConstraints = {
-  video: true,
-  audio: true
-};
+// const videoSettings: MediaStreamConstraints = {
+//   video: true,
+//   audio: true
+// };
 
-navigator.mediaDevices.getUserMedia(videoSettings).then(
-  (stream: MediaStream): void => {
-    video.setAttribute("src", window.URL.createObjectURL(stream));
-    video.play();
-  }
-);
+// navigator.mediaDevices.getUserMedia(videoSettings).then(
+//   (stream: MediaStream): void => {
+//     video.setAttribute("src", window.URL.createObjectURL(stream));
+//     video.play();
+//   }
+// );
 
-const canvas: HTMLCanvasElement = document.getElementById(
-  "canvas"
-) as HTMLCanvasElement;
-const context: CanvasRenderingContext2D = canvas.getContext("2d");
+// const canvas: HTMLCanvasElement = document.getElementById(
+//   "canvas"
+// ) as HTMLCanvasElement;
+// const context: CanvasRenderingContext2D = canvas.getContext("2d");
 
 // Automatic screenshots
 // setInterval(() => {

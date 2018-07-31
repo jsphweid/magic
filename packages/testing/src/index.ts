@@ -1,8 +1,5 @@
-// import * as Phone from "~/phone";
-// import * as Toggl from "~/toggl";
+import * as Toggl from "~/toggl";
 
-// (async () => {
-//   console.log(
-//     Phone.parseTimeEntryText(await Toggl.getProjects(), "Browsing and napping")
-//   );
-// })();
+(async () => {
+  console.log(await Toggl.getProjects());
+})();
