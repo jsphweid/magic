@@ -1,0 +1,44 @@
+type Query {
+  time(start: DateTime, stop: DateTime): Time!
+}
+
+type Mutation {
+  setNarrative(text: String): Time!
+  addTags(tags: [String!]!): Time!
+  removeTags(tags: [String!]): Time!
+}
+
+type Time {
+  interval: Interval!
+  narratives: [Narrative!]
+  tags: [Tag!]
+  stats: Stats
+}
+
+type Interval {
+  start: DateTime!
+  stop: DateTime
+}
+
+interface Node {
+  id: ID!
+}
+
+type Narrative implements Node {
+  id: ID!
+  interval: Interval!
+  text: String!
+}
+
+type Tag implements Node {
+  id: ID!
+  name: String!
+  connections: [Tag!]
+}
+
+type Stats {
+  duration: Int
+  tracked: Int
+}
+
+scalar DateTime
