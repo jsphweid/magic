@@ -47,9 +47,14 @@ export interface TimeEntry {
 export const getTimeEntry = async (id: string): Promise<TimeEntry> =>
   get(`/time_entries/${id}`);
 
-export const getTimeEntries = async (): Promise<TimeEntry[]> => {
-  const { from, to } = dateRange();
-  const params = { start_date: from, end_date: to };
+export const getTimeEntries = async (
+  start: Moment.Moment,
+  stop: Moment.Moment
+): Promise<TimeEntry[]> => {
+  const params = {
+    start_date: start.toISOString(),
+    end_date: stop.toISOString()
+  };
 
   const timeEntries: TimeEntry[] = await get("/time_entries", params);
   return timeEntries.sort((a, b) => Moment(a.start).diff(Moment(b.start)));
@@ -110,11 +115,3 @@ const post = (resource: string, data: string) =>
 
 const workspace = async (resource: string) =>
   get(`/workspaces/${process.env.TOGGL_WORKSPACE}/${resource}`);
-
-const dateRange = () => ({
-  from: Moment()
-    .subtract(60, "days")
-    .toISOString(),
-
-  to: Moment().toISOString()
-});

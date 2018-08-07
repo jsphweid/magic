@@ -6,7 +6,7 @@ import symbols from "../data/symbols.json";
 export interface SymbolData {
   name: string;
   connections?: string[];
-  value?: number;
+  score?: number;
 }
 
 export const all = symbols as SymbolData[];

@@ -1,4 +1,15 @@
 {
   "private": true,
-  "name": "graphql"
+  "name": "graphql",
+  "dependencies": {
+    "graphql-import": "^0.6.0",
+    "graphql-tag": "^2.9.2",
+    "graphql-yoga": "^1.15.1",
+    "lodash": "^4.17.10",
+    "moment": "^2.22.2"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.116",
+    "graphql-tag": "^2.9.2"
+  }
 }

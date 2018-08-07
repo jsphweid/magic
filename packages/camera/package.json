@@ -1,8 +1,4 @@
 {
   "private": true,
-  "name": "camera",
-  "devDependencies": {
-    "parcel-bundler": "^1.9.6",
-    "parcel-plugin-typescript": "^1.0.0"
-  }
+  "name": "camera"
 }

@@ -1,0 +1,78 @@
+type Query {
+  now(start: Date, stop: Date): Time!
+}
+
+type Mutation {
+  setTime(narrative: String, tags: [String]!): Time!
+
+  setNarrative(text: String): Time!
+  addTags(tags: [String!]!): Time!
+  removeTags(tags: [String!]): Time!
+}
+
+interface HasInterval {
+  interval: Interval!
+}
+
+type Interval {
+  start: Date!
+  stop: Date
+  duration: Duration
+}
+
+type Duration {
+  milliseconds: Int!
+  seconds: Float!
+  minutes: Float!
+  hours: Float!
+  days: Float!
+  weeks: Float!
+  months: Float!
+  years: Float!
+}
+
+type Time implements HasInterval {
+  interval: Interval!
+  narratives(sort: Sort = DESCENDING): [Narrative!]
+  tagOccurences: [TagOccurence!]
+}
+
+enum Sort {
+  ASCENDING
+  DESCENDING
+}
+
+interface Node {
+  id: ID!
+}
+
+type Narrative implements Node & HasInterval {
+  id: ID!
+  interval: Interval!
+  description: String!
+}
+
+type TagOccurence implements Node & HasInterval {
+  id: ID!
+  interval: Interval!
+  tag: Tag!
+}
+
+type Tag implements Node {
+  id: ID!
+  name: String!
+  score: Score!
+  connections: [Tag!]
+}
+
+enum Score {
+  POSITIVE_HIGH
+  POSITIVE_MEDIUM
+  POSITIVE_LOW
+  NEUTRAL
+  NEGATIVE_LOW
+  NEGATIVE_MEDIUM
+  NEGATIVE_HIGH
+}
+
+scalar Date
