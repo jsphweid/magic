@@ -1,14 +1,11 @@
-import * as Path from "path";
-
-import { importSchema } from "graphql-import";
 import { GraphQLServer } from "graphql-yoga";
 
-import { resolvers } from "./Resolvers";
+import { schema, resolvers } from "./Schema";
 
 const server = new GraphQLServer({
-  typeDefs: importSchema(Path.resolve(__dirname, "Schema/Main.graphql")),
+  typeDefs: schema,
 
-  // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
+  // https:// github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
   resolvers: resolvers as any
 });
 

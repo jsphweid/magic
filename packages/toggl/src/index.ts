@@ -49,11 +49,11 @@ export const getTimeEntry = async (id: string): Promise<TimeEntry> =>
 
 export const getTimeEntries = async (
   start: Moment.Moment,
-  stop: Moment.Moment
+  stop: Moment.Moment | null
 ): Promise<TimeEntry[]> => {
   const params = {
     start_date: start.toISOString(),
-    end_date: stop.toISOString()
+    end_date: (stop || Moment()).toISOString()
   };
 
   const timeEntries: TimeEntry[] = await get("/time_entries", params);

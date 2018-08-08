@@ -20,17 +20,6 @@ type Interval {
   duration: Duration
 }
 
-type Duration {
-  milliseconds: Int!
-  seconds: Float!
-  minutes: Float!
-  hours: Float!
-  days: Float!
-  weeks: Float!
-  months: Float!
-  years: Float!
-}
-
 type Time implements HasInterval {
   interval: Interval!
   narratives(sort: Sort = DESCENDING): [Narrative!]

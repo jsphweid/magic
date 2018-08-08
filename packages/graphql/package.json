@@ -2,7 +2,6 @@
   "private": true,
   "name": "graphql",
   "dependencies": {
-    "graphql-import": "^0.6.0",
     "graphql-tag": "^2.9.2",
     "graphql-yoga": "^1.15.1",
     "lodash": "^4.17.10",
