@@ -13,13 +13,13 @@ const {
 const scoreValues: {
   [scoreLabel: string]: number;
 } = {
-  POSITIVE_HIGH: 4,
+  POSITIVE_HIGH: 3,
   POSITIVE_MEDIUM: 2,
   POSITIVE_LOW: 1,
   NEUTRAL: 0,
   NEGATIVE_LOW: 1,
   NEGATIVE_MEDIUM: 2,
-  NEGATIVE_HIGH: 4
+  NEGATIVE_HIGH: 3
 };
 
 const scoreLabels = Object.keys(scoreValues).reverse();
@@ -76,7 +76,7 @@ const scores = (
 };
 
 const data = Object.entries(
-  scores(dataInterval.start, dataInterval.stop, 10 * 60 * 1000)
+  scores(dataInterval.start, dataInterval.stop, 5 * 60 * 1000)
 ).map(([intervalMS, scores]) => ({
   dateMS: parseInt(intervalMS, 10),
   ...scores
@@ -100,7 +100,6 @@ const x = D3.scaleLinear()
 
 const y = D3.scaleLinear()
   .domain([0, 10])
-  // .domain([0, 1])
   .range([height, 0]);
 
 const colorStopsForScores: {
@@ -116,12 +115,10 @@ const colorStopsForScores: {
 };
 
 const color = (index: number) =>
-  index === 3
-    ? D3.hsl(0, 0, 0, 0)
-    : D3.interpolateHslLong(
-        D3.color("hsl(0, 97%, 62%)") || "#000",
-        D3.color("hsl(190, 97%, 62%)") || "#fff"
-      )(colorStopsForScores[scoreLabels[index]]);
+  D3.interpolateHslLong(
+    D3.color("hsl(0, 97%, 62%)") || "#000",
+    D3.color("hsl(190, 97%, 62%)") || "#fff"
+  )(colorStopsForScores[scoreLabels[index]]);
 
 const area = D3.area()
   .x(datum => x(datum.data.dateMS))
