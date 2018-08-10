@@ -47,7 +47,7 @@ const extractInterval = (
   start: Moment.Moment;
   stop: Moment.Moment | null;
 } => ({
-  start: start ? Moment(start) : Moment().subtract(1, "hour"),
+  start: start ? Moment(start) : Moment().subtract(30, "days"),
   stop: stop ? Moment(stop) : null
 });
 
@@ -62,6 +62,10 @@ const extractNarrativesAndTagOccurences = (
     (acc, timeEntry) => {
       const interval = extractInterval(timeEntry.start, timeEntry.stop || null);
 
+      if (!timeEntry.tags) {
+        console.log(timeEntry);
+      }
+
       return {
         ...acc,
         narratives: [
@@ -74,13 +78,11 @@ const extractNarrativesAndTagOccurences = (
         ],
         tagOccurences: [
           ...acc.tagOccurences,
-          ..._
-            .intersectionBy(
-              allTags,
-              Tags.expandConnections(timeEntry.tags),
-              "name"
-            )
-            .map(tag => ({ id: timeEntry.id, interval, tag }))
+          ..._.intersectionBy(
+            allTags,
+            Tags.expandConnections(timeEntry.tags),
+            "name"
+          ).map(tag => ({ id: timeEntry.id, interval, tag }))
         ]
       };
     },

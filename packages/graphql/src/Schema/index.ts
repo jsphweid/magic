@@ -37,6 +37,7 @@ export const schema = GraphQL.print(gql`
 
 export const resolvers = {
   Query: Query.resolvers,
+  Mutation: Mutation.resolvers,
   Interval: Interval.resolvers,
   Duration: Duration.resolvers,
   Tag: Tag.resolvers

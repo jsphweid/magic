@@ -2,18 +2,18 @@ import Moment from "moment";
 
 import * as Toggl from "~/toggl";
 
-export const isSleep = (from: Moment.Moment, to: Moment.Moment): boolean => {
-  const isLongEnoughToBeSleep = Moment.duration(to.diff(from)).asHours() > 1;
+export const isSleep = (start: Moment.Moment, stop: Moment.Moment): boolean => {
+  const isLongEnoughToBeSleep = Moment.duration(stop.diff(start)).asHours() > 1;
 
-  const isReasonableFromHour = from.hour() >= 18 || from.hour() <= 6;
-  const isReasonableToHour = to.hour() >= 4 && to.hour() <= 14;
+  const isReasonableFromHour = start.hour() >= 18 || start.hour() <= 6;
+  const isReasonableToHour = stop.hour() >= 4 && stop.hour() <= 14;
 
   return isLongEnoughToBeSleep && isReasonableFromHour && isReasonableToHour;
 };
 
 interface Sleep {
-  from: Moment.Moment;
-  to: Moment.Moment;
+  start: Moment.Moment;
+  stop: Moment.Moment;
 }
 
 export const fromTimeEntries = (timeEntries: Toggl.TimeEntry[]): Sleep[] =>
@@ -28,14 +28,14 @@ export const fromTimeEntries = (timeEntries: Toggl.TimeEntry[]): Sleep[] =>
         return updatedAcc;
       }
 
-      const from = Moment(acc.previousTimeEntry.stop);
-      const to = Moment(timeEntry.start);
+      const start = Moment(acc.previousTimeEntry.stop);
+      const stop = Moment(timeEntry.start);
 
-      if (!isSleep(from, to)) {
+      if (!isSleep(start, stop)) {
         return updatedAcc;
       }
 
-      return { ...updatedAcc, sleep: [...updatedAcc.sleep, { from, to }] };
+      return { ...updatedAcc, sleep: [...updatedAcc.sleep, { start, stop }] };
     },
     {
       sleep: []
