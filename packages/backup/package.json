@@ -1,4 +1,7 @@
 {
   "private": true,
-  "name": "backup"
+  "name": "backup",
+  "dependencies": {
+    "moment": "^2.22.2"
+  }
 }

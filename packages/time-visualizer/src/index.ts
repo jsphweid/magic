@@ -1,135 +1,48 @@
-import _ from "lodash";
-import Moment from "moment";
 import * as D3 from "d3";
 
-import DATA from "../data/data.json";
+import * as Score from "~/score";
 
-const {
-  data: {
-    now: { interval: dataInterval, tagOccurences }
-  }
-} = DATA;
+import * as Data from "./Data";
 
-const scoreValues: {
-  [scoreLabel: string]: number;
-} = {
-  POSITIVE_HIGH: 3,
-  POSITIVE_MEDIUM: 2,
-  POSITIVE_LOW: 1,
-  NEUTRAL: 0,
-  NEGATIVE_LOW: 1,
-  NEGATIVE_MEDIUM: 2,
-  NEGATIVE_HIGH: 3
-};
+const DIVERGING = false;
 
-const scoreLabels = Object.keys(scoreValues).reverse();
+const WIDTH = 20000;
+const HEIGHT = 10;
 
-const scores = (
-  start: string,
-  stop: string | null,
-  stepMS: number
-): {
-  [dateMS: number]: {
-    [tagName: string]: number;
-  };
-} => {
-  const initialScores = scoreLabels.reduce(
-    (acc, scoreText) => ({ ...acc, [scoreText]: 0 }),
-    {}
-  );
+const SAMPLE_DURATION_MS = 5 * 60 * 1000;
 
-  const MSIntervals = _.range(
-    Moment(start).valueOf(),
-    Moment(stop || undefined).valueOf(),
-    stepMS
-  );
-
-  const MSIntervalScores = _.fromPairs(
-    _.zip(
-      MSIntervals,
-      _.range(MSIntervals.length).map(() => _.clone(initialScores))
-    )
-  );
-
-  for (const { interval, tag } of tagOccurences) {
-    const startMS = Moment(interval.start).valueOf();
-    const stopMS = Moment(interval.stop || undefined).valueOf();
-
-    const startIntervalMS = MSIntervals.find(MS => MS >= startMS);
-
-    if (!startIntervalMS) {
-      continue;
-    }
-
-    for (const intervalMS of _.range(startIntervalMS, stopMS, stepMS)) {
-      MSIntervalScores[intervalMS][tag.score] = scoreValues[tag.score];
-    }
-  }
-
-  // for (const scores of Object.values(MSIntervalScores)) {
-  //   if (_.sum(Object.values(scores)) <= 0) {
-  //     scores.NEUTRAL = 1;
-  //   }
-  // }
-
-  return MSIntervalScores;
-};
-
-const data = Object.entries(
-  scores(dataInterval.start, dataInterval.stop, 5 * 60 * 1000)
-).map(([intervalMS, scores]) => ({
-  dateMS: parseInt(intervalMS, 10),
-  ...scores
-}));
-
-D3.selectAll("svg").remove();
-
-const svg = D3.select("body").append("svg");
-
-const width = 40000;
-const height = 100;
+const data = Data.toD3StackFormat(DIVERGING, SAMPLE_DURATION_MS);
 
 const series = D3.stack()
-  .keys(scoreLabels)
+  .keys(Score.names.reverse())
   .order(D3.stackOrderNone)
-  .offset(D3.stackOffsetSilhouette)(data);
+  .offset(DIVERGING ? D3.stackOffsetNone : D3.stackOffsetExpand)(data);
 
 const x = D3.scaleLinear()
-  .domain([Moment(dataInterval.start).valueOf(), Moment().valueOf()])
-  .range([0, width]);
+  .domain([Data.interval.start.valueOf(), Data.interval.stop.valueOf()])
+  .range([0, WIDTH]);
 
 const y = D3.scaleLinear()
-  .domain([0, 10])
-  .range([height, 0]);
-
-const colorStopsForScores: {
-  [scoreText: string]: number;
-} = {
-  POSITIVE_HIGH: 1,
-  POSITIVE_MEDIUM: 0.95,
-  POSITIVE_LOW: 0.4,
-  NEUTRAL: 0,
-  NEGATIVE_LOW: 0.2,
-  NEGATIVE_MEDIUM: 0.1,
-  NEGATIVE_HIGH: 0
-};
-
-const color = (index: number) =>
-  D3.interpolateHslLong(
-    D3.color("hsl(0, 97%, 62%)") || "#000",
-    D3.color("hsl(190, 97%, 62%)") || "#fff"
-  )(colorStopsForScores[scoreLabels[index]]);
+  .domain(DIVERGING ? [-7, 7] : [0, 1])
+  .range([HEIGHT, 0]);
 
 const area = D3.area()
-  .x(datum => x(datum.data.dateMS))
+  .x(datum => x(datum.data.startMS))
   .y0(datum => y(datum[0]))
   .y1(datum => y(datum[1]))
   .curve(D3.curveBasis);
 
-svg
+D3.selectAll("svg").remove();
+
+D3.select("body")
+  .append("svg")
+  .attr("width", WIDTH)
+  .attr("height", HEIGHT)
+  .attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
+  .attr("preserveAspectRatio", "none")
   .selectAll("path")
   .data(series)
   .enter()
   .append("path")
   .attr("d", area)
-  .attr("fill", (_datum: never, index: number) => color(index));
+  .attr("fill", (_datum: never, index: number) => Score.colorForIndex(index));
