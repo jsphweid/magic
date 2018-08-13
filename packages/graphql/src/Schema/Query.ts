@@ -47,7 +47,7 @@ const extractInterval = (
   start: Moment.Moment;
   stop: Moment.Moment | null;
 } => ({
-  start: start ? Moment(start) : Moment().subtract(7, "days"),
+  start: start ? Moment(start) : Moment().subtract(30, "days"),
   stop: stop ? Moment(stop) : null
 });
 

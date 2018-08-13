@@ -1,7 +1,6 @@
 import _ from "lodash";
 import Moment from "moment";
 
-import * as Interval from "~/interval";
 import * as Score from "~/score";
 
 import DATA from "../data/data.json";
@@ -9,18 +8,17 @@ import DATA from "../data/data.json";
 const {
   data: {
     now: {
-      interval: { start, stop },
+      // interval: { start, stop },
       tagOccurences
     }
   }
 } = DATA;
 
-export const interval = Interval.end(Interval.fromStrings(start, stop));
+export const interval = { start: Moment().subtract(1, "day"), stop: Moment() };
 
 export type D3StackDatum = Score.Values & { startMS: number };
 
 export const toD3StackFormat = (
-  diverging: boolean,
   sampleDurationMS: number
 ): {
   [startMS: number]: Score.Values;
@@ -54,17 +52,7 @@ export const toD3StackFormat = (
     )) {
       samples[activeIntervalStartMS][
         Score.nameFromString(tag.score)
-      ] = diverging
-        ? Score.valueOf(tag.score)
-        : Score.absoluteValueOf(tag.score);
-    }
-  }
-
-  if (!diverging) {
-    for (const startMS in samples) {
-      if (_.sum(Object.values(samples[startMS])) === 0) {
-        samples[startMS][Score.Name.NEUTRAL] = 1;
-      }
+      ] = Score.absoluteValueOf(tag.score);
     }
   }
 

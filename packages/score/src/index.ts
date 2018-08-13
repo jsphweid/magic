@@ -40,13 +40,13 @@ export interface Values {
 }
 
 export const values: Values = {
-  [Name.POSITIVE_HIGH]: 3,
+  [Name.POSITIVE_HIGH]: 4,
   [Name.POSITIVE_MEDIUM]: 2,
   [Name.POSITIVE_LOW]: 1,
   [Name.NEUTRAL]: 0,
   [Name.NEGATIVE_LOW]: -1,
   [Name.NEGATIVE_MEDIUM]: -2,
-  [Name.NEGATIVE_HIGH]: -3
+  [Name.NEGATIVE_HIGH]: -4
 };
 
 export const valuesZero: Values = {
@@ -74,18 +74,18 @@ export const colorForIndex = (index: number): string =>
   colorForName(names[index]);
 
 export const colors = [
-  "hsl(355, 97%, 62%)",
+  "hsl(350, 97%, 62%)",
   "hsl(65, 100%, 51%)",
-  "hsl(190, 97%, 62%)"
+  "hsl(150, 97%, 62%)"
 ];
 
 const colorStops: Values = {
   [Name.POSITIVE_HIGH]: 1,
-  [Name.POSITIVE_MEDIUM]: 0.85,
-  [Name.POSITIVE_LOW]: 0.7,
+  [Name.POSITIVE_MEDIUM]: 0.8,
+  [Name.POSITIVE_LOW]: 0.6,
   [Name.NEUTRAL]: 0.5,
-  [Name.NEGATIVE_LOW]: 0.3,
-  [Name.NEGATIVE_MEDIUM]: 0.15,
+  [Name.NEGATIVE_LOW]: 0.2,
+  [Name.NEGATIVE_MEDIUM]: 0.1,
   [Name.NEGATIVE_HIGH]: 0
 };
 

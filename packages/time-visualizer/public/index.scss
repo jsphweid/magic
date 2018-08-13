@@ -3,9 +3,29 @@ html {
   margin: 0;
   padding: 0;
 
-  background: hsl(240, 11%, 20%);
+  background: hsl(240, 12%, 15%);
 }
 
-svg {
+.score {
+  position: relative;
   height: 100%;
+
+  > div {
+    position: absolute;
+
+    svg {
+      height: 100%;
+    }
+  }
+
+  & .positive {
+    top: 0;
+    bottom: 50%;
+  }
+
+  & .negative {
+    top: 50%;
+    bottom: 0;
+    transform: scaleY(-1);
+  }
 }
