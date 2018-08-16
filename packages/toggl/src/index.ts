@@ -4,6 +4,8 @@ import { default as Axios, AxiosRequestConfig } from "axios";
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/projects.md
 
+import * as Time from "~/time";
+
 export interface Project {
   id: number;
   wid: number;
@@ -30,7 +32,7 @@ export const getProjects = async (): Promise<Project[]> =>
 
 export interface TimeEntry {
   description?: string;
-  id?: number;
+  id: number;
   pid?: number;
   wid?: number;
   tid?: number;
@@ -48,12 +50,13 @@ export const getTimeEntry = async (id: string): Promise<TimeEntry> =>
   get(`/time_entries/${id}`);
 
 export const getTimeEntries = async (
-  start: Moment.Moment,
-  stop: Moment.Moment | null
+  interval: Time.Interval.Interval
 ): Promise<TimeEntry[]> => {
+  const { start, stop } = Time.Interval.end(interval);
+
   const params = {
     start_date: start.toISOString(),
-    end_date: (stop || Moment()).toISOString()
+    end_date: stop.toISOString()
   };
 
   const timeEntries: TimeEntry[] = await get("/time_entries", params);

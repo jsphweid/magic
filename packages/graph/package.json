@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "graph",
+  "dependencies": {
+    "graphql": "^0.13.2",
+    "graphql-tag": "^2.9.2",
+    "lodash": "^4.17.10",
+    "moment": "^2.22.2"
+  },
+  "devDependencies": {
+    "@types/graphql": "^0.13.4",
+    "@types/lodash": "^4.14.116"
+  }
+}

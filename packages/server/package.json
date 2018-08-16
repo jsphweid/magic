@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "server",
+  "dependencies": {
+    "graphql": "^0.13.2",
+    "graphql-yoga": "^1.15.1"
+  }
+}

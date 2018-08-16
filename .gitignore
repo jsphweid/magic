@@ -1,9 +1,11 @@
 node_modules
 
 dist
-data
 generated
 functions
+
+data
+data.*
 
 .tst
 .cache

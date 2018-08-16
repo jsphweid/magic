@@ -8,7 +8,11 @@ const {
   toggl: { token: TOGGL_TOKEN, workspace: TOGGL_WORKSPACE }
 } = Functions.config();
 
-process.env = { ...process.env, TOGGL_TOKEN, TOGGL_WORKSPACE };
+process.env = {
+  ...process.env,
+  TOGGL_TOKEN,
+  TOGGL_WORKSPACE
+};
 
 export const incomingTextMessage = Functions.https.onRequest(
   async (req, res) => {

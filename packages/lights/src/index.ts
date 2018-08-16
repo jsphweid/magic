@@ -1,30 +1,46 @@
 import "cross-fetch/polyfill";
 
+import gql from "graphql-tag";
 import ApolloClient from "apollo-boost";
 
-import * as Queries from "./Queries";
+const client = new ApolloClient({ uri: "http://192.168.1.7:8080" });
 
 export interface Light {
   id: string;
   name: string;
 }
 
-const client = new ApolloClient({
-  uri: "http://192.168.1.7:8080"
-});
+export const all = async (): Promise<Light[]> => {
+  const query = gql`
+    {
+      lights {
+        id
+        name
+      }
+    }
+  `;
 
-export const all = async () => {
-  const {
-    data: { lights }
-  } = await client.query<{ lights: Light[] }>({
-    query: Queries.allLights
-  });
-
-  return lights.map(({ id, name }) => ({ id, name }));
+  const result = await client.query<{ lights: Light[] }>({ query });
+  return result.data.lights;
 };
 
-export const set = async (id: string, state: object) =>
-  client.mutate({
+export const set = async (id: string, state: object): Promise<Light | null> => {
+  const mutation = gql`
+    mutation($id: ID!, $state: LightState!) {
+      setLightState(id: $id, state: $state) {
+        color
+      }
+    }
+  `;
+
+  const result = await client.mutate<Light>({
     variables: { id, state },
-    mutation: Queries.setLight
+    mutation
   });
+
+  if (!result || !result.data) {
+    return null;
+  }
+
+  return result.data as Light;
+};

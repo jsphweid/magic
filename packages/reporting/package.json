@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "name": "reporting",
+  "scripts": {
+    "dev": "parcel public/index.html",
+    "build": "parcel build public/index.html"
+  },
+  "devDependencies": {
+    "@types/d3": "^5.0.0",
+    "@types/lodash": "^4.14.116",
+    "node-sass": "^4.9.2",
+    "parcel-bundler": "^1.9.7",
+    "parcel-plugin-typescript": "^1.0.0"
+  },
+  "dependencies": {
+    "apollo-boost": "^0.1.13",
+    "d3": "^5.5.0",
+    "graphql": "^0.13.2",
+    "lodash": "^4.17.10",
+    "moment": "^2.22.2"
+  }
+}
