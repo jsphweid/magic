@@ -5,7 +5,7 @@ import * as Graph from "~/graph";
 
 const schema: any = GraphQLTools.makeExecutableSchema(Graph.schema);
 
-new GraphQLServer({
+const server = new GraphQLServer({
   schema,
   context: {
     secrets: {
@@ -15,4 +15,6 @@ new GraphQLServer({
       }
     }
   }
-}).start(() => console.log("Server is running on http://localhost:4000"));
+});
+
+server.start(() => console.log("Server is running on http://localhost:4000"));

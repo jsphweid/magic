@@ -1,31 +1,14 @@
 import _ from "lodash";
 import * as D3 from "d3";
-import * as GraphQLTools from "graphql-tools";
 
 import * as Graph from "~/graph";
 import * as Time from "~/time";
 
 import * as Data from "./Data";
 
-import { ApolloClient, InMemoryCache } from "apollo-boost";
-import { SchemaLink } from "apollo-link-schema";
+import ApolloClient from "apollo-boost";
 
-const schema = GraphQLTools.makeExecutableSchema(Graph.schema);
-
-const client = new ApolloClient({
-  cache: new InMemoryCache(),
-  link: new SchemaLink({
-    schema,
-    context: {
-      secrets: {
-        toggl: {
-          token: localStorage.getItem("TOGGL_TOKEN"),
-          workspaceId: localStorage.getItem("TOGGL_WORKSPACE_ID")
-        }
-      }
-    }
-  })
-});
+const client = new ApolloClient({ uri: "http://localhost:4000" });
 
 const WIDTH = 500;
 const HEIGHT = 10;
