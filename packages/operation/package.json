@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "operations",
+  "dependencies": {
+    "graphql": "^0.13.2",
+    "graphql-tag": "^2.9.2"
+  }
+}

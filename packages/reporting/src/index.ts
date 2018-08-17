@@ -1,7 +1,7 @@
 import _ from "lodash";
 import * as D3 from "d3";
 
-import * as Graph from "~/graph";
+import * as Operation from "~/operation";
 import * as Time from "~/time";
 
 import * as Data from "./Data";
@@ -17,7 +17,7 @@ const SAMPLE_DURATION_MS = 5 * 60 * 1000;
 
 (async () => {
   const { data: rawData } = await client.query<Data.Data>({
-    query: Graph.Operation.now
+    query: Operation.now
   });
 
   const data = Data.toD3Stack(rawData, SAMPLE_DURATION_MS);

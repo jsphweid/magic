@@ -1,12 +1,10 @@
-import * as GraphQLTools from "graphql-tools";
 import { GraphQLServer } from "graphql-yoga";
 
-import * as Graph from "~/graph";
-
-const schema: any = GraphQLTools.makeExecutableSchema(Graph.schema);
+import * as Schema from "./Schema";
 
 const server = new GraphQLServer({
-  schema,
+  typeDefs: Schema.source,
+  resolvers: Schema.resolvers,
   context: {
     secrets: {
       toggl: {
