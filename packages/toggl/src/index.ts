@@ -6,6 +6,11 @@ import { default as Axios, AxiosRequestConfig } from "axios";
 
 import * as Time from "~/time";
 
+export interface Secrets {
+  token: string;
+  workspaceId: string;
+}
+
 export interface Project {
   id: number;
   wid: number;
@@ -22,11 +27,13 @@ export interface Project {
   at?: string;
 }
 
-export const getProject = async (id: string): Promise<Project> =>
-  workspace(`/projects/${id}`);
+export const getProject = async (
+  secrets: Secrets,
+  id: string
+): Promise<Project> => workspace(secrets, `/projects/${id}`);
 
-export const getProjects = async (): Promise<Project[]> =>
-  workspace("/projects");
+export const getProjects = async (secrets: Secrets): Promise<Project[]> =>
+  workspace(secrets, "/projects");
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/time_entries.md
 
@@ -46,10 +53,13 @@ export interface TimeEntry {
   at: string;
 }
 
-export const getTimeEntry = async (id: string): Promise<TimeEntry> =>
-  get(`/time_entries/${id}`);
+export const getTimeEntry = async (
+  secrets: Secrets,
+  id: string
+): Promise<TimeEntry> => get(secrets, `/time_entries/${id}`);
 
 export const getTimeEntries = async (
+  secrets: Secrets,
   interval: Time.Interval.Interval
 ): Promise<TimeEntry[]> => {
   const { start, stop } = Time.Interval.end(interval);
@@ -59,16 +69,20 @@ export const getTimeEntries = async (
     end_date: stop.toISOString()
   };
 
-  const timeEntries: TimeEntry[] = await get("/time_entries", params);
+  const timeEntries: TimeEntry[] = await get(secrets, "/time_entries", params);
   return timeEntries.sort((a, b) => Moment(a.start).diff(Moment(b.start)));
 };
 
-export const startTimeEntry = async (timeEntry: {
-  project?: Project;
-  description: string;
-  tags?: string[];
-}): Promise<void> =>
+export const startTimeEntry = async (
+  secrets: Secrets,
+  timeEntry: {
+    project?: Project;
+    description: string;
+    tags?: string[];
+  }
+): Promise<void> =>
   post(
+    secrets,
     `/time_entries/start`,
     JSON.stringify({
       time_entry: {
@@ -89,14 +103,15 @@ export interface Tag {
   at: string;
 }
 
-export const getTags = async (): Promise<Tag[]> => workspace("/tags");
+export const getTags = async (secrets: Secrets): Promise<Tag[]> =>
+  workspace(secrets, "/tags");
 
-const togglRequest = async (config: AxiosRequestConfig) => {
+const togglRequest = async (secrets: Secrets, config: AxiosRequestConfig) => {
   const url = `https://www.toggl.com/api/v8${config.url}`;
 
   // https://github.com/toggl/toggl_api_docs/blob/master/chapters/users.md#get-current-user-data
   const auth = {
-    username: `${process.env.TOGGL_TOKEN}`,
+    username: `${secrets.token}`,
     password: "api_token"
   };
 
@@ -105,16 +120,16 @@ const togglRequest = async (config: AxiosRequestConfig) => {
   return data;
 };
 
-const get = (resource: string, params?: any) =>
-  togglRequest({ url: resource, method: "get", params });
+const get = (secrets: Secrets, resource: string, params?: any) =>
+  togglRequest(secrets, { url: resource, method: "get", params });
 
-const post = (resource: string, data: string) =>
-  togglRequest({
+const post = (secrets: Secrets, resource: string, data: string) =>
+  togglRequest(secrets, {
     url: resource,
     method: "post",
     headers: { "Content-Type": "application/json" },
     data
   });
 
-const workspace = async (resource: string) =>
-  get(`/workspaces/${process.env.TOGGL_WORKSPACE}/${resource}`);
+const workspace = async (secrets: Secrets, resource: string) =>
+  get(secrets, `/workspaces/${secrets.workspaceId}${resource}`);

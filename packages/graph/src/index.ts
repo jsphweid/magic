@@ -1,4 +1,4 @@
-import * as Schema from "./Schema";
-import * as Operation from "./Operation";
+export * from "./Schema";
 
-export { Schema, Operation };
+import * as Operation from "./Operation";
+export { Operation };

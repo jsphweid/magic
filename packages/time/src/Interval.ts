@@ -22,7 +22,7 @@ export const end = (
   stop?: Moment.Moment | null
 ): Complete => ({
   ...interval,
-  stop: stop ? Moment(stop) : interval.stop || Moment()
+  stop: stop ? stop : interval.stop || Moment()
 });
 
 export const duration = (interval: Interval): Moment.Duration => {

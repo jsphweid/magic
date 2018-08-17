@@ -7,7 +7,7 @@ export const schema = gql`
     id: ID!
     name: String!
     score: Score!
-    connections: [Tag!]
+    connections: [Tag!]!
   }
 
   enum Score {

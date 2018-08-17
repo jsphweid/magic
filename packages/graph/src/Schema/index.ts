@@ -44,3 +44,9 @@ export const resolvers = {
   Node: { __resolveType: () => "Node" },
   HasInterval: { __resolveType: () => "HasInterval" }
 };
+
+// https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
+export const schema: any = {
+  typeDefs: GraphQL.print(source),
+  resolvers
+};

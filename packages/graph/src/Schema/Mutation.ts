@@ -15,12 +15,12 @@ export const schema = gql`
 export const resolvers = {
   setTime: (
     _source: never,
-    args: { narrative: string | null; tags: string[] | null }
+    args: {
+      narrative: string | null;
+      tags: string[] | null;
+    }
   ) => ({
     narratives: [{ description: args.narrative }],
-    tagOccurences:
-      args.tags && args.tags.length !== 0
-        ? Time.Tag.fromNames(args.tags).map(tag => ({ tag }))
-        : null
+    tagOccurences: Time.Tag.fromNames(args.tags || []).map(tag => ({ tag }))
   })
 };

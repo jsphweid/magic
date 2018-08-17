@@ -1,18 +1,36 @@
 import _ from "lodash";
 import * as D3 from "d3";
-import ApolloClient from "apollo-boost";
+import * as GraphQLTools from "graphql-tools";
 
 import * as Graph from "~/graph";
 import * as Time from "~/time";
 
 import * as Data from "./Data";
 
-const client = new ApolloClient({ uri: "http://localhost:4000" });
+import { ApolloClient, InMemoryCache } from "apollo-boost";
+import { SchemaLink } from "apollo-link-schema";
+
+const schema = GraphQLTools.makeExecutableSchema(Graph.schema);
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: new SchemaLink({
+    schema,
+    context: {
+      secrets: {
+        toggl: {
+          token: localStorage.getItem("TOGGL_TOKEN"),
+          workspaceId: localStorage.getItem("TOGGL_WORKSPACE_ID")
+        }
+      }
+    }
+  })
+});
 
 const WIDTH = 500;
 const HEIGHT = 10;
 
-const SAMPLE_DURATION_MS = 0.5 * 60 * 1000;
+const SAMPLE_DURATION_MS = 5 * 60 * 1000;
 
 (async () => {
   const { data: rawData } = await client.query<Data.Data>({
@@ -68,7 +86,7 @@ const SAMPLE_DURATION_MS = 0.5 * 60 * 1000;
         : Time.Score.Name.NEGATIVE_HIGH
     )
       .replace("rgb", "rgba")
-      .replace(")", ", 0.2)");
+      .replace(")", ", 0.3)");
 
     D3.select(positiveScores ? ".positive" : ".negative")
       .attr("style", `background: ${background}`)
@@ -104,11 +122,11 @@ const colors = [
 
 const colorStops: Time.Score.Values = {
   [Time.Score.Name.POSITIVE_HIGH]: 1,
-  [Time.Score.Name.POSITIVE_MEDIUM]: 0.85,
-  [Time.Score.Name.POSITIVE_LOW]: 0.7,
+  [Time.Score.Name.POSITIVE_MEDIUM]: 0.9,
+  [Time.Score.Name.POSITIVE_LOW]: 0.8,
   [Time.Score.Name.NEUTRAL]: 0.5,
-  [Time.Score.Name.NEGATIVE_LOW]: 0.12,
-  [Time.Score.Name.NEGATIVE_MEDIUM]: 0.06,
+  [Time.Score.Name.NEGATIVE_LOW]: 0.08,
+  [Time.Score.Name.NEGATIVE_MEDIUM]: 0.04,
   [Time.Score.Name.NEGATIVE_HIGH]: 0
 };
 

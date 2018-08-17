@@ -2,7 +2,7 @@
   "private": true,
   "name": "server",
   "dependencies": {
-    "graphql": "^0.13.2",
-    "graphql-yoga": "^1.15.1"
+    "graphql-tools": "^3.1.1",
+    "graphql-yoga": "^1.16.1"
   }
 }

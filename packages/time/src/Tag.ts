@@ -7,13 +7,14 @@ import DATA from "../data/tags.json";
 
 export interface Tag {
   name: string;
-  connections?: string[];
+  connections: string[];
   score: Score.Name;
 }
 
 export const all: Tag[] = DATA.map(tag => ({
   ...tag,
-  score: Score.nameFromString(tag.score || "NEUTRAL")
+  score: Score.nameFromString(tag.score || "NEUTRAL"),
+  connections: tag.connections || []
 }));
 
 export const fromNames = (tagNames: string[]): Tag[] =>
