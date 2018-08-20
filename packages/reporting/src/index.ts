@@ -1,19 +1,19 @@
 import _ from "lodash";
+import Moment from "moment";
 import * as D3 from "d3";
+import ApolloClient from "apollo-boost";
 
 import * as Operation from "~/operation";
 import * as Time from "~/time";
 
 import * as Data from "./Data";
 
-import ApolloClient from "apollo-boost";
-
 const client = new ApolloClient({ uri: "http://localhost:4000" });
 
 const WIDTH = 500;
 const HEIGHT = 10;
 
-const SAMPLE_DURATION_MS = 5 * 60 * 1000;
+const SAMPLE_DURATION_MS = 1 * 60 * 1000;
 
 (async () => {
   const { data: rawData } = await client.query<Data.Data>({
@@ -22,12 +22,13 @@ const SAMPLE_DURATION_MS = 5 * 60 * 1000;
 
   const data = Data.toD3Stack(rawData, SAMPLE_DURATION_MS);
 
-  const interval = Time.Interval.end(
-    Time.Interval.fromStrings(
-      rawData.now.interval.start,
-      rawData.now.interval.stop
-    )
-  );
+  const paddingMinutes = 15;
+
+  const { start, stop } = rawData.now.interval;
+  const interval = {
+    start: Moment(start).subtract(paddingMinutes, "minutes"),
+    stop: Moment(stop || undefined).add(paddingMinutes, "minutes")
+  };
 
   const x = D3.scaleLinear()
     .domain([interval.start.valueOf(), interval.stop.valueOf()])
@@ -69,7 +70,7 @@ const SAMPLE_DURATION_MS = 5 * 60 * 1000;
         : Time.Score.Name.NEGATIVE_HIGH
     )
       .replace("rgb", "rgba")
-      .replace(")", ", 0.3)");
+      .replace(")", ", 0.4)");
 
     D3.select(positiveScores ? ".positive" : ".negative")
       .attr("style", `background: ${background}`)
