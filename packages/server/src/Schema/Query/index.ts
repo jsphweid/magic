@@ -58,10 +58,8 @@ const toTimeSource = (
   const tagOccurrences: TagOccurrence.Source[] = [];
 
   for (const timeEntry of togglTimeEntries) {
-    const tagInterval = Time.Interval.fromStrings(
-      timeEntry.start,
-      timeEntry.stop
-    );
+    const { start, stop } = timeEntry;
+    const tagInterval = Time.Interval.fromData({ start, stop });
 
     if (interval.valueOf() >= tagInterval.start.valueOf()) {
       continue;

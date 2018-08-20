@@ -5,7 +5,7 @@ import * as Toggl from "~/toggl";
 import * as Interval from "./Interval";
 
 export const isSleep = (interval: Interval.Interval): boolean => {
-  const { start, stop } = Interval.end(interval);
+  const { start, stop } = Interval.toStopped(interval);
 
   const isLongEnoughToBeSleep =
     Interval.duration({ start, stop }).asHours() > 1;
@@ -28,10 +28,10 @@ export const fromTimeEntries = (
       continue;
     }
 
-    const interval = Interval.fromStrings(
-      Moment(previousTimeEntry.stop).toISOString(),
-      timeEntry.start
-    );
+    const interval = Interval.fromData({
+      start: Moment(previousTimeEntry.stop).toISOString(),
+      stop: timeEntry.start
+    });
 
     if (isSleep(interval)) {
       sleep.push(interval);

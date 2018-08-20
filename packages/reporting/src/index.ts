@@ -26,7 +26,7 @@ const xAxis = (
 
 const yAxis = (): D3.ScaleLinear<number, number> =>
   D3.scaleLinear()
-    .domain([0, 15])
+    .domain([0, 10])
     .range([HEIGHT, 0]);
 
 const area = (
@@ -63,7 +63,7 @@ const area = (
             ]
       )
       .order(D3.stackOrderNone)
-      .offset(D3.stackOffsetNone)(_.clone(stackData));
+      .offset(D3.stackOffsetNone)(stackData);
 
     const backgroundRGB = Color.forScoreName(
       positiveScores

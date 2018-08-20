@@ -62,7 +62,7 @@ export const getTimeEntries = async (
   secrets: Secrets,
   interval: Time.Interval.Interval
 ): Promise<TimeEntry[]> => {
-  const { start, stop } = Time.Interval.end(interval);
+  const { start, stop } = Time.Interval.toStopped(interval);
 
   const params = {
     start_date: start.toISOString(),
