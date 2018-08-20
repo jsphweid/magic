@@ -22,7 +22,7 @@ const SAMPLE_DURATION_MS = 1 * 60 * 1000;
 
   const data = Data.toD3Stack(rawData, SAMPLE_DURATION_MS);
 
-  const paddingMinutes = 15;
+  const paddingMinutes = 0;
 
   const { start, stop } = rawData.now.interval;
   const interval = {
@@ -30,8 +30,12 @@ const SAMPLE_DURATION_MS = 1 * 60 * 1000;
     stop: Moment(stop || undefined).add(paddingMinutes, "minutes")
   };
 
+  const { startMS: xMax } = _.last(data) || {
+    startMS: interval.stop.valueOf()
+  };
+
   const x = D3.scaleLinear()
-    .domain([interval.start.valueOf(), interval.stop.valueOf()])
+    .domain([interval.start.valueOf(), xMax])
     .range([0, WIDTH]);
 
   const y = D3.scaleLinear()
