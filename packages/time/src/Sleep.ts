@@ -7,8 +7,7 @@ import * as Interval from "./Interval";
 export const isSleep = (interval: Interval.Interval): boolean => {
   const { start, stop } = Interval.toStopped(interval);
 
-  const isLongEnoughToBeSleep =
-    Interval.duration({ start, stop }).asHours() > 1;
+  const isLongEnoughToBeSleep = Interval.duration(interval).asHours() > 1;
 
   const isReasonableStartHour = start.hour() >= 18 || start.hour() <= 6;
   const isReasonableStopHour = stop.hour() >= 4 && stop.hour() <= 14;

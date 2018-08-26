@@ -1,7 +1,7 @@
 import _ from "lodash";
 
 import * as Toggl from "~/toggl";
-import { Tag } from "~/time";
+import * as Time from "~/time";
 
 export const toTimeEntry = (
   projects: Toggl.Project[],
@@ -13,7 +13,7 @@ export const toTimeEntry = (
 } => {
   const formattedText = text.replace(/ /g, "-").toLowerCase();
   const symbols = _.uniq(
-    Tag.all.reduce<string[]>(
+    Time.Tag.all.reduce<string[]>(
       (acc, symbol) =>
         formattedText.includes(symbol.name) ? [...acc, symbol.name] : acc,
       []

@@ -11,8 +11,11 @@ const HEIGHT = 10;
 
 const SAMPLE_DURATION_MS = 1 * 60 * 1000;
 
+const START = null;
+const STOP = null;
+
 const xAxis = (
-  interval: Time.Interval.Complete,
+  interval: Time.Interval.Stopped,
   stackData: Data.D3StackDatum[]
 ): D3.ScaleLinear<number, number> => {
   const { startMS: xMax } = _.last(stackData) || {
@@ -42,7 +45,11 @@ const area = (
 (async () => {
   D3.selectAll("svg").remove();
 
-  const { interval, stackData } = await Data.asD3Stack(SAMPLE_DURATION_MS);
+  const { interval, stackData } = await Data.asD3Stack(
+    SAMPLE_DURATION_MS,
+    START,
+    STOP
+  );
 
   const x = xAxis(interval, stackData);
   const y = yAxis();

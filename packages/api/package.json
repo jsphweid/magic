@@ -1,8 +1,10 @@
 {
   "private": true,
-  "name": "server",
+  "name": "api",
   "dependencies": {
     "@types/graphql": "^0.13.4",
+    "firebase-admin": "^6.0.0",
+    "firebase-functions": "^2.0.5",
     "graphql": "^0.13.2",
     "graphql-tag": "^2.9.2",
     "graphql-yoga": "^1.16.1",

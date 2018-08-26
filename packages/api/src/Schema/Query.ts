@@ -5,10 +5,10 @@ import Moment from "moment";
 import * as Toggl from "~/toggl";
 import * as Time from "~/time";
 
-import { Source as TimeSource } from "../Time";
+import { Source as TimeSource } from "./Time";
 
-import * as Narrative from "../Narrative";
-import * as TagOccurrence from "../TagOccurrence";
+import * as Narrative from "./Narrative";
+import * as TagOccurrence from "./TagOccurrence";
 
 export const schema = gql`
   type Query {
@@ -21,25 +21,16 @@ interface Args {
   stop: string | null;
 }
 
-interface Context {
-  secrets: {
-    toggl: {
-      token: string;
-      workspaceId: string;
-    };
-  };
-}
-
 export const resolvers = {
-  now: async (_source: never, args: Args, context: Context) => {
+  now: async (_source: never, args: Args) => {
     const togglInterval = {
       start: args.start ? Moment(args.start) : Moment().subtract(2, "days"),
       stop: args.stop ? Moment(args.stop) : null
     };
 
     const [togglTimeEntries, togglTags] = await Promise.all([
-      Toggl.getTimeEntries(context.secrets.toggl, togglInterval),
-      Toggl.getTags(context.secrets.toggl)
+      Toggl.getTimeEntries(togglInterval),
+      Toggl.getTags()
     ]);
 
     return toTimeSource(args, togglInterval, togglTimeEntries, togglTags);

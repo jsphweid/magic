@@ -5,7 +5,7 @@ generated
 functions
 
 data
-data.*
+data.json
 
 .tst
 .cache
