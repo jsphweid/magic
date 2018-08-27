@@ -2,6 +2,8 @@ import gql from "graphql-tag";
 
 import * as Time from "~/time";
 
+import * as Duration from "./Duration";
+
 export const schema = gql`
   type Interval {
     start: Date!
@@ -10,10 +12,8 @@ export const schema = gql`
   }
 `;
 
-export const resolvers = {
-  start: (source: Time.Interval.Interval) => source.start.toISOString(),
-  stop: (source: Time.Interval.Interval) =>
-    source.stop ? source.stop.toISOString() : null,
+type Source = Time.Interval.Interval;
 
-  duration: (source: Time.Interval.Interval) => Time.Interval.duration(source)
+export const resolvers = {
+  duration: (source: Source): Duration.Source => Time.Interval.duration(source)
 };

@@ -1,5 +1,6 @@
 import gql from "graphql-tag";
 import * as GraphQL from "graphql";
+import Moment from "moment";
 
 import * as Query from "./Query";
 import * as Mutation from "./Mutation";
@@ -43,5 +44,43 @@ export const resolvers: any = {
   Duration: Duration.resolvers,
 
   Node: { __resolveType: () => "Node" },
-  HasInterval: { __resolveType: () => "HasInterval" }
+  HasInterval: { __resolveType: () => "HasInterval" },
+
+  Date: new GraphQL.GraphQLScalarType({
+    name: "Date",
+
+    serialize: (value: Moment.Moment): number => value.valueOf(),
+
+    parseValue: (value: string): Moment.Moment | undefined => parseDate(value),
+
+    parseLiteral: (ast: GraphQL.ValueNode): Moment.Moment | undefined => {
+      if (ast.kind === GraphQL.Kind.INT || ast.kind === GraphQL.Kind.FLOAT) {
+        return Moment(ast.value);
+      }
+
+      if (ast.kind === GraphQL.Kind.STRING) {
+        return;
+      }
+    }
+  })
+};
+
+const parseDate = (date: string): Moment.Moment | undefined => {
+  if (
+    Moment(date, Moment.ISO_8601).isValid() ||
+    Moment(date, Moment.RFC_2822).isValid()
+  ) {
+    return Moment(date);
+  }
+
+  console.log(date);
+
+  const [value, unit, tense] = date.split(" ");
+
+  const timeFromNow = value as Moment.DurationInputArg1;
+  const timeUnit = unit as Moment.DurationInputArg2;
+
+  return ["from", "ahead"].includes(tense || "ago")
+    ? Moment().add(timeFromNow, timeUnit)
+    : Moment().subtract(timeFromNow, timeUnit);
 };

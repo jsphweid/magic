@@ -4,11 +4,12 @@ import * as Time from "~/time";
 
 export const schema = gql`
   type Mutation {
-    setTime(narrative: String, tags: [String!]): Time!
+    setTime(start: Date, stop: Date, narrative: String, tags: [String!]): Time!
 
-    setNarrative(text: String): Time!
-    addTags(tags: [String!]): Time!
-    removeTags(tags: [String!]): Time!
+    setNarrative(start: Date, stop: Date, text: String): Time!
+
+    addTags(start: Date, stop: Date, tags: [String!]): Time!
+    removeTags(start: Date, stop: Date, tags: [String!]): Time!
   }
 `;
 

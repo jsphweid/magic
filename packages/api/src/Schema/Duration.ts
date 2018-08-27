@@ -14,13 +14,15 @@ export const schema = gql`
   }
 `;
 
+export type Source = Moment.Duration;
+
 export const resolvers = {
-  milliseconds: (source: Moment.Duration) => source.asMilliseconds(),
-  seconds: (source: Moment.Duration) => source.asSeconds(),
-  minutes: (source: Moment.Duration) => source.asMinutes(),
-  hours: (source: Moment.Duration) => source.asHours(),
-  days: (source: Moment.Duration) => source.asDays(),
-  weeks: (source: Moment.Duration) => source.asWeeks(),
-  months: (source: Moment.Duration) => source.asMonths(),
-  years: (source: Moment.Duration) => source.asYears()
+  milliseconds: (source: Source) => source.asMilliseconds(),
+  seconds: (source: Source) => source.asSeconds(),
+  minutes: (source: Source) => source.asMinutes(),
+  hours: (source: Source) => source.asHours(),
+  days: (source: Source) => source.asDays(),
+  weeks: (source: Source) => source.asWeeks(),
+  months: (source: Source) => source.asMonths(),
+  years: (source: Source) => source.asYears()
 };
