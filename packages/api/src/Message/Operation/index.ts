@@ -4,12 +4,12 @@ import gql from "graphql-tag";
 export const fromMessage = (
   schema: GraphQL.GraphQLSchema,
   message: string
-): GraphQL.DocumentNode | null => {
+): GraphQL.DocumentNode | void => {
   const queryType = schema.getQueryType();
   const mutationType = schema.getMutationType();
 
   if (!queryType || !mutationType) {
-    return null;
+    return;
   }
 
   const rootField = Object.values({
@@ -20,7 +20,7 @@ export const fromMessage = (
   );
 
   if (!rootField) {
-    return null;
+    return;
   }
 
   if (rootField.args.length === 0) {
@@ -33,13 +33,21 @@ export const fromMessage = (
         removeName(rootField.name, message),
         rootField.args,
         arg
-      )}`
+      ) || null}`
   );
 
+  const outputType = GraphQL.getNamedType(rootField.type);
+  const selection =
+    GraphQL.isObjectType(outputType) && outputType.name === "Time"
+      ? "{ ...Now }"
+      : null;
+
   return gql`
-    {
-      ${rootField.name}(${args.join(" ")})
+    mutation {
+      ${rootField.name}(${args.join(" ")}) ${selection || ""}
     }
+
+    ${selection ? fragments : ""}
   `;
 };
 
@@ -67,14 +75,14 @@ const parseArgValue = (
   messageWithoutFieldName: string,
   args: GraphQL.GraphQLArgument[],
   argToParse: GraphQL.GraphQLArgument
-): string | number | null => {
+): string | number | void => {
   const messageWithoutArgName = removeName(
     argToParse.name,
     messageWithoutFieldName
   );
 
   if (messageWithoutArgName === messageWithoutFieldName) {
-    return null;
+    return;
   }
 
   const nextArg = args
@@ -97,3 +105,27 @@ const parseArgValue = (
 
   return `"${value}"`;
 };
+
+const fragments = gql`
+  fragment Now on Time {
+    ...Interval
+    narratives {
+      ...Interval
+      description
+    }
+    tagOccurrences {
+      ...Interval
+      tag {
+        name
+        score
+      }
+    }
+  }
+
+  fragment Interval on HasInterval {
+    interval {
+      start
+      stop
+    }
+  }
+`;

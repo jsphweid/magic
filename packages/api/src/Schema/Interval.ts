@@ -14,6 +14,6 @@ export const schema = gql`
 
 type Source = Time.Interval.Interval;
 
-export const resolvers = {
+export const resolve = {
   duration: (source: Source): Duration.Source => Time.Interval.duration(source)
 };

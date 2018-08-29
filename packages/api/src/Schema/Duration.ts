@@ -16,7 +16,7 @@ export const schema = gql`
 
 export type Source = Moment.Duration;
 
-export const resolvers = {
+export const resolve = {
   milliseconds: (source: Source) => source.asMilliseconds(),
   seconds: (source: Source) => source.asSeconds(),
   minutes: (source: Source) => source.asMinutes(),

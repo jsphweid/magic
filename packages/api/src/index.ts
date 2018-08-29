@@ -1,30 +1,24 @@
+import { GraphQLServer } from "graphql-yoga";
+import * as GraphQLTools from "graphql-tools";
+import * as BodyParser from "body-parser";
+
 import * as Functions from "firebase-functions";
 
-import { GraphQLServer } from "graphql-yoga";
+import "./Config";
 
 import * as Schema from "./Schema";
-import * as Twilio from "./Twilio";
+import * as Message from "./Message";
 
-if (process.env.NODE_ENV === "production") {
-  const {
-    toggl: { token: TOGGL_TOKEN, workspace_id: TOGGL_WORKSPACE_ID },
-    twilio: { owner_number: TWILIO_OWNER_NUMBER }
-  } = Functions.config();
-
-  process.env = {
-    ...process.env,
-    TOGGL_TOKEN,
-    TOGGL_WORKSPACE_ID,
-    TWILIO_OWNER_NUMBER
-  };
-}
-
-const server = new GraphQLServer({
+const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.source,
   resolvers: Schema.resolvers
 });
 
-server.express.post("/twilio", Twilio.handler);
+const server = new GraphQLServer({ schema }).post(
+  "/messages",
+  BodyParser.json(),
+  Message.handler(schema)
+);
 
 export const api = Functions.https.onRequest(server.express);
 

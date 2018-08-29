@@ -24,7 +24,10 @@ export const all = async (): Promise<Light[]> => {
   return result.data.lights;
 };
 
-export const set = async (id: string, state: object): Promise<Light | null> => {
+export const set = async (
+  id: string,
+  state: object
+): Promise<Light | undefined> => {
   const mutation = gql`
     mutation($id: ID!, $state: LightState!) {
       setLightState(id: $id, state: $state) {
@@ -39,7 +42,7 @@ export const set = async (id: string, state: object): Promise<Light | null> => {
   });
 
   if (!result || !result.data) {
-    return null;
+    return;
   }
 
   return result.data as Light;

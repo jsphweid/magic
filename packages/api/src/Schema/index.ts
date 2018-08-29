@@ -1,6 +1,5 @@
 import gql from "graphql-tag";
 import * as GraphQL from "graphql";
-import Moment from "moment";
 
 import * as Query from "./Query";
 import * as Mutation from "./Mutation";
@@ -10,6 +9,7 @@ import * as Time from "./Time";
 import * as Narrative from "./Narrative";
 import * as Tag from "./Tag";
 import * as TagOccurrence from "./TagOccurrence";
+import * as Date from "./Date";
 
 export const source = gql`
   ${GraphQL.print(Query.schema)}
@@ -34,53 +34,32 @@ export const source = gql`
   ${GraphQL.print(TagOccurrence.schema)}
 
   scalar Date
+
+  fragment Now on Time {
+    ...Interval
+    narratives {
+      ...Interval
+      description
+    }
+    tagOccurrences {
+      ...Interval
+      tag {
+        name
+        score
+      }
+    }
+  }
 `;
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
 export const resolvers: any = {
-  Query: Query.resolvers,
-  Mutation: Mutation.resolvers,
-  Interval: Interval.resolvers,
-  Duration: Duration.resolvers,
+  Query: Query.resolve,
+  Mutation: Mutation.resolve,
+  Interval: Interval.resolve,
+  Duration: Duration.resolve,
 
   Node: { __resolveType: () => "Node" },
   HasInterval: { __resolveType: () => "HasInterval" },
 
-  Date: new GraphQL.GraphQLScalarType({
-    name: "Date",
-
-    serialize: (value: Moment.Moment): number => value.valueOf(),
-
-    parseValue: (value: string): Moment.Moment | undefined => parseDate(value),
-
-    parseLiteral: (ast: GraphQL.ValueNode): Moment.Moment | undefined => {
-      if (ast.kind === GraphQL.Kind.INT || ast.kind === GraphQL.Kind.FLOAT) {
-        return Moment(ast.value);
-      }
-
-      if (ast.kind === GraphQL.Kind.STRING) {
-        return;
-      }
-    }
-  })
-};
-
-const parseDate = (date: string): Moment.Moment | undefined => {
-  if (
-    Moment(date, Moment.ISO_8601).isValid() ||
-    Moment(date, Moment.RFC_2822).isValid()
-  ) {
-    return Moment(date);
-  }
-
-  console.log(date);
-
-  const [value, unit, tense] = date.split(" ");
-
-  const timeFromNow = value as Moment.DurationInputArg1;
-  const timeUnit = unit as Moment.DurationInputArg2;
-
-  return ["from", "ahead"].includes(tense || "ago")
-    ? Moment().add(timeFromNow, timeUnit)
-    : Moment().subtract(timeFromNow, timeUnit);
+  Date: Date.resolve
 };

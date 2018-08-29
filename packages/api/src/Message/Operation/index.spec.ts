@@ -1,18 +1,20 @@
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
-import * as Operation from "./Operation";
+import * as Operation from "./index";
 
 describe("translating messages into GraphQL operations", () => {
-  test("translates a basic query", () => {
-    messageBecomesOperation(
-      "hello",
-      gql`
-        {
-          hello
-        }
-      `
-    );
+  describe("translating basic queries", () => {
+    test("translates a basic query", () => {
+      messageBecomesOperation(
+        "hello",
+        gql`
+          {
+            hello
+          }
+        `
+      );
+    });
   });
 
   describe("parsing args", () => {

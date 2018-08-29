@@ -31,8 +31,8 @@ export type D3StackDatum = Time.Score.Values & {
 
 export const asD3Stack = async (
   sampleDurationMS: number,
-  start: Moment.Moment | null,
-  stop?: Moment.Moment | null
+  start: Moment.Moment | undefined,
+  stop?: Moment.Moment | undefined
 ): Promise<{
   interval: Time.Interval.Stopped;
   stackData: D3StackDatum[];

@@ -21,10 +21,14 @@ interface Args {
   stop: string | null;
 }
 
-export const resolvers = {
+export const resolve = {
   now: async (_source: never, args: Args) => {
     const togglInterval = {
-      start: args.start ? Moment(args.start) : Moment().subtract(2, "days"),
+      start:
+        args.start || (!args.start && !args.stop)
+          ? Moment(args.start || undefined)
+          : Moment().subtract(2, "days"),
+
       stop: args.stop ? Moment(args.stop) : null
     };
 
