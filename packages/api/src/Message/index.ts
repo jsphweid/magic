@@ -16,6 +16,15 @@ export const handler = (schema: GraphQL.GraphQLSchema): Express.Handler => {
     link: new SchemaLink({ schema })
   });
 
+  console.log(
+    GraphQL.print(
+      Operation.fromMessage(
+        schema,
+        "set time start in five minutes tags browsing, bathroom and body narrative Bathroom browsing"
+      ).value
+    )
+  );
+
   return async (req, res) => {
     const { From: from, Body: message } = req.body;
     if (!from || !message) {
@@ -26,8 +35,8 @@ export const handler = (schema: GraphQL.GraphQLSchema): Express.Handler => {
       return res.status(200).end();
     }
 
-    const operation = Operation.fromMessage(schema, message);
-    if (!operation) {
+    const operation = Operation.fromMessage(schema, message).value;
+    if (operation instanceof Error) {
       return messageResponse(res, from, "I couldn't understand your message.");
     }
 
@@ -44,7 +53,6 @@ export const handler = (schema: GraphQL.GraphQLSchema): Express.Handler => {
       messageResponse(res, from, formattedData);
     } catch (e) {
       console.log(typeof e);
-
       messageResponse(res, from, e);
     }
   };
