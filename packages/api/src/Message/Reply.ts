@@ -74,10 +74,18 @@ const dataToString = (data: any, spaces: string = ""): string => {
       : Object.entries(data)
           .map(([key, value]) => {
             const children = dataToString(value, ` ${spaces}`);
+
+            if (children.trim() === "" || children.trim() === "null") {
+              return "";
+            }
+
             return `${key}:${
-              children.length < 23 ? ` ${children.trim()}` : `\n${children}`
+              spaces.length + children.length < 23
+                ? ` ${children.trim()}`
+                : `\n${children}`
             }`;
           })
+          .filter(line => line !== "")
           .join(`\n${spaces}`);
 
   return `${spaces}${value}`;
