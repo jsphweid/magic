@@ -72,9 +72,12 @@ const dataToString = (data: any, spaces: string = ""): string => {
     !data || typeof data !== "object"
       ? JSON.stringify(data)
       : Object.entries(data)
-          .map(
-            ([key, value]) => `${key}:\n${dataToString(value, ` ${spaces}`)}`
-          )
+          .map(([key, value]) => {
+            const children = dataToString(value, ` ${spaces}`);
+            return `${key}:${
+              children.length < 23 ? ` ${children.trim()}` : `\n${children}`
+            }`;
+          })
           .join(`\n${spaces}`);
 
   return `${spaces}${value}`;
