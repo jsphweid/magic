@@ -4,6 +4,8 @@ export const fromOperationResult = (
   operation: GraphQL.DocumentNode,
   { data, errors }: GraphQL.ExecutionResult
 ): string => {
+  console.log(data);
+
   if (!data) {
     return `Something went wrong!${
       errors ? `\n\n${errors.map(({ message }) => message).join("\n")}` : ""
@@ -17,8 +19,7 @@ export const fromOperationResult = (
 
   const timeSelection = operationAST.selectionSet.selections.find(
     selection =>
-      selection.kind === "Field" &&
-      ["time", "startTime"].includes(selection.name.value)
+      selection.kind === "Field" && ["startTime"].includes(selection.name.value)
   );
 
   return timeSelection && timeSelection.kind === "Field"
@@ -64,5 +65,71 @@ const timeQueryDataToReply = ({
     .trim();
 };
 
-const operationDataToReply = (data: any): string => toJSON(data);
-const toJSON = (data: any): string => JSON.stringify(data, undefined, 1);
+const operationDataToReply = (data: any): string => operationDataToReply(data);
+
+const dataToString = (data: any, spaces: string = ""): string => {
+  const value =
+    !data || typeof data !== "object"
+      ? JSON.stringify(data)
+      : Object.entries(data)
+          .map(
+            ([key, value]) => `${key}:\n${dataToString(value, ` ${spaces}`)}`
+          )
+          .join(`\n${spaces}`);
+
+  return `${spaces}${value}`;
+};
+
+console.log(
+  dataToString({
+    interval: {
+      start: {
+        formatted: "7:26 PM, Wednesday, September 5th, 2018"
+      },
+      stop: null
+    },
+    narratives: [
+      {
+        interval: {
+          start: {
+            formatted: "7:26 PM, Wednesday, September 5th, 2018"
+          },
+          stop: null
+        },
+        description: "Working on GraphQL over SMS"
+      }
+    ],
+    tagOccurrences: [
+      {
+        interval: {
+          start: {
+            formatted: "7:26 PM, Wednesday, September 5th, 2018"
+          },
+          stop: null
+        },
+        tag: {
+          name: "magic",
+          score: "POSITIVE_HIGH",
+          connections: [
+            {
+              name: "code",
+              score: "POSITIVE_MEDIUM",
+              connections: [
+                {
+                  name: "productive",
+                  score: "POSITIVE_MEDIUM",
+                  connections: []
+                }
+              ]
+            },
+            {
+              name: "productive",
+              score: "POSITIVE_MEDIUM",
+              connections: []
+            }
+          ]
+        }
+      }
+    ]
+  })
+);
