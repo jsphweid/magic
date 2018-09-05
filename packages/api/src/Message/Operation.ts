@@ -146,9 +146,6 @@ const fragments = gql`
       stop {
         ...FormattedDate
       }
-      duration {
-        milliseconds
-      }
     }
   }
 

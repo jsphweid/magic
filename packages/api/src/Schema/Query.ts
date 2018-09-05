@@ -1,4 +1,3 @@
-import _ from "lodash";
 import gql from "graphql-tag";
 import Moment from "moment";
 
@@ -25,7 +24,7 @@ export const resolve = {
   time: async (_source: any, args: Args): Promise<TimeSource> => {
     const togglInterval = {
       start: args.start || Moment().subtract(12, "hours"),
-      stop: args.stop || null
+      stop: args.stop
     };
 
     const [
@@ -63,7 +62,10 @@ const toTimeSource = (
     const { start, stop } = timeEntry;
     const timeEntryInterval = Time.Interval.fromData({ start, stop });
 
-    if (timeEntryInterval.start.valueOf() < interval.start.valueOf()) {
+    if (
+      timeEntryInterval.start.valueOf() <
+      interval.start.valueOf() - 2 * 1000
+    ) {
       continue;
     }
 

@@ -1,5 +1,4 @@
 import * as GraphQL from "graphql";
-import Moment from "moment";
 
 export const fromOperationResult = (
   operation: GraphQL.DocumentNode,
@@ -30,7 +29,6 @@ export const fromOperationResult = (
 interface TimeQueryData {
   interval: {
     start: { formatted: string };
-    duration: { milliseconds: number };
   };
   narratives: Array<{ description: string }>;
   tagOccurrences: Array<{ tag: { name: string } }>;
@@ -38,8 +36,7 @@ interface TimeQueryData {
 
 const timeQueryDataToReply = ({
   interval: {
-    start: { formatted },
-    duration: { milliseconds }
+    start: { formatted }
   },
   narratives,
   tagOccurrences
@@ -56,12 +53,11 @@ const timeQueryDataToReply = ({
     return "Nothing is being tracked!";
   }
 
-  const duration = Moment.duration(-milliseconds, "ms").humanize(true);
-
   return `
-    ${narrative ? `${narrative.description}` : "No narrative is active!"}
+    ${formatted} – ${
+    narrative ? `${narrative.description}` : "No narrative is active!"
+  }
 
-    Started ${duration} at ${formatted}
     ${tags.length > 0 ? `Tags: ${tags.join(", ")}` : "No tags are active!"}
   `
     .replace(/    /g, "")

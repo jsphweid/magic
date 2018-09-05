@@ -1,8 +1,8 @@
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Toggl from "~/Toggl";
-import * as Time from "~/Time";
+import * as Toggl from "~/toggl";
+import * as Time from "~/time";
 
 import * as Query from "./Query";
 import { Source as TimeSource } from "./Time";
@@ -37,13 +37,6 @@ export const resolve = {
       tags: args.tags || []
     };
 
-    console.log([
-      args,
-      interval,
-      Time.Interval.isStopped(interval),
-      { ...newTimeEntry, interval }
-    ]);
-
     const { value: timeEntry } = Time.Interval.isStopped(interval)
       ? await Toggl.createTimeEntry({ ...newTimeEntry, interval })
       : await Toggl.startTimeEntry(newTimeEntry);
@@ -52,7 +45,7 @@ export const resolve = {
       throw timeEntry;
     }
 
-    if (!args.start && !Time.Interval.isStopped(interval)) {
+    if (args.start && !Time.Interval.isStopped(interval)) {
       const { value: updatedTimeEntry } = await Toggl.updateTimeEntry({
         ...timeEntry,
         start: interval.start.toISOString()

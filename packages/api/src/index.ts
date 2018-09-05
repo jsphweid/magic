@@ -1,5 +1,7 @@
 import { GraphQLServer } from "graphql-yoga";
 import * as GraphQLTools from "graphql-tools";
+
+import CORS from "cors";
 import * as BodyParser from "body-parser";
 
 import * as Functions from "firebase-functions";
@@ -14,17 +16,14 @@ const schema = GraphQLTools.makeExecutableSchema({
   resolvers: Schema.resolvers
 });
 
-const server = new GraphQLServer({ schema }).post(
-  "/messages",
-  BodyParser.json(),
-  Message.handler(schema)
-);
+const server = new GraphQLServer({ schema })
+  .use(CORS({ origin: true }))
+  .post("/messages", BodyParser.json(), Message.handler(schema));
 
-export const api =
-  process.env.NODE_ENV === "production"
-    ? Functions.https.onRequest(server.express)
-    : undefined;
+server.start(() => {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Server started (http://localhost:4000)");
+  }
+});
 
-if (process.env.NODE_ENV !== "production") {
-  server.start(() => console.log("Server is running on http://localhost:4000"));
-}
+exports.api = Functions.https.onRequest(server.express);

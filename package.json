@@ -17,10 +17,6 @@
     "lights:test:watch": "tst test lights --watch",
     "lights:dev": "tst dev lights",
     "lights:build": "tst build lights",
-    "prelude:test": "tst test prelude",
-    "prelude:test:watch": "tst test prelude --watch",
-    "prelude:dev": "tst dev prelude",
-    "prelude:build": "tst build prelude",
     "reporting:test": "tst test reporting",
     "reporting:test:watch": "tst test reporting --watch",
     "reporting:dev": "lerna run dev --stream --scope reporting",
@@ -40,11 +36,11 @@
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",
-    "@types/node": "^10.7.1",
-    "firebase-tools": "^4.2.0",
+    "@types/node": "^10.9.4",
+    "firebase-tools": "^4.2.1",
     "jest": "^23.5.0",
-    "lerna": "^3.1.2",
-    "nodemon": "^1.18.3",
+    "lerna": "^3.2.1",
+    "nodemon": "^1.18.4",
     "parcel-bundler": "^1.9.7",
     "parcel-plugin-typescript": "^1.0.0",
     "ts-jest": "^23.1.4",
@@ -53,7 +49,7 @@
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
     "twilio": "^3.19.2",
-    "typescript": "^3.0.1",
+    "typescript": "^3.0.3",
     "typescript-tooling": "^4.0.3-alpha.2"
   }
 }
