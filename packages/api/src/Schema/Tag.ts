@@ -18,3 +18,11 @@ export const schema = gql`
 export type Source = Time.Tag.Tag & {
   id: string;
 };
+
+export const resolve = {
+  connections: (source: Source): Source[] =>
+    Time.Tag.allFromNames(source.connections).map(tag => ({
+      id: source.id,
+      ...tag
+    }))
+};

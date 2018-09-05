@@ -1,8 +1,12 @@
+import _ from "lodash";
 import Moment from "moment";
 
 import { default as Axios, AxiosRequestConfig } from "axios";
+import { either as Either, option as Option } from "fp-ts";
 
 import * as Time from "~/time";
+
+type Result<T> = Either.Either<Error, T>;
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/projects.md
 
@@ -22,11 +26,11 @@ export interface Project {
   at?: string;
 }
 
-export const getProject = async (id: string): Promise<Project> =>
-  workspace(`/projects/${id}`);
+export const getProject = async (id: string): Promise<Result<Project>> =>
+  workspace<Project>(`/projects/${id}`);
 
-export const getProjects = async (): Promise<Project[]> =>
-  workspace("/projects");
+export const getProjects = async (): Promise<Result<Project[]>> =>
+  workspace<Project[]>("/projects");
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/time_entries.md
 
@@ -46,39 +50,134 @@ export interface TimeEntry {
   at: string;
 }
 
-export const getTimeEntry = async (id: string): Promise<TimeEntry> =>
-  get(`/time_entries/${id}`);
+export const getTimeEntry = async (id: string): Promise<Result<TimeEntry>> =>
+  get<TimeEntry>(`/time_entries/${id}`);
 
 export const getTimeEntries = async (
   interval: Time.Interval.Interval
-): Promise<TimeEntry[]> => {
+): Promise<Result<TimeEntry[]>> => {
   const { start, stop } = Time.Interval.toStopped(interval);
 
-  const params = {
-    start_date: start.toISOString(),
-    end_date: stop.toISOString()
-  };
+  // seven days
+  const batchSizeMS = 7 * 24 * 60 * 60 * 1000;
 
-  const timeEntries: TimeEntry[] = await get("/time_entries", params);
-  return timeEntries.sort((a, b) => Moment(a.start).diff(Moment(b.start)));
+  let timeEntries: TimeEntry[] = [];
+  for (const batchStart of _.range(
+    start.valueOf(),
+    stop.valueOf(),
+    batchSizeMS
+  )) {
+    const batch = await get<TimeEntry[]>("/time_entries", {
+      start_date: Moment(batchStart).toISOString(),
+      end_date: Moment(batchStart)
+        .add(batchSizeMS, "ms")
+        .toISOString()
+    });
+
+    if (batch.isLeft()) {
+      return batch;
+    }
+
+    timeEntries = [...timeEntries, ...batch.value];
+  }
+
+  return Either.right(
+    timeEntries.sort(
+      (a, b) =>
+        Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
+    )
+  );
 };
 
-export const startTimeEntry = async (timeEntry: {
-  project?: Project;
-  description: string;
+export const getCurrentTimeEntry = async (): Promise<
+  Result<Option.Option<TimeEntry>>
+> => {
+  const response = await get<{ data: TimeEntry }>(`/time_entries/current`);
+  return response.isLeft()
+    ? Either.left(response.value)
+    : Either.right(Option.fromNullable(response.value.data));
+};
+
+export interface NewTimeEntry {
+  projectID?: string | number;
+  description?: string;
   tags?: string[];
-}): Promise<void> =>
-  post(
-    `/time_entries/start`,
+}
+
+export const createTimeEntry = async (
+  newTimeEntry: NewTimeEntry & { interval: Time.Interval.Stopped }
+): Promise<Result<TimeEntry>> => {
+  console.log(
     JSON.stringify({
       time_entry: {
-        created_with: "magic",
-        pid: (timeEntry.project && timeEntry.project.id) || null,
-        description: timeEntry.description,
-        tags: timeEntry.tags || []
+        ...newTimeEntryToBodyData(newTimeEntry),
+        duration: Time.Interval.duration(newTimeEntry.interval).asSeconds(),
+        start: newTimeEntry.interval.start.toISOString()
       }
     })
   );
+
+  const response = await post<{ data: TimeEntry }>(
+    `/time_entries`,
+    JSON.stringify({
+      time_entry: {
+        ...newTimeEntryToBodyData(newTimeEntry),
+        duration: Time.Interval.duration(newTimeEntry.interval).asSeconds(),
+        start: newTimeEntry.interval.start.toISOString()
+      }
+    })
+  );
+
+  return response.isLeft()
+    ? Either.left(response.value)
+    : Either.right(response.value.data);
+};
+
+export const startTimeEntry = async (
+  newTimeEntry: NewTimeEntry
+): Promise<Result<TimeEntry>> => {
+  const response = await post<{ data: TimeEntry }>(
+    `/time_entries/start`,
+    JSON.stringify({ time_entry: newTimeEntryToBodyData(newTimeEntry) })
+  );
+
+  return response.isLeft()
+    ? Either.left(response.value)
+    : Either.right(response.value.data);
+};
+
+const newTimeEntryToBodyData = ({
+  projectID,
+  description,
+  tags
+}: NewTimeEntry): {
+  created_with: string;
+  pid?: string | number;
+  description?: string;
+  tags: string[];
+} => ({
+  created_with: "magic",
+  pid: projectID,
+  description,
+  tags: tags || []
+});
+
+export const stopTimeEntry = async (
+  id: number | string
+): Promise<Result<void>> => put<void>(`/time_entries/${id}/stop`);
+
+export const updateTimeEntry = async (
+  timeEntry: TimeEntry
+): Promise<Result<TimeEntry>> => {
+  const response = await put<{ data: TimeEntry }>(
+    `/time_entries/${timeEntry.id}`,
+    JSON.stringify({ time_entry: timeEntry })
+  );
+
+  return response.isLeft()
+    ? Either.left(response.value)
+    : Either.right(response.value.data);
+};
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/tags.md
 
@@ -89,9 +188,12 @@ export interface Tag {
   at: string;
 }
 
-export const getTags = async (): Promise<Tag[]> => workspace("/tags");
+export const getTags = async (): Promise<Result<Tag[]>> =>
+  workspace<Tag[]>("/tags");
 
-const togglRequest = async (config: AxiosRequestConfig) => {
+const togglRequest = async <T>(
+  config: AxiosRequestConfig
+): Promise<Result<T>> => {
   const url = `https://www.toggl.com/api/v8${config.url}`;
 
   // https://github.com/toggl/toggl_api_docs/blob/master/chapters/users.md#get-current-user-data
@@ -103,23 +205,35 @@ const togglRequest = async (config: AxiosRequestConfig) => {
 
   try {
     const { data } = await Axios.request({ ...config, url, auth });
-
-    return data;
-  } catch (e) {
-    console.log(e);
+    return Either.right(data as T);
+  } catch (error) {
+    console.log(error);
+    return Either.left(new Error(error.message));
   }
 };
 
-const get = (resource: string, params?: any) =>
-  togglRequest({ url: resource, method: "get", params });
-
-const post = (resource: string, data: string) =>
-  togglRequest({
+const get = <T>(resource: string, params?: any): Promise<Result<T>> =>
+  togglRequest<T>({
+    method: "get",
     url: resource,
-    method: "post",
+    params
+  });
+
+const post = <T>(resource: string, data?: string): Promise<Result<T>> =>
+  togglRequest<T>({
     headers: { "Content-Type": "application/json" },
+    method: "post",
+    url: resource,
     data
   });
 
-const workspace = async (resource: string) =>
-  get(`/workspaces/${process.env.TOGGL_WORKSPACE_ID}/${resource}`);
+const put = <T>(resource: string, data?: string): Promise<Result<T>> =>
+  togglRequest<T>({
+    headers: { "Content-Type": "application/json" },
+    method: "put",
+    url: resource,
+    data
+  });
+
+const workspace = async <T>(resource: string): Promise<Result<T>> =>
+  get<T>(`/workspaces/${process.env.TOGGL_WORKSPACE_ID}/${resource}`);

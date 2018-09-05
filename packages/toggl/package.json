@@ -4,6 +4,11 @@
   "dependencies": {
     "axios": "^0.18.0",
     "cross-fetch": "^2.2.2",
+    "fp-ts": "^1.8.0",
+    "lodash": "^4.17.10",
     "moment": "^2.22.2"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.116"
   }
 }

@@ -6,8 +6,8 @@ import * as Duration from "./Duration";
 
 export const schema = gql`
   type Interval {
-    start: Date!
-    stop: Date
+    start: FormattedDate!
+    stop: FormattedDate
     duration: Duration!
   }
 `;

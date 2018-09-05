@@ -6,19 +6,21 @@ import { either as Either } from "fp-ts";
 // 1 hour from now
 // in five minutes
 export const toDate = (english: string): Either.Either<Error, Moment.Moment> =>
-  englishToWords(english).chain(words =>
-    wordToTense(words.tense).chain(tense =>
-      wordToUnit(words.unit).chain(unit =>
-        wordToAmount(words.amount).chain(amount =>
-          Either.right(
-            tense === "past"
-              ? Moment().subtract(amount, unit)
-              : Moment().add(amount, unit)
+  english === "now"
+    ? Either.right(Moment())
+    : englishToWords(english).chain(words =>
+        wordToTense(words.tense).chain(tense =>
+          wordToUnit(words.unit).chain(unit =>
+            wordToAmount(words.amount).chain(amount =>
+              Either.right(
+                tense === "past"
+                  ? Moment().subtract(amount, unit)
+                  : Moment().add(amount, unit)
+              )
+            )
           )
         )
-      )
-    )
-  );
+      );
 
 const englishToWords = (
   english: string
@@ -51,18 +53,24 @@ const wordToTense = (word: string): Either.Either<Error, Tense> =>
     ? Either.right("past" as Tense)
     : ["from", "ahead", "later"].includes(word)
       ? Either.right("future" as Tense)
-      : Either.left(new Error(`Not sure if "${word}" is past or future tense`));
+      : Either.left(
+          new Error(`Not sure if "${word}" is past or future tense.`)
+        );
 
 const wordToAmount = (word: string): Either.Either<Error, number> => {
-  const amount = wordsToNumbers[word] || parseFloat(word);
+  const numberFromWord = wordsToNumbers[word];
+  const amount =
+    numberFromWord === undefined ? parseFloat(word) : numberFromWord;
+
   return !isNaN(amount)
     ? Either.right(amount)
-    : Either.left(new Error(`${amount} is not a number`));
+    : Either.left(new Error(`${amount} is not a number.`));
 };
 
 const wordsToNumbers: {
   [word: string]: number | undefined;
 } = {
+  zero: 0,
   one: 1,
   two: 2,
   three: 3,
@@ -79,7 +87,7 @@ type Unit = Moment.DurationInputArg2;
 const wordToUnit = (word: string): Either.Either<Error, Unit> =>
   units.includes(word.toLowerCase())
     ? Either.right(word as Unit)
-    : Either.left(new Error(`"${word}" is not a valid unit of time`));
+    : Either.left(new Error(`"${word}" is not a valid unit of time.`));
 
 const units = [
   "year years y",

@@ -17,12 +17,12 @@ export const schema = gql`
 export type Source = Moment.Duration;
 
 export const resolve = {
-  milliseconds: (source: Source) => source.asMilliseconds(),
-  seconds: (source: Source) => source.asSeconds(),
-  minutes: (source: Source) => source.asMinutes(),
-  hours: (source: Source) => source.asHours(),
-  days: (source: Source) => source.asDays(),
-  weeks: (source: Source) => source.asWeeks(),
-  months: (source: Source) => source.asMonths(),
-  years: (source: Source) => source.asYears()
+  milliseconds: (source: Source): number => source.asMilliseconds(),
+  seconds: (source: Source): number => source.asSeconds(),
+  minutes: (source: Source): number => source.asMinutes(),
+  hours: (source: Source): number => source.asHours(),
+  days: (source: Source): number => source.asDays(),
+  weeks: (source: Source): number => source.asWeeks(),
+  months: (source: Source): number => source.asMonths(),
+  years: (source: Source): number => source.asYears()
 };

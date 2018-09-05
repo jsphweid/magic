@@ -12,30 +12,37 @@ import * as TagOccurrence from "./TagOccurrence";
 
 export const schema = gql`
   type Query {
-    now(start: Date, stop: Date): Time!
+    time(start: Date, stop: Date): Time!
   }
 `;
 
 interface Args {
-  start: string | null;
-  stop: string | null;
+  start: Moment.Moment | null;
+  stop: Moment.Moment | null;
 }
 
 export const resolve = {
-  now: async (_source: never, args: Args) => {
+  time: async (_source: any, args: Args): Promise<TimeSource> => {
     const togglInterval = {
-      start:
-        args.start || (!args.start && !args.stop)
-          ? Moment(args.start || undefined)
-          : Moment().subtract(2, "days"),
-
-      stop: args.stop ? Moment(args.stop) : null
+      start: args.start || Moment().subtract(12, "hours"),
+      stop: args.stop || null
     };
 
-    const [togglTimeEntries, togglTags] = await Promise.all([
+    const [
+      { value: togglTimeEntries },
+      { value: togglTags }
+    ] = await Promise.all([
       Toggl.getTimeEntries(togglInterval),
       Toggl.getTags()
     ]);
+
+    if (togglTimeEntries instanceof Error) {
+      throw togglTimeEntries;
+    }
+
+    if (togglTags instanceof Error) {
+      throw togglTags;
+    }
 
     return toTimeSource(args, togglInterval, togglTimeEntries, togglTags);
   }
@@ -54,9 +61,9 @@ const toTimeSource = (
 
   for (const timeEntry of togglTimeEntries) {
     const { start, stop } = timeEntry;
-    const tagInterval = Time.Interval.fromData({ start, stop });
+    const timeEntryInterval = Time.Interval.fromData({ start, stop });
 
-    if (interval.valueOf() >= tagInterval.start.valueOf()) {
+    if (timeEntryInterval.start.valueOf() < interval.start.valueOf()) {
       continue;
     }
 
@@ -68,7 +75,7 @@ const toTimeSource = (
     ) {
       narratives.push({
         id,
-        interval: tagInterval,
+        interval: timeEntryInterval,
         description: timeEntry.description
       });
     }
@@ -77,17 +84,25 @@ const toTimeSource = (
       continue;
     }
 
-    for (const tag of Time.Tag.fromNames(timeEntry.tags)) {
-      const togglTag = togglTags.find(({ name }) => name === tag.name);
+    for (const tag of timeEntry.tags.map(Time.Tag.fromName)) {
+      if (tag.isNone()) {
+        continue;
+      }
 
+      const togglTag = togglTags.find(({ name }) => name === tag.value.name);
       if (!togglTag) {
         continue;
       }
 
+      const togglID = `${togglTag.id}`;
+
       tagOccurrences.push({
         id,
-        interval: tagInterval,
-        tag: { ...tag, id: togglTag.id }
+        interval: timeEntryInterval,
+        tag: {
+          id: togglID,
+          ...tag.value
+        }
       });
     }
   }
@@ -108,10 +123,11 @@ const getInterval = (
     return togglInterval;
   }
 
-  const lastSleep = _.last(Time.Sleep.fromTimeEntries(togglTimeEntries));
-
-  if (lastSleep) {
-    return { ...togglInterval, start: lastSleep.stop || Moment() };
+  const [timeEntry] = togglTimeEntries;
+  if (timeEntry) {
+    return {
+      start: Moment(timeEntry.start)
+    };
   }
 
   return togglInterval;

@@ -1,6 +1,7 @@
 {
   "extends": "../../tslint.json",
   "rules": {
-    "no-submodule-imports": [true, "~", "cross-fetch/polyfill"]
+    "no-submodule-imports": [true, "~", "cross-fetch/polyfill"],
+    "no-console": false
   }
 }

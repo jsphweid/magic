@@ -3,12 +3,18 @@ import * as GraphQL from "graphql";
 
 import * as Query from "./Query";
 import * as Mutation from "./Mutation";
+
 import * as Interval from "./Interval";
+import * as FormattedDate from "./FormattedDate";
 import * as Duration from "./Duration";
+
 import * as Time from "./Time";
+
 import * as Narrative from "./Narrative";
+
 import * as Tag from "./Tag";
 import * as TagOccurrence from "./TagOccurrence";
+
 import * as Date from "./Date";
 
 export const source = gql`
@@ -20,6 +26,7 @@ export const source = gql`
   }
 
   ${GraphQL.print(Interval.schema)}
+  ${GraphQL.print(FormattedDate.schema)}
   ${GraphQL.print(Duration.schema)}
 
   ${GraphQL.print(Time.schema)}
@@ -34,28 +41,17 @@ export const source = gql`
   ${GraphQL.print(TagOccurrence.schema)}
 
   scalar Date
-
-  fragment Now on Time {
-    ...Interval
-    narratives {
-      ...Interval
-      description
-    }
-    tagOccurrences {
-      ...Interval
-      tag {
-        name
-        score
-      }
-    }
-  }
 `;
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
 export const resolvers: any = {
   Query: Query.resolve,
   Mutation: Mutation.resolve,
+
+  Tag: Tag.resolve,
+
   Interval: Interval.resolve,
+  FormattedDate: FormattedDate.resolve,
   Duration: Duration.resolve,
 
   Node: { __resolveType: () => "Node" },

@@ -1,62 +1,66 @@
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
-import { either as Either } from "fp-ts";
-
 export const fromMessage = (
   schema: GraphQL.GraphQLSchema,
   message: string
-): Either.Either<Error, GraphQL.DocumentNode> =>
-  messageToRootField(schema, message).chain(rootField => {
-    if (rootField.args.length === 0) {
-      return Either.right(gql`{ ${rootField.name} }`);
+): GraphQL.DocumentNode => {
+  const { parentType, rootField } = messageToRootField(schema, message);
+
+  const operation = parentType.name === "Query" ? "query" : "mutation";
+
+  const args = messageToArgs(rootField, message)
+    .map(({ name, value }) => `${name}: ${value}`)
+    .join(", ");
+
+  const outputType = GraphQL.getNamedType(rootField.type);
+  const selection =
+    GraphQL.isObjectType(outputType) && outputType.name === "Time"
+      ? "{ ...Time }"
+      : "{}";
+
+  return gql`
+    ${operation} {
+      ${rootField.name}${args.length > 0 ? `(${args})` : ""} ${selection}
     }
 
-    const args = messageToArgs(rootField, message)
-      .map(({ name, value }) => `${name}: ${value}`)
-      .join(", ");
-
-    const outputType = GraphQL.getNamedType(rootField.type);
-    const selection =
-      GraphQL.isObjectType(outputType) && outputType.name === "Time"
-        ? "{ ...Now }"
-        : "";
-
-    return Either.right(gql`
-      mutation {
-        ${rootField.name}${args.length > 0 ? `(${args})` : ""} ${selection ||
-      ""}
-      }
-
-      ${selection !== "" ? GraphQL.print(fragments) : ""}
-    `);
-  });
+    ${selection !== "{}" ? GraphQL.print(fragments) : ""}
+  `;
+};
 
 const messageToRootField = (
   schema: GraphQL.GraphQLSchema,
   message: string
-): Either.Either<Error, GraphQL.GraphQLField<unknown, unknown>> => {
-  const queryType = schema.getQueryType();
-  const mutationType = schema.getMutationType();
+): {
+  parentType: GraphQL.GraphQLObjectType;
+  rootField: GraphQL.GraphQLField<unknown, unknown>;
+} => {
+  // these are definitely defined in the schema
+  const queryType = schema.getQueryType() as GraphQL.GraphQLObjectType;
+  const mutationType = schema.getMutationType() as GraphQL.GraphQLObjectType;
 
-  if (!queryType && !mutationType) {
-    return Either.left(new Error("`Query` and `Mutation` aren't defined"));
-  }
+  const queryFields = Object.values(queryType.getFields());
+  const mutationFields = Object.values(queryType.getFields());
 
-  const rootField = [
-    ...Object.values(queryType ? queryType.getFields() : {}),
-    ...Object.values(mutationType ? mutationType.getFields() : {})
-  ].find(
-    field => message.toLowerCase().indexOf(nameToInputFormat(field.name)) === 0
+  const rootFields = [
+    ...queryFields.map(rootField => ({ parentType: queryType, rootField })),
+    ...mutationFields.map(rootField => ({
+      parentType: mutationType,
+      rootField
+    }))
+  ];
+
+  const rootField = rootFields.find(
+    ({ rootField }) =>
+      message.toLowerCase().indexOf(nameToInputFormat(rootField.name)) === 0
   );
 
   return rootField
-    ? Either.right(rootField)
-    : Either.left(
-        new Error(
-          `No field from \`Query\` or \`Mutation\` is at the beginning of the message`
-        )
-      );
+    ? rootField
+    : {
+        parentType: mutationType,
+        rootField: mutationType.getFields().startTime
+      };
 };
 
 const messageToArgs = (
@@ -65,7 +69,14 @@ const messageToArgs = (
 ): Array<{ name: string; value: string }> =>
   rootField.args.map(arg => ({
     name: arg.name,
-    value: messageToArgValue(rootField, arg, message)
+    value: messageToArgValue(
+      rootField,
+      arg,
+
+      arg.name === "narrative" && !message.toLowerCase().includes("narrative")
+        ? `narrative ${message}`
+        : message
+    )
   }));
 
 const messageToArgValue = (
@@ -76,7 +87,7 @@ const messageToArgValue = (
   const argNameAsInputFormat = nameToInputFormat(arg.name);
   const argNameStartIndex = message.toLowerCase().indexOf(argNameAsInputFormat);
 
-  if (argNameStartIndex <= 0) {
+  if (argNameStartIndex < 0) {
     return "null";
   }
 
@@ -98,7 +109,12 @@ const messageToArgValue = (
     )
     .trim();
 
-  return `${JSON.stringify(value)}`;
+  if (GraphQL.isListType(arg.type)) {
+    const items = value.includes(", ") ? value.split(", ") : value.split(" ");
+    return `[${items.map(value => JSON.stringify(value)).join(", ")}]`;
+  }
+
+  return JSON.stringify(value);
 };
 
 const nameToInputFormat = (name: string): string =>
@@ -108,7 +124,7 @@ const nameToInputFormat = (name: string): string =>
     .toLowerCase();
 
 const fragments = gql`
-  fragment Now on Time {
+  fragment Time on Time {
     ...Interval
     narratives {
       ...Interval
@@ -117,16 +133,51 @@ const fragments = gql`
     tagOccurrences {
       ...Interval
       tag {
-        name
-        score
+        ...Tag
       }
     }
   }
 
   fragment Interval on HasInterval {
     interval {
-      start
-      stop
+      start {
+        ...FormattedDate
+      }
+      stop {
+        ...FormattedDate
+      }
+      duration {
+        milliseconds
+      }
+    }
+  }
+
+  fragment FormattedDate on FormattedDate {
+    formatted(format: "h:MM A")
+  }
+
+  fragment Tag on Tag {
+    name
+    score
+    connections {
+      name
+      score
+      connections {
+        name
+        score
+        connections {
+          name
+          score
+          connections {
+            name
+            score
+            connections {
+              name
+              score
+            }
+          }
+        }
+      }
     }
   }
 `;

@@ -2,7 +2,7 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-// import * as English from "./English";
+import * as English from "./English";
 
 export const schema = gql`
   scalar Date
@@ -17,27 +17,28 @@ export const resolve = new GraphQL.GraphQLScalarType({
       return Moment(parseFloat(ast.value));
     }
 
-    if (ast.kind === GraphQL.Kind.STRING) {
-      return parseDate(ast.value);
+    if (ast.kind !== GraphQL.Kind.STRING) {
+      throw new GraphQL.GraphQLError(
+        `"${ast.kind}" must be an \`Int\`, \`Float\`, or \`String\``
+      );
     }
 
-    throw new GraphQL.GraphQLError(
-      `"${ast.kind}" isn't an \`Int\`, \`Float\`, or \`String\``,
-      ast
-    );
+    return parseDate(ast.value, ast);
   }
 });
 
-const parseDate = (date: string, ast?: GraphQL.ValueNode): Moment.Moment => {
+const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
   if (
-    Moment(date, Moment.ISO_8601).isValid() ||
-    Moment(date, Moment.RFC_2822).isValid()
+    Moment(source, Moment.ISO_8601).isValid() ||
+    Moment(source, Moment.RFC_2822).isValid()
   ) {
-    return Moment(date);
+    return Moment(source);
   }
 
-  throw new GraphQL.GraphQLError(
-    `"${date}" cannot be parsed into a \`Date\``,
-    ast
-  );
+  const { value: date } = English.toDate(source);
+  if (date instanceof Error) {
+    throw new GraphQL.GraphQLError(date.message, ast);
+  }
+
+  return date;
 };

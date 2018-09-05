@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { option as Option } from "fp-ts";
 
 import * as Toggl from "~/toggl";
 
@@ -11,13 +12,22 @@ export interface Tag {
   score: Score.Name;
 }
 
-export const all: Tag[] = DATA.map(tag => ({
-  ...tag,
-  score: Score.nameFromString(tag.score || "NEUTRAL"),
-  connections: tag.connections || []
-}));
+export const fromName = (name: string): Option.Option<Tag> =>
+  Option.fromNullable(DATA.find(tag => tag.name === name)).map(fromData);
 
-export const fromNames = (tagNames: string[]): Tag[] =>
+const fromData = (data: {
+  name: string;
+  connections?: string[];
+  score?: string;
+}): Tag => ({
+  ...data,
+  score: Score.nameFromString(data.score || "NEUTRAL"),
+  connections: data.connections || []
+});
+
+export const all: Tag[] = DATA.map(fromData);
+
+export const allFromNames = (tagNames: string[]): Tag[] =>
   _.chain(
     tagNames.map(tagName => {
       const tag = all.find(({ name }) => name === tagName);
@@ -26,11 +36,8 @@ export const fromNames = (tagNames: string[]): Tag[] =>
         return [];
       }
 
-      if (!tag.connections) {
-        return [tag];
-      }
-
-      return [tag, ...fromNames(tag.connections)];
+      const connections = tag.connections ? allFromNames(tag.connections) : [];
+      return [tag, ...connections];
     })
   )
     .flatten()

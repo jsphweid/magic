@@ -6,19 +6,28 @@ import Moment from "moment";
 import * as Toggl from "~/toggl";
 import * as Time from "~/time";
 
-export const save = async () => {
+const save = async (): Promise<void> => {
   writeAsJSON("../data/time-tags.json", Time.Tag.all);
-  writeAsJSON("../data/toggl-tags.json", await Toggl.getTags());
 
-  writeAsJSON(
-    "../data/toggl-time-entries.json",
-    await Toggl.getTimeEntries({
-      start: Moment().subtract(2, "years")
-    })
-  );
+  const togglTags = await Toggl.getTags();
+  if (togglTags.isLeft()) {
+    throw togglTags;
+  }
+
+  writeAsJSON("../data/toggl-tags.json", togglTags.value);
+
+  const togglTimeEntries = await Toggl.getTimeEntries({
+    start: Moment("2018-06-22T13:10:55+00:00")
+  });
+
+  if (togglTimeEntries.isLeft()) {
+    throw togglTimeEntries;
+  }
+
+  writeAsJSON("../data/toggl-time-entries.json", togglTimeEntries.value);
 };
 
-const writeAsJSON = (filePath: string, contents: object) =>
+const writeAsJSON = (filePath: string, contents: object): void =>
   FS.writeFileSync(
     Path.resolve(__dirname, filePath),
     JSON.stringify(contents, null, 2)

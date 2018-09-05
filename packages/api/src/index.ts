@@ -20,7 +20,10 @@ const server = new GraphQLServer({ schema }).post(
   Message.handler(schema)
 );
 
-export const api = Functions.https.onRequest(server.express);
+export const api =
+  process.env.NODE_ENV === "production"
+    ? Functions.https.onRequest(server.express)
+    : undefined;
 
 if (process.env.NODE_ENV !== "production") {
   server.start(() => console.log("Server is running on http://localhost:4000"));

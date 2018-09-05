@@ -33,6 +33,9 @@ export const toStopped = (
   stop: stop ? stop : interval.stop || Moment()
 });
 
+export const isStopped = (interval: Interval): interval is Stopped =>
+  Moment.isMoment(interval.stop);
+
 export const duration = (interval: Interval): Moment.Duration => {
   const { start, stop } = toStopped(interval, interval.stop);
   return Moment.duration(stop.diff(start));
