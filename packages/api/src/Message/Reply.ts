@@ -71,24 +71,34 @@ const dataToString = (data: any, spaces: string = ""): string => {
   const value =
     !data || typeof data !== "object"
       ? JSON.stringify(data)
-      : Object.entries(data)
-          .map(([key, value]) => {
-            const children = dataToString(value, ` ${spaces}`);
-
-            if (children.trim() === "" || children.trim() === "null") {
-              return "";
-            }
-
-            return `${key}:${
-              spaces.length + children.length < 23
-                ? ` ${children.trim()}`
-                : `\n${children}`
-            }`;
-          })
-          .filter(line => line !== "")
-          .join(`\n${spaces}`);
+      : mapToString(data, spaces);
 
   return `${spaces}${value}`;
+};
+
+const mapToString = (map: any, spaces: string): string => {
+  const fields = Object.entries(map);
+
+  if (fields.length === 1) {
+    const [[key, value]] = fields;
+    return dataToString({ [key]: value }, spaces);
+  }
+
+  return fields
+    .map(([key, value]) => {
+      const children = dataToString(value, ` ${spaces}`);
+      if (children.trim() === "" || children.trim() === "null") {
+        return "";
+      }
+
+      return `${key}:${
+        spaces.length + children.length < 23
+          ? ` ${children.trim()}`
+          : `\n${children}`
+      }`;
+    })
+    .filter(line => line !== "")
+    .join(`\n${spaces}`);
 };
 
 console.log(
