@@ -7,14 +7,14 @@ import * as Toggl from "~/toggl";
 import * as Time from "~/time";
 
 const save = async (): Promise<void> => {
-  writeAsJSON("../data/time-tags.json", Time.Tag.all);
+  writeAsJSON("../.data/time-tags.json", Time.Tag.all);
 
   const togglTags = await Toggl.getTags();
   if (togglTags.isLeft()) {
     throw togglTags;
   }
 
-  writeAsJSON("../data/toggl-tags.json", togglTags.value);
+  writeAsJSON("../.data/toggl-tags.json", togglTags.value);
 
   const togglTimeEntries = await Toggl.getTimeEntries({
     start: Moment("2018-06-22T13:10:55+00:00")
@@ -24,7 +24,7 @@ const save = async (): Promise<void> => {
     throw togglTimeEntries;
   }
 
-  writeAsJSON("../data/toggl-time-entries.json", togglTimeEntries.value);
+  writeAsJSON("../.data/toggl-time-entries.json", togglTimeEntries.value);
 };
 
 const writeAsJSON = (filePath: string, contents: object): void =>

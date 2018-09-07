@@ -24,14 +24,9 @@ server.express
   .post("/messages", BodyParser.json(), Message.handler(schema))
   .post("/graphql", BasicAuth({ users: { api: `${process.env.API_TOKEN}` } }));
 
-server.start(
-  {
-    endpoint: "/graphql",
-    playground: process.env.NODE_ENV !== "production" ? "/playground" : false
-  },
-  () =>
-    process.env.NODE_ENV !== "production" &&
-    console.log("http://localhost:4000/playground")
-);
+server.start({
+  endpoint: "/graphql",
+  playground: false
+});
 
 exports.api = Functions.https.onRequest(server.express);

@@ -1,6 +1,8 @@
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
+import * as Time from "./Time";
+
 export const fromMessage = (
   schema: GraphQL.GraphQLSchema,
   message: string
@@ -16,7 +18,7 @@ export const fromMessage = (
   const outputType = GraphQL.getNamedType(rootField.type);
   const selection =
     GraphQL.isObjectType(outputType) && outputType.name === "Time"
-      ? "{ ...Time }"
+      ? `{ ${Time.selection} }`
       : "{}";
 
   return gql`
@@ -24,7 +26,7 @@ export const fromMessage = (
       ${rootField.name}${args.length > 0 ? `(${args})` : ""} ${selection}
     }
 
-    ${selection !== "{}" ? GraphQL.print(fragments) : ""}
+    ${selection !== "{}" ? GraphQL.print(Time.fragments) : ""}
   `;
 };
 
@@ -52,7 +54,7 @@ const messageToRootField = (
 
   const rootField = rootFields.find(
     ({ rootField }) =>
-      message.toLowerCase().indexOf(nameToInputFormat(rootField.name)) === 0
+      message.toLowerCase().indexOf(nameToWords(rootField.name)) === 0
   );
 
   return rootField
@@ -84,7 +86,7 @@ const messageToArgValue = (
   arg: GraphQL.GraphQLArgument,
   message: string
 ): string => {
-  const argNameAsInputFormat = nameToInputFormat(arg.name);
+  const argNameAsInputFormat = nameToWords(arg.name);
   const argNameStartIndex = message.toLowerCase().indexOf(argNameAsInputFormat);
 
   if (argNameStartIndex < 0) {
@@ -96,7 +98,7 @@ const messageToArgValue = (
     .map(
       rootFieldArg =>
         rootFieldArg !== arg
-          ? message.indexOf(nameToInputFormat(rootFieldArg.name))
+          ? message.indexOf(nameToWords(rootFieldArg.name))
           : -1
     )
     .filter(index => index >= argValueStartIndex)
@@ -117,64 +119,8 @@ const messageToArgValue = (
   return JSON.stringify(value);
 };
 
-const nameToInputFormat = (name: string): string =>
+const nameToWords = (name: string): string =>
   name
     .replace(/([A-Z])/g, " $1")
     .trim()
     .toLowerCase();
-
-const fragments = gql`
-  fragment Time on Time {
-    ...Interval
-    narratives {
-      ...Interval
-      description
-    }
-    tagOccurrences {
-      ...Interval
-      tag {
-        ...Tag
-      }
-    }
-  }
-
-  fragment Interval on HasInterval {
-    interval {
-      start {
-        ...FormattedDate
-      }
-      stop {
-        ...FormattedDate
-      }
-    }
-  }
-
-  fragment FormattedDate on FormattedDate {
-    formatted(format: "h:MM A")
-  }
-
-  fragment Tag on Tag {
-    name
-    score
-    connections {
-      name
-      score
-      connections {
-        name
-        score
-        connections {
-          name
-          score
-          connections {
-            name
-            score
-            connections {
-              name
-              score
-            }
-          }
-        }
-      }
-    }
-  }
-`;

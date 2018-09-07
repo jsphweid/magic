@@ -4,7 +4,7 @@ import { option as Option } from "fp-ts";
 import * as Toggl from "~/toggl";
 
 import * as Score from "./Score";
-import DATA from "../data/tags.json";
+import DATA from "../.data/tags.json";
 
 export interface Tag {
   name: string;

@@ -29,10 +29,9 @@ export const handler = (schema: GraphQL.GraphQLSchema): Express.Handler => {
       source: GraphQL.print(operation)
     });
 
-    res.send(
-      twiml
-        .message({ to: from }, Reply.fromOperationResult(operation, result))
-        .toString()
-    );
+    console.log(Reply.fromResult(operation, result));
+
+    const reply = Reply.fromResult(operation, result);
+    return res.send(twiml.message({ to: from }, reply).toString());
   };
 };
