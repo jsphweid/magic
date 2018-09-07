@@ -3,7 +3,7 @@ export const toString = (
   indent: string = "",
   addIndent: boolean = false
 ): string =>
-  data && typeof data === "object"
+  isObject(data)
     ? objectToString(data, `${indent}${addIndent ? " " : ""}`)
     : typeof data !== "string"
       ? JSON.stringify(data)
@@ -14,16 +14,22 @@ const objectToString = (
   indent: string
 ): string => {
   if (Array.isArray(object)) {
-    const values = object.map(value => toString(value, indent, true));
-    const asLine = values.join(" ");
+    const values = object.map(value => {
+      return isObject(value)
+        ? objectToString(value, indent)
+        : toString(value, indent, true);
+    });
 
+    const asLine = values.join(" ");
     if (isEmpty(asLine)) {
       return "";
     }
 
-    return isTooLong(indent, asLine)
-      ? values.map(value => `${value}`).join(`\n${indent}`)
-      : asLine;
+    return !isTooLong(indent, asLine)
+      ? asLine
+      : values
+          .map(value => `${!isIndented(indent, value) ? indent : ""}${value}`)
+          .join(`\n`);
   }
 
   const nonNulls = Object.entries(object).filter(([, value]) => value !== null);
@@ -34,19 +40,12 @@ const objectToString = (
 
   const fields: string[] = nonNulls
     .map(([key, value]) => {
-      const contents = toString(value, indent);
+      const contents = toString(value, indent, true);
       if (isEmpty(contents)) {
         return "";
       }
 
-      if (key === "narratives") {
-        console.log({ key, value, contents });
-      }
-
-      const spacing = isTooLong(indent, key, " ", contents)
-        ? `\n${indent} `
-        : " ";
-
+      const spacing = isTooLong(indent, key, " ", contents) ? "\n" : " ";
       return `${key}${spacing}${contents}`;
     })
     .filter(value => !isEmpty(value));
@@ -54,8 +53,48 @@ const objectToString = (
   return objectToString(fields, indent);
 };
 
+const isObject = (value: any): boolean => value && typeof value === "object";
+
 const isTooLong = (...strings: string[]): boolean =>
   strings.join("").length > 23;
 
+const isIndented = (indent: string, string: string): boolean =>
+  string.indexOf(indent) === 0;
+
 const isEmpty = (string: string): boolean =>
   string.replace(/\n/g, "").trim() === "";
+
+const x = toString({
+  data: {
+    time: {
+      narratives: [
+        {
+          interval: {
+            start: {
+              formatted: "3:09 PM Fr Sep 7"
+            },
+            stop: null
+          },
+          description: "Working on GraphQL over SMS"
+        }
+      ],
+      tagOccurrences: [
+        {
+          interval: {
+            start: {
+              formatted: "3:09 PM Fr Sep 7"
+            },
+            stop: null
+          },
+          tag: {
+            name: "magic",
+            score: "POSITIVE_HIGH"
+          }
+        }
+      ]
+    }
+  }
+});
+
+console.log(x);
+console.log(JSON.stringify(x));

@@ -5,14 +5,15 @@ export const selection = "...Time";
 export const fragments = gql`
   fragment Time on Time {
     narratives {
-      description
       ...Interval
+      description
     }
     tagOccurrences {
-      tag {
-        ...Tag
-      }
       ...Interval
+      tag {
+        name
+        score
+      }
     }
   }
 
@@ -28,31 +29,6 @@ export const fragments = gql`
   }
 
   fragment FormattedDate on FormattedDate {
-    formatted(format: "h:MM A dd MMM D")
-  }
-
-  fragment Tag on Tag {
-    name
-    score
-    connections {
-      name
-      score
-      connections {
-        name
-        score
-        connections {
-          name
-          score
-          connections {
-            name
-            score
-            connections {
-              name
-              score
-            }
-          }
-        }
-      }
-    }
+    formatted(format: "h:MM A ddd MMM D")
   }
 `;
