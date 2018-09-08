@@ -1,7 +1,7 @@
 import _ from "lodash";
-// import wrap from "word-wrap";
+import wrap from "word-wrap";
 
-const MAX_WIDTH = 23;
+const MAX_WIDTH = 30;
 
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive;
 
@@ -14,47 +14,53 @@ export type JSONPrimitive = string | number | boolean | null;
 
 export const toString = (data: JSONValue): string => withIndent("", data);
 
-export const withIndent = (
-  indent: string,
-  value: JSONValue,
-  addIndent: boolean = false
-): string => {
-  const updatedIndent = `${indent}${addIndent ? " " : ""}`;
+export const withIndent = (indent: string, value: JSONValue): string => {
   return isObject(value)
-    ? objectToString(updatedIndent, value)
+    ? objectToString(indent, value)
     : Array.isArray(value)
-      ? arrayToString(updatedIndent, value)
-      : primitiveToString(updatedIndent, value);
+      ? arrayToString(indent, value)
+      : primitiveToString(indent, value);
 };
 
 const isObject = (value: JSONValue): value is JSONObject =>
   value !== null && typeof value === "object";
 
-const objectToString = (
-  indent: string,
-  object: { [key: string]: any }
-): string =>
-  arrayToString(
-    indent,
-    Object.entries(object).map(
-      ([key, value]) => `${key} ${withIndent(indent, value, true)}`
-    )
+const objectToString = (indent: string, object: JSONObject): string => {
+  const fields = Object.entries(object).filter(([, value]) => value !== null);
+  if (fields.length === 1) {
+    return withIndent(indent, fields[0][1]);
+  }
+
+  const keyValues = fields.map(
+    ([key, value]) => `${key} ${withIndent(` ${indent}`, value)}`
   );
 
-const arrayToString = (indent: string, array: JSONArray): string => {
-  // const asOneLine = array.map(value => withIndent("", value)).join(" ");
-  // if (!isTooLong(asOneLine)) {
-  //   return asOneLine;
-  // }
+  const asMultipleLines = arrayToString(indent, keyValues);
+  const asOneLine = asMultipleLines.replace(
+    new RegExp(`\n${indent}`, "g"),
+    " "
+  );
 
+  return !isTooLong(asOneLine)
+    ? asOneLine
+    : asMultipleLines.replace(` \n `, "\n ");
+};
+
+const arrayToString = (indent: string, array: JSONArray): string => {
   return array.map(value => `${withIndent(indent, value)}`).join("");
 };
 
+const primitiveToString1 = (indent: string, primitive: JSONPrimitive): string =>
+  typeof primitive === "string"
+    ? wrap(primitive, { indent, width: MAX_WIDTH })
+    : JSON.stringify(primitive);
+
+primitiveToString1;
+
 const primitiveToString = (indent: string, primitive: JSONPrimitive): string =>
   typeof primitive === "string"
-    ? `\n${indent}${primitive}`
-    : // wrap(primitive, { indent, width: MAX_WIDTH })
-      JSON.stringify(primitive);
+    ? `\n${indent}${primitive}`.trimRight()
+    : JSON.stringify(primitive);
 
 const isTooLong = (string: string): boolean => string.length > MAX_WIDTH;
 
@@ -67,7 +73,8 @@ const x = toString({
             start: {
               formatted: "3:09 PM Fr Sep 7"
             },
-            stop: null
+            stop: [1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8],
+            stop2: [1, 2, 3, 4]
           },
           description: "Working on GraphQL over SMS"
         }
