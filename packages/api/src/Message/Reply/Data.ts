@@ -35,15 +35,7 @@ const objectToString = (indent: string, object: JSONObject): string => {
     ([key, value]) => `${key} ${withIndent(` ${indent}`, value)}`
   );
 
-  const asMultipleLines = arrayToString(indent, keyValues);
-  const asOneLine = asMultipleLines.replace(
-    new RegExp(`\n${indent}`, "g"),
-    " "
-  );
-
-  return !isTooLong(asOneLine)
-    ? asOneLine
-    : asMultipleLines.replace(` \n `, "\n ");
+  return arrayToString(indent, keyValues);
 };
 
 const arrayToString = (indent: string, array: JSONArray): string => {
