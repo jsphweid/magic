@@ -19,7 +19,8 @@
     "graphql-yoga": "^1.16.1",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
-    "twilio": "^3.19.2"
+    "twilio": "^3.19.2",
+    "word-wrap": "^1.2.3"
   },
   "devDependencies": {
     "@types/graphql": "^0.13.4",
