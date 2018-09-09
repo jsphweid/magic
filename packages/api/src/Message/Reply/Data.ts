@@ -1,7 +1,7 @@
 import _ from "lodash";
 import wrap from "word-wrap";
 
-const MAX_WIDTH = 30;
+const MAX_WIDTH = 23;
 
 export type JSONValue = JSONObject | JSONArray | JSONPrimitive;
 
@@ -12,100 +12,77 @@ export interface JSONObject {
 export interface JSONArray extends Array<JSONValue> {}
 export type JSONPrimitive = string | number | boolean | null;
 
-export const toString = (data: JSONValue): string => withIndent("", data);
+export const toString = (data: JSONValue): string =>
+  withIndent("", data)
+    .replace("\n", "")
+    .split("\n")
+    .map(value => {
+      const trimmed = value.trimRight();
+      if (trimmed.length < MAX_WIDTH) {
+        return trimmed;
+      }
 
-export const withIndent = (indent: string, value: JSONValue): string => {
-  return Array.isArray(value)
+      const spaces = value.match(/\s+/) || "";
+      if (!spaces) {
+        return trimmed;
+      }
+
+      const indent = spaces[0];
+      return wrap(trimmed.trimLeft(), { indent, width: MAX_WIDTH });
+    })
+    .join("\n");
+
+export const withIndent = (indent: string, value: JSONValue): string =>
+  Array.isArray(value)
     ? arrayToString(indent, value)
     : isObject(value)
       ? objectToString(indent, value)
       : primitiveToString(indent, value);
-};
 
 const isObject = (value: JSONValue): value is JSONObject =>
   value !== null && typeof value === "object";
 
 const objectToString = (indent: string, object: JSONObject): string => {
-  const fields = Object.entries(object).filter(([, value]) => value !== null);
-  return fields.length === 1
-    ? withIndent(indent, fields[0][1])
-    : arrayToString(
+  const nonNulls = Object.entries(object).filter(([, value]) => value !== null);
+  return nonNulls.length === 1
+    ? withIndent(indent, nonNulls[0][1])
+    : formatLines(
         indent,
-        fields.map(
-          ([key, value]) => `${key} ${withIndent(` ${indent}`, value)}`
-        )
+        arrayToString(
+          indent,
+          nonNulls.map(([key, value]) => {
+            const valueAsString = withIndent(` ${indent}`, value);
+            return valueAsString.replace(/ /g, "") !== ""
+              ? formatLines(indent, `${key}${valueAsString}`)
+              : "";
+          })
+        ),
+        " "
       );
 };
 
-const arrayToString = (indent: string, array: JSONArray): string => {
-  const asOneLine;
+const arrayToString = (indent: string, array: JSONArray): string =>
+  formatLines(
+    indent,
+    array
+      .filter(value => value !== "")
+      .map(value => withIndent(indent, value))
+      .join(""),
+    " "
+  );
 
-  return array.map(value => `${withIndent(indent, value)}`).join("");
+const formatLines = (
+  indent: string,
+  asMultipleLines: string,
+  separator: string = ""
+): string => {
+  const asSingleLine = asMultipleLines
+    .split(`\n${indent}`)
+    .filter(line => line !== "")
+    .join(separator);
+
+  return asSingleLine.length <= MAX_WIDTH ? asSingleLine : asMultipleLines;
 };
-
-const primitiveToString1 = (indent: string, primitive: JSONPrimitive): string =>
-  typeof primitive === "string"
-    ? wrap(primitive, { indent, width: MAX_WIDTH })
-    : JSON.stringify(primitive);
 
 const primitiveToString = (indent: string, primitive: JSONPrimitive): string =>
   `\n${indent}${primitive}`;
-
-// const isTooLong = (string: string): boolean => string.length > MAX_WIDTH;
-
-const x = toString({
-  data: {
-    time: {
-      narratives: [
-        {
-          interval: {
-            start: {
-              formatted: "3:09 PM Fr Sep 7"
-            },
-            stop: [1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8],
-            stop2: [1, 2, 3, 4]
-          },
-          description: "Working on GraphQL over SMS"
-        }
-      ],
-      tagOccurrences: [
-        {
-          interval: {
-            start: {
-              formatted: "3:09 PM Fr Sep 7"
-            },
-            stop: null
-          },
-          tag: {
-            name: "magic"
-          }
-        },
-        {
-          interval: {
-            start: {
-              formatted: "3:09 PM Fr Sep 7"
-            },
-            stop: null
-          },
-          tag: {
-            name: "todd-elvers"
-          }
-        },
-        {
-          interval: {
-            start: {
-              formatted: "3:09 PM Fr Sep 7"
-            },
-            stop: null
-          },
-          tag: {
-            name: "weed"
-          }
-        }
-      ]
-    }
-  }
-});
-
-console.log(x);
-console.log(JSON.stringify(x));

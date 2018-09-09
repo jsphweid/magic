@@ -12,7 +12,6 @@ export const fragments = gql`
       ...Interval
       tag {
         name
-        score
       }
     }
   }
@@ -29,6 +28,6 @@ export const fragments = gql`
   }
 
   fragment FormattedDate on FormattedDate {
-    formatted(format: "h:MM A ddd MMM D")
+    formatted(format: "h:MM A ddd")
   }
 `;
