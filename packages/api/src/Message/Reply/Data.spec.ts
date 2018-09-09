@@ -108,7 +108,7 @@ describe("transforming JSON into an SMS-friendly format", () => {
     });
 
     test("objects with single fields are collapsed upward", () => {
-      console.log(
+      expect(
         Data.toString({
           a: 1,
           isTrue: {
@@ -117,6 +117,34 @@ describe("transforming JSON into an SMS-friendly format", () => {
             }
           }
         })
+      ).toBe("a 1 isTrue true");
+    });
+
+    test("arrays with small objects", () => {
+      expect(Data.toString(["a", { b: true, c: true }, "d"])).toBe(
+        "a b true c true d"
+      );
+    });
+
+    test("arrays with large objects", () => {
+      expect(
+        Data.toString([
+          "item",
+          { x: true, y: false, z: false, a: false },
+          "item"
+        ])
+      ).toBe(
+        trim(
+          "            ",
+          `
+            item
+            x true
+            y false
+            z false
+            a false
+            item
+          `
+        )
       );
     });
   });

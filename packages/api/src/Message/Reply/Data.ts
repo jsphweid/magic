@@ -46,18 +46,16 @@ const objectToString = (indent: string, object: JSONObject): string => {
   const nonNulls = Object.entries(object).filter(([, value]) => value !== null);
   return nonNulls.length === 1
     ? withIndent(indent, nonNulls[0][1])
-    : formatLines(
+    : arrayToString(
         indent,
-        arrayToString(
-          indent,
-          nonNulls.map(([key, value]) => {
-            const valueAsString = withIndent(` ${indent}`, value);
-            return valueAsString.replace(/ /g, "") !== ""
-              ? formatLines(indent, `${key}${valueAsString}`)
-              : "";
-          })
-        ),
-        " "
+        nonNulls.map(([key, value]) => {
+          const valueAsString = withIndent(` ${indent}`, value);
+          if (valueAsString.replace(/ /g, "") === "") {
+            return "";
+          }
+
+          return formatLines(indent, `${key}${valueAsString}`);
+        })
       );
 };
 
@@ -66,7 +64,12 @@ const arrayToString = (indent: string, array: JSONArray): string =>
     indent,
     array
       .filter(value => value !== "")
-      .map(value => withIndent(indent, value))
+      .map(value => {
+        const valueAsString = withIndent(indent, value);
+        return isObject(value) && !valueAsString.includes("\n")
+          ? primitiveToString(indent, valueAsString)
+          : valueAsString;
+      })
       .join(""),
     " "
   );
