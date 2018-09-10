@@ -12,7 +12,6 @@ export const fragments = gql`
       tag {
         name
       }
-      ...Interval
     }
   }
 

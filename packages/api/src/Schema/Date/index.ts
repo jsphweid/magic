@@ -1,6 +1,8 @@
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
-import Moment from "moment";
+
+import _ from "lodash";
+import Moment from "moment-timezone";
 
 import { Interval } from "~/time";
 
@@ -31,21 +33,61 @@ export const resolve = new GraphQL.GraphQLScalarType({
 
 const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
   /*
-    Try all the hard-coded `Moment` formats at the end of this file
+    Check if the source has the meridiem marker (A/AM/P/PM). If it doesn't we'll
+    use that information later to make a better guess about what time was meant.
+  */
+  const [, lastTimePart] = source.split(":");
+  const isSourceMissingMeridiem = ["A", "AM", "P", "PM"].includes(
+    lastTimePart.toUpperCase()
+  );
+
+  const now = Moment();
+
+  /*
+    Try a bunch of hard-coded `Moment` formats (at the end of this file)
     https://momentjs.com/docs/#/parsing/string-format/
   */
-  for (const format of allowedInputFormats) {
-    const now = Moment();
-    const moment = Moment(source, format, true)
-      .utcOffset(`${process.env.TIME_UTC_OFFSET}`)
-      .year(now.year());
+  for (const format of [Moment.ISO_8601, Moment.RFC_2822, ...formats]) {
+    const date = Moment.tz(source, format, true, `${process.env.TIME_ZONE}`);
 
-    if (moment.isValid()) {
-      // Make sure 10:00 PM recorded at 12:45 AM isn't referring to the future
-      return Interval.duration({ start: moment, stop: now }).asHours() <= -12
-        ? moment.subtract(1, "day")
-        : moment;
+    if (!date.isValid()) {
+      continue;
     }
+
+    // Parsing without a year can yield times way in the past
+    if (date.year() < 2018) {
+      date.year(2018);
+    }
+
+    if (isSourceMissingMeridiem) {
+      return date;
+    }
+
+    /*
+      Sometimes the date Moment parses can be off when "AM" or "PM" is missing.
+      12:30 might become 12:30 AM even though 12:30 PM is closer. We need to
+      check for that situation and adjust the date if it occurs.
+    */
+
+    const hoursUntilDate = Math.abs(
+      Interval.duration({
+        start: date,
+        stop: now
+      }).asHours()
+    );
+
+    const closerDate = [
+      Moment(date).add(12, "hours"),
+      Moment(date).subtract(12, "hours")
+    ].find(
+      alteredDate =>
+        hoursUntilDate >
+        Math.abs(
+          Interval.duration({ start: date, stop: alteredDate }).asHours()
+        )
+    );
+
+    return closerDate || date;
   }
 
   // Try parsing the date from english-like values i.e. "in five minutes"
@@ -57,89 +99,58 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
   return date;
 };
 
-const allowedInputFormats = [
-  Moment.ISO_8601,
-  Moment.RFC_2822,
-
-  "MM-DD-YYYY h:mm A",
-  "MM-DD-YYYY h:mm a",
+const dateFormats = [
   "MM-DD-YYYY",
-  "MM-DD-YY h:mm A",
-  "MM-DD-YY h:mm a",
   "MM-DD-YY",
 
-  "MMMM D, YYYY h:mm A",
-  "MMMM D, YYYY h:mm a",
   "MMMM D, YYYY",
-  "MMMM D, YY h:mm A",
-  "MMMM D, YY h:mm a",
   "MMMM D, YY",
-  "MMMM D, h:mm A",
-  "MMMM D, h:mm a",
-  "MMMM D YYYY h:mm A",
-  "MMMM D YYYY h:mm a",
+
   "MMMM D YYYY",
-  "MMMM D YY h:mm A",
-  "MMMM D YY h:mm a",
   "MMMM D YY",
-  "MMMM D h:mm A",
-  "MMMM D h:mm a",
+
   "MMMM D",
 
-  "MMM D, YYYY h:mm A",
-  "MMM D, YYYY h:mm a",
   "MMM D, YYYY",
-  "MMM D, YY h:mm A",
-  "MMM D, YY h:mm a",
   "MMM D, YY",
-  "MMM D, h:mm A",
-  "MMM D, h:mm a",
-  "MMM D YYYY h:mm A",
-  "MMM D YYYY h:mm a",
+
   "MMM D YYYY",
-  "MMM D YY h:mm A",
-  "MMM D YY h:mm a",
   "MMM D YY",
-  "MMM D h:mm A",
-  "MMM D h:mm a",
+
   "MMM D",
 
-  "MMMM Do, YYYY h:mm A",
-  "MMMM Do, YYYY h:mm a",
   "MMMM Do, YYYY",
-  "MMMM Do, YY h:mm A",
-  "MMMM Do, YY h:mm a",
-  "MMMM Do, YY",
-  "MMMM Do, h:mm A",
-  "MMMM Do, h:mm a",
-  "MMMM Do YYYY h:mm A",
-  "MMMM Do YYYY h:mm a",
+  "MMMM D, YY",
+
   "MMMM Do YYYY",
-  "MMMM Do YY h:mm A",
-  "MMMM Do YY h:mm a",
   "MMMM Do YY",
-  "MMMM Do h:mm A",
-  "MMMM Do h:mm a",
+
   "MMMM Do",
 
-  "MMM Do, YYYY h:mm A",
-  "MMM Do, YYYY h:mm a",
   "MMM Do, YYYY",
-  "MMM Do, YY h:mm A",
-  "MMM Do, YY h:mm a",
   "MMM Do, YY",
-  "MMM Do, h:mm A",
-  "MMM Do, h:mm a",
-  "MMM Do YYYY h:mm A",
-  "MMM Do YYYY h:mm a",
-  "MMM Do YYYY",
-  "MMM Do YY h:mm A",
-  "MMM Do YY h:mm a",
-  "MMM Do YY",
-  "MMM Do h:mm A",
-  "MMM Do h:mm a",
-  "MMM Do",
 
-  "h:mm A",
-  "h:mm a"
+  "MMM Do YYYY",
+  "MMM Do YY",
+
+  "MMM Do"
 ];
+
+const timeFormats = [
+  "h:mm:ss a",
+  "h:mm:ssa",
+  "h:mm:ss",
+  "h:mm a",
+  "h:mma",
+  "h:mm",
+  "hmmssa",
+  "hmma",
+  "hmmss",
+  "hmm"
+];
+
+const formats = _.flattenDeep(
+  dateFormats.map(dateFormat =>
+    timeFormats.map(timeFormat => `${dateFormat} ${timeFormat}`)
+  )
+).concat(timeFormats);

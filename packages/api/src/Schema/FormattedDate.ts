@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import Moment from "moment";
+import Moment from "moment-timezone";
 
 export const schema = gql`
   type FormattedDate {
@@ -31,9 +31,8 @@ export type Source = Moment.Moment;
 export const resolve = {
   unix: (source: Source): number => Math.round(source.valueOf() / 1000),
 
-  ISO: (source: Source): string =>
-    source.utcOffset(`${process.env.TIME_UTC_OFFSET}`).toISOString(),
+  ISO: (source: Source): string => source.toISOString(),
 
   formatted: (source: Source, args: { format: string }): string =>
-    source.utcOffset(`${process.env.TIME_UTC_OFFSET}`).format(args.format)
+    source.tz(`${process.env.TIME_ZONE}`).format(args.format)
 };

@@ -4,7 +4,7 @@ if (process.env.NODE_ENV === "production") {
   const config = Functions.config();
   process.env = {
     ...process.env,
-    TIME_UTC_OFFSET: config.time.utc_offset,
+    TIME_ZONE: config.time.zone,
     API_TOKEN: config.api.token,
     TOGGL_TOKEN: config.toggl.token,
     TOGGL_WORKSPACE_ID: config.toggl.workspace_id,
@@ -13,7 +13,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const required = [
-  "TIME_UTC_OFFSET",
+  "TIME_ZONE",
   "API_TOKEN",
   "TOGGL_TOKEN",
   "TOGGL_WORKSPACE_ID",

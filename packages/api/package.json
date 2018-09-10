@@ -19,12 +19,14 @@
     "graphql-yoga": "^1.16.1",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
+    "moment-timezone": "^0.5.21",
     "twilio": "^3.19.2",
     "word-wrap": "^1.2.3"
   },
   "devDependencies": {
     "@types/graphql": "^0.13.4",
     "@types/lodash": "^4.14.116",
+    "@types/moment-timezone": "^0.5.8",
     "@types/stringify-object": "^3.2.0",
     "parcel-bundler": "^1.9.7",
     "parcel-plugin-typescript": "^1.0.0",

@@ -6,25 +6,32 @@ import Moment from "moment";
 import * as Toggl from "~/toggl";
 import * as Time from "~/time";
 
-const save = async (): Promise<void> => {
-  writeAsJSON("../.data/time-tags.json", Time.Tag.all);
+const BACKUP_DIR = "../.data";
 
-  const togglTags = await Toggl.getTags();
-  if (togglTags.isLeft()) {
+const save = async (): Promise<void> => {
+  // Save the Toggl and Magic versions of every tag
+
+  writeAsJSON(`${BACKUP_DIR}/time-tags.json`, Time.Tag.all);
+
+  const { value: togglTags } = await Toggl.getTags();
+  if (togglTags instanceof Error) {
     throw togglTags;
   }
 
-  writeAsJSON("../.data/toggl-tags.json", togglTags.value);
+  writeAsJSON(`${BACKUP_DIR}/toggl-tags.json`, togglTags);
 
-  const togglTimeEntries = await Toggl.getTimeEntries({
+  // Save every time entry
+
+  const { value: togglTimeEntries } = await Toggl.getTimeEntries({
+    // This is when tracking began
     start: Moment("2018-06-22T13:10:55+00:00")
   });
 
-  if (togglTimeEntries.isLeft()) {
+  if (togglTimeEntries instanceof Error) {
     throw togglTimeEntries;
   }
 
-  writeAsJSON("../.data/toggl-time-entries.json", togglTimeEntries.value);
+  writeAsJSON(`${BACKUP_DIR}/toggl-time-entries.json`, togglTimeEntries);
 };
 
 const writeAsJSON = (filePath: string, contents: object): void =>

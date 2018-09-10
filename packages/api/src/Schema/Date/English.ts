@@ -3,15 +3,15 @@ import Moment from "moment";
 import { either as Either } from "fp-ts";
 
 /*
-  Parse english date expressions into a `Moment` object, i.e.
+  Parse english date expressions...
   "now", "5 days ago", "1 hour from now", "twelve days later", etc.
 */
 export const toDate = (english: string): Either.Either<Error, Moment.Moment> =>
   english === "now"
     ? Either.right(Moment())
     : /*
-        Parse everything needed to create a `Moment` object starting from the
-        current time or a reason for failure with an `Error`
+        Parse everything needed to create a `Moment` to or from now, if that
+        fails provide the reason in an `Error`
       */
       englishToWords(english).chain(words =>
         wordToTense(words.tense).chain(tense =>

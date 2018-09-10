@@ -111,14 +111,15 @@ export const resolve = {
 };
 
 /*
-  If any one of the tags provided or the tags they connect to has a name which
-  matches a project's, return that match. This is primarily used just to get the
-  nice colored timeline view in the Toggl web interface.
+  If any of the tags or their connections has a name which matches a project,
+  return that match. This is primarily used to get the nice colored timeline
+  view in Toggl's web interface.
 */
 const projectFromTagNames = async (
   tagNames: string[]
 ): Promise<Either.Either<Error, Option.Option<Toggl.Project>>> =>
   (await Toggl.getProjects()).chain(projects => {
+    // Get the data for every tag and their connections
     const expandedTagNames = Tag.allFromNames(tagNames).map(({ name }) => name);
     return Either.right(
       Option.fromNullable(
