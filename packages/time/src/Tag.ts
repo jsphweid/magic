@@ -25,24 +25,24 @@ const fromData = (data: {
   connections: data.connections || []
 });
 
-export const all: Tag[] = DATA.map(fromData);
+export const stringToName = (string: string): string =>
+  string
+    .trim()
+    .toLowerCase()
+    .replace(/ /g, "-");
 
 export const allFromNames = (tagNames: string[]): Tag[] =>
   _.chain(
-    tagNames.map(tagName => {
-      const tag = all.find(({ name }) => name === tagName);
-
-      if (!tag) {
-        return [];
-      }
-
-      const connections = tag.connections ? allFromNames(tag.connections) : [];
-      return [tag, ...connections];
-    })
+    tagNames
+      .map(name => fromName(name))
+      .filter(Option.isSome)
+      .map(tag => [tag.value, ...allFromNames(tag.value.connections)])
   )
     .flatten()
     .uniq()
     .value();
+
+export const all: Tag[] = DATA.map(fromData);
 
 export const missingFromData = (tags: Toggl.Tag[]): string[] =>
   _.xorBy<{ name: string }>(tags, all, ({ name }) => name).map(

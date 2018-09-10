@@ -4,6 +4,7 @@ if (process.env.NODE_ENV === "production") {
   const config = Functions.config();
   process.env = {
     ...process.env,
+    TIME_UTC_OFFSET: config.time.utc_offset,
     API_TOKEN: config.api.token,
     TOGGL_TOKEN: config.toggl.token,
     TOGGL_WORKSPACE_ID: config.toggl.workspace_id,
@@ -12,14 +13,17 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const required = [
+  "TIME_UTC_OFFSET",
   "API_TOKEN",
   "TOGGL_TOKEN",
   "TOGGL_WORKSPACE_ID",
   "TWILIO_NUMBERS_OWNER"
 ];
 
-for (const variable of required) {
-  if (process.env[variable] === undefined || process.env[variable] === null) {
-    throw new Error(`\`${variable}\` is missing from the environment!`);
+if (!__dirname.includes("functions")) {
+  for (const variable of required) {
+    if (process.env[variable] === undefined || process.env[variable] === null) {
+      throw new Error(`\`${variable}\` is missing from the environment!`);
+    }
   }
 }

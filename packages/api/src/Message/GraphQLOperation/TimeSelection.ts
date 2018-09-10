@@ -1,18 +1,18 @@
 import gql from "graphql-tag";
 
-export const selection = "...Time";
+export const source = "...Time";
 
 export const fragments = gql`
   fragment Time on Time {
     narratives {
-      ...Interval
       description
+      ...Interval
     }
     tagOccurrences {
-      ...Interval
       tag {
         name
       }
+      ...Interval
     }
   }
 
@@ -28,6 +28,6 @@ export const fragments = gql`
   }
 
   fragment FormattedDate on FormattedDate {
-    formatted(format: "h:MM A ddd")
+    formatted(format: "h:mm A ddd")
   }
 `;

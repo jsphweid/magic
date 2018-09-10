@@ -6,7 +6,7 @@ import { either as Either, option as Option } from "fp-ts";
 
 import * as Time from "~/time";
 
-type Result<T> = Either.Either<Error, T>;
+type Result<Data> = Either.Either<Error, Data>;
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/projects.md
 
@@ -99,7 +99,7 @@ export const getCurrentTimeEntry = async (): Promise<
 };
 
 export interface NewTimeEntry {
-  projectID?: string | number;
+  projectID?: number;
   description?: string;
   tags?: string[];
 }
@@ -107,16 +107,6 @@ export interface NewTimeEntry {
 export const createTimeEntry = async (
   newTimeEntry: NewTimeEntry & { interval: Time.Interval.Stopped }
 ): Promise<Result<TimeEntry>> => {
-  console.log(
-    JSON.stringify({
-      time_entry: {
-        ...newTimeEntryToBodyData(newTimeEntry),
-        duration: Time.Interval.duration(newTimeEntry.interval).asSeconds(),
-        start: newTimeEntry.interval.start.toISOString()
-      }
-    })
-  );
-
   const response = await post<{ data: TimeEntry }>(
     `/time_entries`,
     JSON.stringify({
@@ -151,8 +141,8 @@ const newTimeEntryToBodyData = ({
   description,
   tags
 }: NewTimeEntry): {
-  created_with: string;
-  pid?: string | number;
+  created_with: "magic";
+  pid?: number;
   description?: string;
   tags: string[];
 } => ({
@@ -182,18 +172,17 @@ export const updateTimeEntry = async (
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/tags.md
 
 export interface Tag {
-  id: string;
+  id: number;
   wid: number;
   name: string;
-  at: string;
 }
 
 export const getTags = async (): Promise<Result<Tag[]>> =>
   workspace<Tag[]>("/tags");
 
-const togglRequest = async <T>(
+const togglRequest = async <Data>(
   config: AxiosRequestConfig
-): Promise<Result<T>> => {
+): Promise<Result<Data>> => {
   const url = `https://www.toggl.com/api/v8${config.url}`;
 
   // https://github.com/toggl/toggl_api_docs/blob/master/chapters/users.md#get-current-user-data
@@ -205,35 +194,37 @@ const togglRequest = async <T>(
 
   try {
     const { data } = await Axios.request({ ...config, url, auth });
-    return Either.right(data as T);
+    return Either.right(data as Data);
   } catch (error) {
-    console.log(error);
-    return Either.left(new Error(error.message));
+    const formattedError = JSON.stringify({ error, message: error.data });
+    console.log(formattedError);
+
+    return Either.left(new Error(formattedError));
   }
 };
 
-const get = <T>(resource: string, params?: any): Promise<Result<T>> =>
-  togglRequest<T>({
+const get = <Data>(resource: string, params?: any): Promise<Result<Data>> =>
+  togglRequest<Data>({
     method: "get",
     url: resource,
     params
   });
 
-const post = <T>(resource: string, data?: string): Promise<Result<T>> =>
-  togglRequest<T>({
+const post = <Data>(resource: string, data?: string): Promise<Result<Data>> =>
+  togglRequest<Data>({
     headers: { "Content-Type": "application/json" },
     method: "post",
     url: resource,
     data
   });
 
-const put = <T>(resource: string, data?: string): Promise<Result<T>> =>
-  togglRequest<T>({
+const put = <Data>(resource: string, data?: string): Promise<Result<Data>> =>
+  togglRequest<Data>({
     headers: { "Content-Type": "application/json" },
     method: "put",
     url: resource,
     data
   });
 
-const workspace = async <T>(resource: string): Promise<Result<T>> =>
-  get<T>(`/workspaces/${process.env.TOGGL_WORKSPACE_ID}/${resource}`);
+const workspace = async <Data>(resource: string): Promise<Result<Data>> =>
+  get<Data>(`/workspaces/${process.env.TOGGL_WORKSPACE_ID}/${resource}`);

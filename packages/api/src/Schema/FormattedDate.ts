@@ -30,8 +30,10 @@ export type Source = Moment.Moment;
 
 export const resolve = {
   unix: (source: Source): number => Math.round(source.valueOf() / 1000),
-  ISO: (source: Source): string => source.toISOString(),
+
+  ISO: (source: Source): string =>
+    source.utcOffset(`${process.env.TIME_UTC_OFFSET}`).toISOString(),
 
   formatted: (source: Source, args: { format: string }): string =>
-    source.format(args.format)
+    source.utcOffset(`${process.env.TIME_UTC_OFFSET}`).format(args.format)
 };

@@ -17,12 +17,14 @@ export const schema = gql`
 export type Source = Moment.Duration;
 
 export const resolve = {
-  milliseconds: (source: Source): number => source.asMilliseconds(),
-  seconds: (source: Source): number => source.asSeconds(),
-  minutes: (source: Source): number => source.asMinutes(),
-  hours: (source: Source): number => source.asHours(),
-  days: (source: Source): number => source.asDays(),
-  weeks: (source: Source): number => source.asWeeks(),
-  months: (source: Source): number => source.asMonths(),
-  years: (source: Source): number => source.asYears()
+  milliseconds: (source: Source): number => toFixed(source.asMilliseconds()),
+  seconds: (source: Source): number => toFixed(source.asSeconds()),
+  minutes: (source: Source): number => toFixed(source.asMinutes()),
+  hours: (source: Source): number => toFixed(source.asHours()),
+  days: (source: Source): number => toFixed(source.asDays()),
+  weeks: (source: Source): number => toFixed(source.asWeeks()),
+  months: (source: Source): number => toFixed(source.asMonths()),
+  years: (source: Source): number => toFixed(source.asYears())
 };
+
+const toFixed = (number: number): number => parseFloat(number.toFixed(2));

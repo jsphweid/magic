@@ -1,4 +1,3 @@
-import _ from "lodash";
 import wrap from "word-wrap";
 
 const MAX_WIDTH = 23;
@@ -12,23 +11,24 @@ export interface JSONObject {
 export interface JSONArray extends Array<JSONValue> {}
 export type JSONPrimitive = string | number | boolean | null;
 
-export const toString = (data: JSONValue): string =>
-  withIndent("", data)
+export const fromResult = (result: JSONValue): string =>
+  withIndent("", result)
     .replace("\n", "")
     .split("\n")
     .map(value => {
-      const trimmed = value.trimRight();
-      if (trimmed.length < MAX_WIDTH) {
-        return trimmed;
+      const trimmedRight = value.trimRight();
+      const trimmed = trimmedRight.trimLeft();
+      if (trimmed.length < MAX_WIDTH && trimmed !== trimmedRight) {
+        return trimmedRight;
       }
 
-      const spaces = value.match(/\s+/) || "";
+      const spaces = trimmedRight.match(/\s+/) || "";
       if (!spaces) {
-        return trimmed;
+        return trimmedRight;
       }
 
-      const indent = spaces[0];
-      return wrap(trimmed.trimLeft(), { indent, width: MAX_WIDTH });
+      const indent = trimmedRight.indexOf(spaces[0]) === 0 ? spaces[0] : "";
+      return wrap(trimmed, { indent, width: MAX_WIDTH });
     })
     .join("\n");
 
@@ -89,3 +89,41 @@ const formatLines = (
 
 const primitiveToString = (indent: string, primitive: JSONPrimitive): string =>
   `\n${indent}${primitive}`;
+
+// console.log(
+//   fromResult({
+//     data: {
+//       time: {
+//         narratives: [
+//           {
+//             description: "Getting ready for bed"
+//           }
+//         ],
+//         tagOccurrences: [
+//           {
+//             tag: {
+//               name: "getting-ready"
+//             }
+//           }
+//         ]
+//       }
+//     }
+//   })
+// );
+
+// console.log(
+//   fromResult({
+//     narratives: [
+//       {
+//         description: "Getting ready for bed"
+//       }
+//     ],
+//     tagOccurrences: [
+//       {
+//         tag: {
+//           name: "getting-ready"
+//         }
+//       }
+//     ]
+//   })
+// );
