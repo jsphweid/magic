@@ -2,8 +2,7 @@ import _ from "lodash";
 import Moment from "moment";
 import ApolloClient from "apollo-boost";
 
-import * as Time from "~/time";
-import * as Operation from "~/operation";
+import { Interval, Score } from "~/time";
 
 const client = new ApolloClient({ uri: "http://localhost:4000" });
 
@@ -25,7 +24,7 @@ export interface Data {
   };
 }
 
-export type D3StackDatum = Time.Score.Values & {
+export type D3StackDatum = Score.Values & {
   startMS: number;
 };
 
@@ -34,7 +33,7 @@ export const asD3Stack = async (
   start: Moment.Moment | undefined,
   stop?: Moment.Moment | undefined
 ): Promise<{
-  interval: Time.Interval.Stopped;
+  interval: Interval.Stopped;
   stackData: D3StackDatum[];
 }> => {
   const {
@@ -46,19 +45,19 @@ export const asD3Stack = async (
     query: Operation.now
   });
 
-  const samples: { [startMS: number]: Time.Score.Values } = {};
-  const interval = Time.Interval.fromDataStopped(intervalData);
+  const samples: { [startMS: number]: Score.Values } = {};
+  const interval = Interval.fromDataStopped(intervalData);
 
   for (const startMS of _.range(
     interval.start.valueOf(),
     interval.stop.valueOf(),
     sampleDurationMS
   )) {
-    samples[startMS] = { ...Time.Score.valuesZero };
+    samples[startMS] = { ...Score.valuesZero };
   }
 
   for (const { interval: intervalData, tag } of tagOccurrences) {
-    const { start, stop } = Time.Interval.fromDataStopped(intervalData);
+    const { start, stop } = Interval.fromDataStopped(intervalData);
 
     const startMS = Moment(start).valueOf();
     const stopMS = Moment(stop || undefined).valueOf();
@@ -77,8 +76,8 @@ export const asD3Stack = async (
       sampleDurationMS
     )) {
       samples[activeIntervalStartMS][
-        Time.Score.nameFromString(tag.score)
-      ] = Time.Score.absoluteValueOf(tag.score);
+        Score.nameFromString(tag.score)
+      ] = Score.absoluteValueOf(tag.score);
     }
   }
 

@@ -34,5 +34,5 @@ export const resolve = {
   ISO: (source: Source): string => source.toISOString(),
 
   formatted: (source: Source, args: { format: string }): string =>
-    source.tz(`${process.env.TIME_ZONE}`).format(args.format)
+    Moment.tz(source, `${process.env.TIME_ZONE}`).format(args.format)
 };

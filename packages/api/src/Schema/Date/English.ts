@@ -43,7 +43,7 @@ const englishToWords = (
     ? Either.right(
         word1 === "in"
           ? // e.g. "in two minutes"
-            { amount: word2, unit: word3, tense: "later" }
+            { amount: word2, unit: word3, tense: "past" }
           : // e.g. "15 minutes later"
             { amount: word1, unit: word2, tense: word3 }
       )

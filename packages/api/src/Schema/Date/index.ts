@@ -37,9 +37,8 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
     use that information later to make a better guess about what time was meant.
   */
   const [, lastTimePart] = source.split(":");
-  const isSourceMissingMeridiem = ["A", "AM", "P", "PM"].includes(
-    lastTimePart.toUpperCase()
-  );
+  const isSourceMissingMeridiem =
+    lastTimePart && ["A", "AM", "P", "PM"].includes(lastTimePart.toUpperCase());
 
   const now = Moment();
 
@@ -59,6 +58,7 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
       date.year(2018);
     }
 
+    // TODO: sadfsdf asdf asdf
     if (isSourceMissingMeridiem) {
       return date;
     }
@@ -69,25 +69,16 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
       check for that situation and adjust the date if it occurs.
     */
 
-    const hoursUntilDate = Math.abs(
-      Interval.duration({
-        start: date,
-        stop: now
-      }).asHours()
-    );
-
-    const closerDate = [
-      Moment(date).add(12, "hours"),
-      Moment(date).subtract(12, "hours")
+    const timeDifferenceFromNowAsHours = timeDifferenceAsHours(date, now);
+    const dateCloserToNow = [
+      Moment(date).subtract(12, "hours"),
+      Moment(date).add(12, "hours")
     ].find(
       alteredDate =>
-        hoursUntilDate >
-        Math.abs(
-          Interval.duration({ start: date, stop: alteredDate }).asHours()
-        )
+        timeDifferenceAsHours(now, alteredDate) < timeDifferenceFromNowAsHours
     );
 
-    return closerDate || date;
+    return dateCloserToNow || date;
   }
 
   // Try parsing the date from english-like values i.e. "in five minutes"
@@ -154,3 +145,14 @@ const formats = _.flattenDeep(
     timeFormats.map(timeFormat => `${dateFormat} ${timeFormat}`)
   )
 ).concat(timeFormats);
+
+const timeDifferenceAsHours = (
+  from: Moment.Moment,
+  to: Moment.Moment
+): number =>
+  Math.abs(
+    Interval.duration({
+      start: from,
+      stop: to
+    }).asHours()
+  );

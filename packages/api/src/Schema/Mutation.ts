@@ -73,15 +73,15 @@ export const resolve = {
     }
 
     const newTimeEntry = {
-      projectID: project.map(({ id }) => id).toUndefined(),
+      pid: project.map(({ id }) => id).toUndefined(),
       description: args.narrative || undefined,
       tags: finalTagNames
     };
 
     // Create a time entry if it's completed, otherwise start one in-progress
     const { value: timeEntry } = Interval.isStopped(interval)
-      ? await Toggl.createTimeEntry({ ...newTimeEntry, interval })
-      : await Toggl.startTimeEntry(newTimeEntry);
+      ? await Toggl.TimeEntry.post(interval, newTimeEntry)
+      : await Toggl.TimeEntry.start(newTimeEntry);
 
     if (timeEntry instanceof Error) {
       throw timeEntry;
@@ -92,9 +92,9 @@ export const resolve = {
       running time entry with the right start time
     */
     if (args.start && !Interval.isStopped(interval)) {
-      const { value: updatedTimeEntry } = await Toggl.updateTimeEntry({
-        ...timeEntry,
-        start: interval.start.toISOString()
+      const { value: updatedTimeEntry } = await Toggl.TimeEntry.put({
+        start: interval.start.toISOString(),
+        ...timeEntry
       });
 
       if (updatedTimeEntry instanceof Error) {

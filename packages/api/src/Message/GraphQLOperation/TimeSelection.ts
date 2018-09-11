@@ -4,9 +4,9 @@ export const source = "...Time";
 
 export const fragments = gql`
   fragment Time on Time {
+    ...Interval
     narratives {
       description
-      ...Interval
     }
     tagOccurrences {
       tag {

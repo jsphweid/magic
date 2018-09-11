@@ -21,17 +21,16 @@ export const handler = (schema: GraphQL.GraphQLSchema): Express.Handler => {
       return res.status(403).end();
     }
 
-    // Run the message as a GraphQL operation against the schema
+    // tslint:disable-next-line:no-console
+    console.log(message);
 
+    // Run the message as a GraphQL operation against the schema
     const operation = GraphQLOperation.sourceFromMessage(schema, message);
     const source = GraphQL.print(operation);
-
     const { data, errors } = await GraphQL.graphql<{ data: any }>({
       schema,
       source
     });
-
-    console.log(source);
 
     // Make sure `data` is defined and format `errors` to only include `message`
     const reply = Reply.fromResult({

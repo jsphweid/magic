@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-import * as Time from "~/time";
+import { Interval } from "~/time";
 
 import * as Tag from "./Tag";
 
@@ -14,6 +14,6 @@ export const schema = gql`
 
 export interface Source {
   id: string;
-  interval: Time.Interval.Interval;
+  interval: Interval.Interval;
   tag: Tag.Source;
 }

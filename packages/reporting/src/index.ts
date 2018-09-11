@@ -1,7 +1,7 @@
 import _ from "lodash";
 import * as D3 from "d3";
 
-import * as Time from "~/time";
+import { Interval, Score } from "~/time";
 
 import * as Data from "./Data";
 import * as Color from "./Color";
@@ -11,11 +11,11 @@ const HEIGHT = 10;
 
 const SAMPLE_DURATION_MS = 1 * 60 * 1000;
 
-const START = null;
-const STOP = null;
+const START = undefined;
+const STOP = undefined;
 
 const xAxis = (
-  interval: Time.Interval.Stopped,
+  interval: Interval.Stopped,
   stackData: Data.D3StackDatum[]
 ): D3.ScaleLinear<number, number> => {
   const { startMS: xMax } = _.last(stackData) || {
@@ -59,23 +59,21 @@ const area = (
       .keys(
         positiveScores
           ? [
-              Time.Score.Name.POSITIVE_LOW,
-              Time.Score.Name.POSITIVE_MEDIUM,
-              Time.Score.Name.POSITIVE_HIGH
+              Score.Name.POSITIVE_LOW,
+              Score.Name.POSITIVE_MEDIUM,
+              Score.Name.POSITIVE_HIGH
             ]
           : [
-              Time.Score.Name.NEGATIVE_LOW,
-              Time.Score.Name.NEGATIVE_MEDIUM,
-              Time.Score.Name.NEGATIVE_HIGH
+              Score.Name.NEGATIVE_LOW,
+              Score.Name.NEGATIVE_MEDIUM,
+              Score.Name.NEGATIVE_HIGH
             ]
       )
       .order(D3.stackOrderNone)
       .offset(D3.stackOffsetNone)(stackData);
 
     const backgroundRGB = Color.forScoreName(
-      positiveScores
-        ? Time.Score.Name.POSITIVE_HIGH
-        : Time.Score.Name.NEGATIVE_HIGH
+      positiveScores ? Score.Name.POSITIVE_HIGH : Score.Name.NEGATIVE_HIGH
     )
       .replace("rgb", "rgba")
       .replace(")", ", 0.4)");

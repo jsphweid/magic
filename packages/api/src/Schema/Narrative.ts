@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-import * as Time from "~/time";
+import { Interval } from "~/time";
 
 export const schema = gql`
   type Narrative implements Node & HasInterval {
@@ -12,6 +12,6 @@ export const schema = gql`
 
 export interface Source {
   id: string;
-  interval: Time.Interval.Interval;
+  interval: Interval.Interval;
   description: string;
 }

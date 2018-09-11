@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-import * as Time from "~/time";
+import { Interval } from "~/time";
 
 import * as Duration from "./Duration";
 
@@ -12,8 +12,8 @@ export const schema = gql`
   }
 `;
 
-type Source = Time.Interval.Interval;
+type Source = Interval.Interval;
 
 export const resolve = {
-  duration: (source: Source): Duration.Source => Time.Interval.duration(source)
+  duration: (source: Source): Duration.Source => Interval.duration(source)
 };

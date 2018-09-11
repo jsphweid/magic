@@ -4,14 +4,14 @@ import * as Path from "path";
 import Moment from "moment";
 
 import * as Toggl from "~/toggl";
-import * as Time from "~/time";
+import { Tag } from "~/time";
 
 const BACKUP_DIR = "../.data";
 
 const save = async (): Promise<void> => {
   // Save the Toggl and Magic versions of every tag
 
-  writeAsJSON(`${BACKUP_DIR}/time-tags.json`, Time.Tag.all);
+  writeAsJSON(`${BACKUP_DIR}/time-tags.json`, Tag.all);
 
   const { value: togglTags } = await Toggl.getTags();
   if (togglTags instanceof Error) {
@@ -22,7 +22,7 @@ const save = async (): Promise<void> => {
 
   // Save every time entry
 
-  const { value: togglTimeEntries } = await Toggl.getTimeEntries({
+  const { value: togglTimeEntries } = await Toggl.TimeEntry.getInterval({
     // This is when tracking began
     start: Moment("2018-06-22T13:10:55+00:00")
   });

@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-import * as Time from "~/time";
+import { Interval } from "~/time";
 
 import * as Narrative from "./Narrative";
 import * as TagOccurrence from "./TagOccurrence";
@@ -19,7 +19,7 @@ export const schema = gql`
 `;
 
 export interface Source {
-  interval: Time.Interval.Interval;
+  interval: Interval.Interval;
   narratives: Narrative.Source[];
   tagOccurrences: TagOccurrence.Source[];
 }
