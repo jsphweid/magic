@@ -22,23 +22,24 @@ interface Response {
 }
 
 const responses = {
-  senderIsMissing: {
-    statusCode: 400,
-    contentType: "text/plain",
-    body: "`From` is expected in the post body"
+  errors: {
+    senderIsMissing: {
+      statusCode: 400,
+      contentType: "text/plain",
+      body: "`From` is expected in the post body"
+    },
+    senderIsNotOwner: {
+      statusCode: 403,
+      contentType: "text/plain",
+      body: "You're not allowed to send messages here"
+    },
+    messageIsMissing: {
+      statusCode: 400,
+      contentType: "text/plain",
+      body: "`From` is expected in the post body"
+    }
   },
-  senderIsNotOwner: {
-    statusCode: 403,
-    contentType: "text/plain",
-    body: "You're not allowed to send messages here"
-  },
-  messageIsMissing: {
-    statusCode: 400,
-    contentType: "text/plain",
-    body: "`From` is expected in the post body"
-  },
-
-  TWIML: {
+  success: {
     statusCode: 200,
     contentType: "text/xml"
   }
@@ -69,29 +70,26 @@ export const handler = (
     )
   });
 
-  respond(response, {
-    statusCode: 200,
-    contentType: "text/xml",
-    body: replyToTWIML(sender, reply)
-  });
+  const TWIML = replyToTWIML(sender, reply);
+  respond(response, { ...responses.success, body: TWIML });
 };
 
 const validateRequest = (
   request: Express.Request
 ): Either.Either<Response, ValidRequest> =>
   validateSender(request).chain(sender =>
-    Either.fromNullable(responses.messageIsMissing)(request.body.Body).map(
-      message => ({ sender, message })
-    )
+    Either.fromNullable(responses.errors.messageIsMissing)(
+      request.body.Body
+    ).map(message => ({ sender, message }))
   );
 
 const validateSender = ({
   body
 }: Express.Request): Either.Either<Response, string> =>
-  Either.fromNullable(responses.senderIsMissing)(body.From).chain(
+  Either.fromNullable(responses.errors.senderIsMissing)(body.From).chain(
     from =>
       from !== "+16185205959"
-        ? Either.left(responses.senderIsNotOwner)
+        ? Either.left(responses.errors.senderIsNotOwner)
         : Either.right(from)
   );
 
