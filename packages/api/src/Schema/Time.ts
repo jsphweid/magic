@@ -9,7 +9,7 @@ export const schema = gql`
   type Time implements HasInterval {
     interval: Interval!
     narratives(sort: Sort = DESCENDING): [Narrative!]!
-    tagOccurrences: [TagOccurrence!]!
+    tags: [TagOccurrence!]!
   }
 
   enum Sort {
@@ -21,5 +21,5 @@ export const schema = gql`
 export interface Source {
   interval: Interval.Interval;
   narratives: Narrative.Source[];
-  tagOccurrences: TagOccurrence.Source[];
+  tags: TagOccurrence.Source[];
 }

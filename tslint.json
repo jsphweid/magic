@@ -1,3 +1,6 @@
 {
-  "extends": "./.tst/tslint.json"
+  "extends": "./.tst/tslint.json",
+  "rules": {
+    "no-submodule-imports": [true, "lodash/fp"]
+  }
 }

@@ -53,16 +53,16 @@ describe("transforming JSON into an SMS-friendly format", () => {
     const objectAsString = trim(
       "        ",
       `
-        key0 ${STRING}
-        key1 ${INT}
-        key2 ${FLOAT}
-        key3 true
-        key4 false
+        key0: ${STRING}
+        key1: ${INT}
+        key2: ${FLOAT}
+        key3: true
+        key4: false
       `
     );
 
     test("small objects are one-liners", () => {
-      expect(Reply.fromResult({ a: "a", b: 1 })).toBe(`a a b 1`);
+      expect(Reply.fromResult({ a: "a", b: 1 })).toBe(`a: a b: 1`);
     });
 
     test("large objects are on multiple lines", () => {
@@ -92,15 +92,15 @@ describe("transforming JSON into an SMS-friendly format", () => {
         trim(
           "            ",
           `
-            parent1
-             child1
+            parent1:
+             child1:
               ${objectAsString.replace(/\n/g, "\n              ")}
-             child2
+             child2:
               ${objectAsString.replace(/\n/g, "\n              ")}
-            parent2
-             child3
+            parent2:
+             child3:
               ${objectAsString.replace(/\n/g, "\n              ")}
-             child4
+             child4:
               ${objectAsString.replace(/\n/g, "\n              ")}
           `
         )
@@ -117,12 +117,12 @@ describe("transforming JSON into an SMS-friendly format", () => {
             }
           }
         })
-      ).toBe("a 1 isTrue true");
+      ).toBe("a: 1 isTrue: true");
     });
 
     test("arrays with small objects", () => {
       expect(Reply.fromResult(["a", { b: true, c: true }, "d"])).toBe(
-        "a b true c true d"
+        "a b: true c: true d"
       );
     });
 
@@ -138,10 +138,10 @@ describe("transforming JSON into an SMS-friendly format", () => {
           "            ",
           `
             item
-            x true
-            y false
-            z false
-            a false
+            x: true
+            y: false
+            z: false
+            a: false
             item
           `
         )

@@ -64,7 +64,7 @@ const toTimeSource = (
   const interval = getInterval(args, togglInterval, togglTimeEntries);
 
   const narratives: Narrative.Source[] = [];
-  const tagOccurrences: TagOccurrence.Source[] = [];
+  const tags: TagOccurrence.Source[] = [];
 
   for (const timeEntry of togglTimeEntries) {
     const { start, stop } = timeEntry;
@@ -109,7 +109,7 @@ const toTimeSource = (
 
       // The ID of the tag is its Toggl ID
       const togglID = `${togglTag.id}`;
-      tagOccurrences.push({
+      tags.push({
         id,
         interval: timeEntryInterval,
         tag: { id: togglID, ...tag }
@@ -120,7 +120,7 @@ const toTimeSource = (
   return {
     interval,
     narratives,
-    tagOccurrences
+    tags
   };
 };
 

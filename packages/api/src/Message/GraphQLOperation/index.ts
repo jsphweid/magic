@@ -7,7 +7,7 @@ import * as TimeSelection from "./TimeSelection";
   Transfrom an SMS message into GraphQL operation source code to run against
   the schema
 */
-export const sourceFromMessage = (
+export const documentFromMessage = (
   schema: GraphQL.GraphQLSchema,
   message: string
 ): GraphQL.DocumentNode => {

@@ -1,6 +1,6 @@
 import Moment from "moment";
 
-import { either as Either } from "fp-ts";
+import { either as Either, option as Option } from "fp-ts";
 
 /*
   Parse english date expressions...
@@ -17,7 +17,7 @@ export const toDate = (english: string): Either.Either<Error, Moment.Moment> =>
         wordToTense(words.tense).chain(tense =>
           wordToUnit(words.unit).chain(unit =>
             wordToAmount(words.amount).chain(amount => {
-              const now = Moment().utcOffset(`${process.env.TIME_UTC_OFFSET}`);
+              const now = Moment();
               return Either.right(
                 tense === "past"
                   ? now.subtract(amount, unit)
@@ -38,28 +38,33 @@ const englishToWords = (
     unit: string;
   }
 > => {
+  // "one hour ago"
   const [word1, word2, word3] = english.split(" ");
-  return word3 // At least three words are required
-    ? Either.right(
-        word1 === "in"
-          ? // e.g. "in two minutes"
-            { amount: word2, unit: word3, tense: "past" }
-          : // e.g. "15 minutes later"
-            { amount: word1, unit: word2, tense: word3 }
+
+  // At least three words are required
+  if (!word3) {
+    return Either.left(
+      new Error(
+        `"${english}" needs to look like "five minutes ago", "in 1 hour", "30 seconds ahead", etc.`
       )
-    : Either.left(
-        new Error(
-          `"${english}" needs to look like "five minutes ago", "in 1 hour", "30 seconds ahead", etc.`
-        )
-      );
+    );
+  }
+
+  return Either.right(
+    word1 === "in"
+      ? // e.g. "in two minutes"
+        { amount: word2, unit: word3, tense: "past" }
+      : // e.g. "15 minutes later"
+        { amount: word1, unit: word2, tense: word3 }
+  );
 };
 
 type Tense = "past" | "future";
 
 const wordToTense = (word: string): Either.Either<Error, Tense> =>
-  ["earlier", "ago", "prior"].includes(word)
+  `earlier ago prior`.includes(word)
     ? Either.right("past" as Tense)
-    : ["from", "ahead", "later"].includes(word)
+    : `from ahead later`.includes(word)
       ? Either.right("future" as Tense)
       : Either.left(
           new Error(`Not sure if "${word}" is past or future tense.`)
@@ -67,13 +72,13 @@ const wordToTense = (word: string): Either.Either<Error, Tense> =>
 
 const wordToAmount = (word: string): Either.Either<Error, number> => {
   // Use the english version of a word (i.e. "two") or attempt parsing it
-  const numberFromWord = wordsToNumbers[word];
-  const amount =
-    numberFromWord === undefined ? parseFloat(word) : numberFromWord;
+  const amount = Option.fromNullable(wordsToNumbers[word]).getOrElse(
+    parseFloat(word)
+  );
 
-  return !isNaN(amount)
-    ? Either.right(amount)
-    : Either.left(new Error(`"${word}" is not a number.`));
+  return isNaN(amount)
+    ? Either.left(new Error(`"${word}" is not a number.`))
+    : Either.right(amount);
 };
 
 const wordsToNumbers: {
@@ -97,16 +102,16 @@ const wordsToNumbers: {
 type Unit = Moment.DurationInputArg2;
 
 const wordToUnit = (word: string): Either.Either<Error, Unit> =>
-  [
-    "year years y",
-    "quarter quarters q",
-    "month months M",
-    "week weeks w",
-    "day days d",
-    "hour hours h",
-    "minute minutes m",
-    "second seconds s",
-    "millisecond milliseconds ms"
-  ].find(units => units.includes(word.toLowerCase()))
+  `
+  year years y
+  quarter quarters q
+  month months M
+  week weeks w
+  day days d
+  hour hours h
+  minute minutes m
+  second seconds s
+  millisecond milliseconds m
+  `.includes(word.toLowerCase())
     ? Either.right(word as Unit)
     : Either.left(new Error(`"${word}" is not a valid unit of time.`));

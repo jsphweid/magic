@@ -58,7 +58,6 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
       date.year(2018);
     }
 
-    // TODO: sadfsdf asdf asdf
     if (isSourceMissingMeridiem) {
       return date;
     }

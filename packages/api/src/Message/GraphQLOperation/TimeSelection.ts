@@ -8,7 +8,7 @@ export const fragments = gql`
     narratives {
       description
     }
-    tagOccurrences {
+    tags {
       tag {
         name
       }

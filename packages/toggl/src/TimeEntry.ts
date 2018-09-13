@@ -32,7 +32,7 @@ export interface TimeEntry {
   at: string;
 }
 
-export interface NewTimeEntry {
+export interface NewEntry {
   pid?: number;
   description?: string;
   tags?: string[];
@@ -100,30 +100,22 @@ export const getCurrentTimeEntry = async (): Promise<
     Request.get<DataResponse<TimeEntry>>(`/time_entries/current`)
   )).map(timeEntry => Option.fromNullable(timeEntry));
 
-// Time entry mutations
-
-export interface NewTimeEntry {
-  projectID?: number;
-  narrative?: string;
-  tags?: string[];
-}
-
-const newTimeEntryToTogglData = (
-  newTimeEntry: NewTimeEntry
-): NewTimeEntry & {
+const newEntryToTogglData = (
+  newEntry: NewEntry
+): NewEntry & {
   created_with: "HireMeForMoney";
-} => ({ ...newTimeEntry, created_with: "HireMeForMoney" });
+} => ({ ...newEntry, created_with: "HireMeForMoney" });
 
 export const post = async (
   interval: Interval.Stopped,
-  newTimeEntry: NewTimeEntry
+  newEntry: NewEntry
 ): Promise<Request.Result<TimeEntry>> =>
   extractData(
     Request.post<DataResponse<TimeEntry>>(
       `/time_entries`,
       JSON.stringify({
         time_entry: {
-          ...newTimeEntryToTogglData(newTimeEntry),
+          ...newEntryToTogglData(newEntry),
           start: interval.start.toISOString(),
           duration: Interval.duration(interval).asSeconds()
         }
@@ -132,13 +124,13 @@ export const post = async (
   );
 
 export const start = async (
-  newTimeEntry: NewTimeEntry
+  newTimeEntry: NewEntry
 ): Promise<Request.Result<TimeEntry>> =>
   extractData(
     Request.post<DataResponse<TimeEntry>>(
       `/time_entries/start`,
       JSON.stringify({
-        time_entry: newTimeEntryToTogglData(newTimeEntry)
+        time_entry: newEntryToTogglData(newTimeEntry)
       })
     )
   );

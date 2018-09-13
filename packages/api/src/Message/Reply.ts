@@ -17,7 +17,7 @@ export type JSONPrimitive = string | number | boolean | null;
   unreadable and too large. This pretty-prints JSON using an aggressively-
   compacting set of rules...
 */
-export const fromResult = (value: JSONValue): string =>
+export const fromJSON = (value: JSONValue): string =>
   toString("", value)
     .replace("\n", "")
     .split("\n")
@@ -39,15 +39,16 @@ export const fromResult = (value: JSONValue): string =>
         ...becomes...
 
         <space><space><space>Content which
-        <space><space><space>is too long
+        <space><space><space><space>is too long
       */
       const spaces = trimmedRight.match(/\s+/);
       const indent =
         spaces && spaces[0] && trimmedRight.indexOf(spaces[0]) === 0
-          ? spaces[0]
-          : "";
+          ? ` ${spaces[0]}`
+          : " ";
 
-      return wrap(trimmed, { indent, width: MAX_WIDTH });
+      // Start the first line one space to the left
+      return wrap(trimmed, { indent, width: MAX_WIDTH }).replace(" ", "");
     })
     .join("\n");
 
@@ -66,7 +67,7 @@ const objectToString = (indent: string, object: JSONObject): string => {
   const nonNulls = Object.entries(object).filter(([, value]) => value !== null);
 
   /*
-    If we have an object with one field, replace the object with itself...
+    If we have an object with one field, replace the object with its value...
     { x: { y: { z: { true } }, a: false } ...becomes... "x true a false"
   */
   return nonNulls.length === 1
@@ -82,10 +83,10 @@ const objectToString = (indent: string, object: JSONObject): string => {
             return "";
           }
 
-          // Always put the value on the next line
-          const separator = !valueAsString.includes("\n") ? `\n ${indent}` : "";
+          // Always put the value on the next line so it's formatted correctly
+          const spacing = !valueAsString.includes("\n") ? `\n ${indent}` : "";
 
-          return formatLines(indent, `${key}${separator}${valueAsString}`, "");
+          return formatLines(indent, `${key}:${spacing}${valueAsString}`, "");
         })
       );
 };
@@ -123,23 +124,10 @@ const formatLines = (
     .filter(line => line !== "")
     .join(separator);
 
-  return asSingleLine.length <= MAX_WIDTH ? asSingleLine : asMultipleLines;
+  return `${indent}${asSingleLine}`.length <= MAX_WIDTH
+    ? asSingleLine
+    : asMultipleLines;
 };
 
 const primitiveToString = (indent: string, primitive: JSONPrimitive): string =>
   `\n${indent}${primitive}`;
-
-console.log(
-  fromResult({
-    narratives: [
-      {
-        description: "Getting ready for bed"
-      }
-    ],
-    tagOccurrences: [
-      {
-        name: "getting-ready"
-      }
-    ]
-  })
-);
