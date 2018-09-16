@@ -84,7 +84,7 @@ const togglDataToSource = (togglData: TogglData): Source =>
         Use the time entry's id as for the tag occurrences and narratives while
         we're still using Toggl
       */
-      const id = `${timeEntry.id}`;
+      const ID = `${timeEntry.id}`;
 
       const narratives =
         // If the narrative is empty, don't add it to the results
@@ -92,13 +92,16 @@ const togglDataToSource = (togglData: TogglData): Source =>
           ? previous.narratives
           : [
               ...previous.narratives,
-              { id, interval, description: timeEntry.description }
+              { ID, interval, description: timeEntry.description }
             ];
 
-      const tagOccurrences = togglData.tags
-        // Don't add tags which aren't defined in Toggl
-        .filter(({ name }) => timeEntry.tags.includes(name))
-        .map(({ name }) => ({ id, interval, tag: name }));
+      const tagOccurrences = [
+        previous.tagOccurrences,
+        ...togglData.tags
+          // Don't add tags which aren't defined in Toggl
+          .filter(({ name }) => timeEntry.tags.includes(name))
+          .map(({ name }) => ({ ID, interval, tag: name }))
+      ];
 
       return { ...previous, narratives, tagOccurrences };
     },
