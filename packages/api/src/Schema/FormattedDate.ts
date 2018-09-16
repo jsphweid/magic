@@ -30,7 +30,6 @@ export type Source = Moment.Moment;
 
 export const resolve = {
   unix: (source: Source): number => Math.round(source.valueOf() / 1000),
-
   ISO: (source: Source): string => source.toISOString(),
 
   formatted: (source: Source, args: { format: string }): string =>

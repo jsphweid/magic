@@ -54,18 +54,19 @@ export const handler = (
   }
 
   const { sender, message } = validatedRequest.value;
+
   const operationSource = GraphQL.print(
     GraphQLOperation.documentFromMessage(schema, message)
   );
 
-  const { data, errors } = await GraphQL.graphql({
+  const result = await GraphQL.graphql<any>({
     source: operationSource,
     schema
   });
 
-  const reply = Reply.fromJSON({
-    data: data || null,
-    errors: Option.fromNullable(errors).fold(null, errors =>
+  const reply = Reply.fromJSONValue({
+    ...result,
+    errors: Option.fromNullable(result.errors).fold(null, errors =>
       errors.map(({ message }) => message)
     )
   });

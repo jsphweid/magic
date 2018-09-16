@@ -7,10 +7,11 @@ import * as BodyParser from "body-parser";
 
 import * as Functions from "firebase-functions";
 
-import "./Config";
-
 import * as Schema from "./Schema";
 import * as Message from "./Message";
+
+import "./Config";
+import "./Backup";
 
 const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.source,

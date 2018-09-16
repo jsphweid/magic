@@ -32,7 +32,7 @@ export const source = gql`
   ${GraphQL.print(Time.schema)}
 
   interface Node {
-    id: ID!
+    ID: ID!
   }
 
   ${GraphQL.print(Narrative.schema)}

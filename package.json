@@ -9,30 +9,10 @@
     "api:test:watch": "tst test api --watch",
     "api:dev": "tst dev api",
     "api:build": "tst build api",
-    "backup:test": "tst test backup",
-    "backup:test:watch": "tst test backup --watch",
-    "backup:dev": "tst dev backup",
-    "backup:build": "tst build backup",
-    "lights:test": "tst test lights",
-    "lights:test:watch": "tst test lights --watch",
-    "lights:dev": "tst dev lights",
-    "lights:build": "tst build lights",
     "reporting:test": "tst test reporting",
     "reporting:test:watch": "tst test reporting --watch",
     "reporting:dev": "lerna run dev --stream --scope reporting",
-    "reporting:build": "lerna run build --stream --scope reporting",
-    "time:test": "tst test time",
-    "time:test:watch": "tst test time --watch",
-    "time:dev": "tst dev time",
-    "time:build": "tst build time",
-    "toggl:test": "tst test toggl",
-    "toggl:test:watch": "tst test toggl --watch",
-    "toggl:dev": "tst dev toggl",
-    "toggl:build": "tst build toggl",
-    "wand:test": "tst test camera",
-    "wand:test:watch": "tst test camera --watch",
-    "wand:dev": "lerna run dev --stream --scope camera",
-    "wand:build": "lerna run build --stream --scope camera"
+    "reporting:build": "lerna run build --stream --scope reporting"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",
@@ -51,5 +31,6 @@
     "twilio": "^3.19.2",
     "typescript": "^3.0.3",
     "typescript-tooling": "^4.0.3-alpha.2"
-  }
+  },
+  "dependencies": {}
 }

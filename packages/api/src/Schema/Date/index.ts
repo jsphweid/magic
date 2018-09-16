@@ -1,11 +1,12 @@
-import * as GraphQL from "graphql";
-import gql from "graphql-tag";
+import { option as Option } from "fp-ts";
 
 import _ from "lodash";
 import Moment from "moment-timezone";
 
-import { Interval } from "~/time";
+import * as GraphQL from "graphql";
+import gql from "graphql-tag";
 
+import * as Interval from "../Interval";
 import * as English from "./English";
 
 export const schema = gql`
@@ -68,16 +69,16 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
       check for that situation and adjust the date if it occurs.
     */
 
-    const timeDifferenceFromNowAsHours = timeDifferenceAsHours(date, now);
-    const dateCloserToNow = [
+    const timeDifferenceFromNowMS = timeDifferenceMS(date, now);
+    const closerDate = [
       Moment(date).subtract(12, "hours"),
       Moment(date).add(12, "hours")
     ].find(
       alteredDate =>
-        timeDifferenceAsHours(now, alteredDate) < timeDifferenceFromNowAsHours
+        timeDifferenceFromNowMS > timeDifferenceMS(now, alteredDate)
     );
 
-    return dateCloserToNow || date;
+    return Option.fromNullable(closerDate).getOrElse(date);
   }
 
   // Try parsing the date from english-like values i.e. "in five minutes"
@@ -88,6 +89,9 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
 
   return date;
 };
+
+const timeDifferenceMS = (start: Moment.Moment, stop: Moment.Moment): number =>
+  Math.abs(Interval.resolve.duration({ start, stop }).asMilliseconds());
 
 const dateFormats = [
   "MM-DD-YYYY",
@@ -139,19 +143,9 @@ const timeFormats = [
   "hmm"
 ];
 
-const formats = _.flattenDeep(
-  dateFormats.map(dateFormat =>
+const formats = _.flattenDeep([
+  ...dateFormats.map(dateFormat =>
     timeFormats.map(timeFormat => `${dateFormat} ${timeFormat}`)
-  )
-).concat(timeFormats);
-
-const timeDifferenceAsHours = (
-  from: Moment.Moment,
-  to: Moment.Moment
-): number =>
-  Math.abs(
-    Interval.duration({
-      start: from,
-      stop: to
-    }).asHours()
-  );
+  ),
+  ...timeFormats
+]);

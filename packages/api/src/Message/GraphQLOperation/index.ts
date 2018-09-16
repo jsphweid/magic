@@ -1,7 +1,7 @@
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
-import * as TimeSelection from "./TimeSelection";
+import * as Selection from "./Selection";
 
 /*
   Transfrom an SMS message into GraphQL operation source code to run against
@@ -30,7 +30,7 @@ export const documentFromMessage = (
   const outputType = GraphQL.getNamedType(rootField.type);
   const selection =
     GraphQL.isObjectType(outputType) && outputType.name === "Time"
-      ? `{ ${TimeSelection.source} }`
+      ? `{ ${Selection.time} }`
       : "{}";
 
   /*
@@ -42,7 +42,7 @@ export const documentFromMessage = (
       ${rootField.name}${args.length > 0 ? `(${args})` : ""} ${selection}
     }
 
-    ${selection !== "{}" ? GraphQL.print(TimeSelection.fragments) : ""}
+    ${selection !== "{}" ? GraphQL.print(Selection.fragments) : ""}
   `;
 };
 

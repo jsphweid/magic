@@ -1,7 +1,0 @@
-{
-  "private": true,
-  "name": "backup",
-  "dependencies": {
-    "moment": "^2.22.2"
-  }
-}

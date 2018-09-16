@@ -1,11 +1,10 @@
+import { either as Either, option as Option } from "fp-ts";
+
 import _ from "lodash";
 import Moment from "moment";
 
-import { either as Either, option as Option } from "fp-ts";
-
-import { Interval } from "~/time";
-
 import * as Request from "./Request";
+import * as Interval from "../Schema/Interval";
 
 /*
   Time entries are currently the fundemental method of storage. This is slightly
@@ -17,7 +16,7 @@ import * as Request from "./Request";
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/time_entries.md
 
 export interface TimeEntry {
-  description?: string;
+  description: string;
   id: number;
   pid?: number;
   wid?: number;
@@ -55,9 +54,9 @@ export const get = async (id: number): Promise<Request.Result<TimeEntry>> =>
   Request.get<TimeEntry>(`/time_entries/${id}`);
 
 export const getInterval = async (
-  interval: Interval.Interval
+  start: Moment.Moment,
+  stop: Moment.Moment
 ): Promise<Request.Result<TimeEntry[]>> => {
-  const { start, stop } = Interval.toStopped(interval);
   const batchSizeMS = 7 * 24 * 60 * 60 * 1000; // Seven days
 
   /*
@@ -107,7 +106,8 @@ const newEntryToTogglData = (
 } => ({ ...newEntry, created_with: "HireMeForMoney" });
 
 export const post = async (
-  interval: Interval.Stopped,
+  start: Moment.Moment,
+  stop: Moment.Moment,
   newEntry: NewEntry
 ): Promise<Request.Result<TimeEntry>> =>
   extractData(
@@ -116,29 +116,33 @@ export const post = async (
       JSON.stringify({
         time_entry: {
           ...newEntryToTogglData(newEntry),
-          start: interval.start.toISOString(),
-          duration: Interval.duration(interval).asSeconds()
+          start: start.toISOString(),
+          duration: Interval.resolve.duration({ start, stop }).asSeconds()
         }
       })
     )
   );
 
 export const start = async (
+  start: Moment.Moment,
   newTimeEntry: NewEntry
 ): Promise<Request.Result<TimeEntry>> =>
   extractData(
     Request.post<DataResponse<TimeEntry>>(
       `/time_entries/start`,
       JSON.stringify({
-        time_entry: newEntryToTogglData(newTimeEntry)
+        time_entry: {
+          ...newEntryToTogglData(newTimeEntry),
+          start: start.toISOString()
+        }
       })
     )
   );
 
 export const stop = async (
-  id: number | string
+  ID: number | string
 ): Promise<Request.Result<TimeEntry>> =>
-  extractData(Request.put<DataResponse<TimeEntry>>(`/time_entries/${id}/stop`));
+  extractData(Request.put<DataResponse<TimeEntry>>(`/time_entries/${ID}/stop`));
 
 export const put = async (
   timeEntry: TimeEntry

@@ -1,17 +1,19 @@
 import * as FS from "fs";
 import * as Path from "path";
-
 import Moment from "moment";
 
-import * as Toggl from "~/toggl";
-import { Tag } from "~/time";
+import * as Toggl from "./Toggl";
 
-const BACKUP_DIR = "../.data";
+const DATA_DIR = Path.join(__dirname, "../.data");
+const BACKUP_DIR = `${DATA_DIR}/backup`;
 
 const save = async (): Promise<void> => {
   // Save the Toggl and Magic versions of every tag
 
-  writeAsJSON(`${BACKUP_DIR}/time-tags.json`, Tag.all);
+  writeAsJSON(
+    `${BACKUP_DIR}/magic-tags.json`,
+    FS.readFileSync(`${DATA_DIR}/tags.json`).toJSON()
+  );
 
   const { value: togglTags } = await Toggl.getTags();
   if (togglTags instanceof Error) {
@@ -22,10 +24,11 @@ const save = async (): Promise<void> => {
 
   // Save every time entry
 
-  const { value: togglTimeEntries } = await Toggl.TimeEntry.getInterval({
+  const { value: togglTimeEntries } = await Toggl.TimeEntry.getInterval(
     // This is when tracking began
-    start: Moment("2018-06-22T13:10:55+00:00")
-  });
+    Moment("2018-06-22T13:10:55+00:00"),
+    Moment()
+  );
 
   if (togglTimeEntries instanceof Error) {
     throw togglTimeEntries;
@@ -40,4 +43,7 @@ const writeAsJSON = (filePath: string, contents: object): void =>
     JSON.stringify(contents, null, 2)
   );
 
-save();
+// Always backup while developing
+if (process.env.NODE_ENV !== "production" && !__dirname.includes("functions")) {
+  save();
+}

@@ -1,3 +1,5 @@
+import { option as Option } from "fp-ts";
+
 import * as Functions from "firebase-functions";
 
 if (process.env.NODE_ENV === "production") {
@@ -22,7 +24,7 @@ const required = [
 
 if (!__dirname.includes("functions")) {
   for (const variable of required) {
-    if (process.env[variable] === undefined || process.env[variable] === null) {
+    if (Option.fromNullable(process.env[variable]).isNone()) {
       throw new Error(`\`${variable}\` is missing from the environment!`);
     }
   }

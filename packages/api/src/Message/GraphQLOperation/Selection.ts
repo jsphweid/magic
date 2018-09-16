@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-export const source = "...Time";
+export const time = "...Time";
 
 export const fragments = gql`
   fragment Time on Time {
@@ -8,7 +8,7 @@ export const fragments = gql`
     narratives {
       description
     }
-    tags {
+    tags: tagOccurrences {
       tag {
         name
       }
