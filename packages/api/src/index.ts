@@ -11,7 +11,7 @@ import * as Schema from "./Schema";
 import * as Message from "./Message";
 
 import "./Config";
-import "./Backup";
+// import "./Backup";
 
 const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.source,

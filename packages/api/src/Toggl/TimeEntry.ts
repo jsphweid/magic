@@ -16,7 +16,7 @@ import * as Interval from "../Schema/Interval";
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/time_entries.md
 
 export interface TimeEntry {
-  description: string;
+  description?: string;
   id: number;
   pid?: number;
   wid?: number;

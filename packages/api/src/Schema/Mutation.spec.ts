@@ -3,11 +3,30 @@ import { either as Either, option as Option } from "fp-ts";
 import Moment from "moment";
 
 import * as Toggl from "../Toggl";
-import * as Interval from "../Interval";
-
+import * as Interval from "./Interval";
 import * as Mutation from "./Mutation";
 
-const mockToggl: jest.Mocked<typeof Toggl> = Toggl as any;
+// https://github.com/facebook/jest/issues/4262
+jest.mock("../Toggl", () => ({
+  TimeEntry: {
+    get: jest.fn(),
+    getInterval: jest.fn(),
+
+    post: jest.fn(),
+    put: jest.fn(),
+
+    start: jest.fn(),
+    stop: jest.fn()
+  },
+
+  getProject: jest.fn(),
+  getProjects: jest.fn(),
+  getTags: jest.fn()
+}));
+
+const mockToggl: jest.Mocked<typeof Toggl> & {
+  TimeEntry: jest.Mocked<typeof Toggl.TimeEntry>;
+} = Toggl as any;
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -23,92 +42,86 @@ describe("Mutation", () => {
     };
 
     test("no time entries running or near the new entry", async () => {
-      const { currentTimeEntry } = mockTogglAPI();
+      const { currentTimeEntry } = mockTogglAPI({
+        timeEntries: []
+      });
+
       await Mutation.resolve.startTime(undefined, args);
+
       expect(currentTimeEntry).toEqual(
-        mockTimeEntry(
-          { start: Moment(), stop: null },
-          {
-            description: args.narrative,
-            tags: args.tags
-          }
-        )
+        mockTimeEntry(Moment(), null, {
+          description: args.narrative,
+          tags: args.tags
+        })
       );
     });
   });
 });
 
 const mockTimeEntry = (
-  interval: Interval.Interval,
+  start: Moment.Moment,
+  stop: Moment.Moment | null,
   newEntry: Toggl.TimeEntry.NewEntry
 ): Toggl.TimeEntry.TimeEntry => ({
   id: 1,
   billable: false,
   created_with: "HireMeForMoney",
-  at: interval.start.toISOString(),
-  start: interval.start.toISOString(),
-  stop: interval.stop ? interval.stop.toISOString() : undefined,
-  duration: Interval.resolve.duration(interval).asSeconds(),
+  at: start.toISOString(),
+  start: start.toISOString(),
+  stop: stop ? stop.toISOString() : undefined,
+  duration: Interval.resolve.duration({ start, stop }).asSeconds(),
   description: newEntry.description,
   tags: newEntry.tags || []
 });
 
-// const mockTimeSource = ({
-//   interval,
-//   narrative,
-//   tags
-// }: MockTimeEntry): Time.Source => ({
-//   interval,
-//   narratives: [{ id: "1", interval, description: narrative }],
-//   tagOccurrences: tags.map(name => ({
-//     id: "1",
-//     interval,
-//     tag: {
-//       id: "1",
-//       name,
-//       connections: [],
-//       score: Score.nameFromString("NEUTRAL")
-//     }
-//   }))
-// });
+/*
+  Creates a stateful mock Toggl API which behaves as if real reads and writes
+  are occuring
+*/
 
 interface TogglState {
   currentTimeEntry?: Toggl.TimeEntry.TimeEntry;
   timeEntries: Toggl.TimeEntry.TimeEntry[];
 }
 
-/*
-  Creates a stateful mock Toggl API which behaves as if real reads and writes
-  are occuring
-*/
 const mockTogglAPI = (state: TogglState): TogglState => {
-  mockToggl.TimeEntry.get.mockResolvedValue(Either.right(state.timeEntries));
-  mockToggl.TimeEntry.getInterval.mockResolvedValue(
-    Either.right(state.timeEntries)
+  mockToggl.TimeEntry.get.mockResolvedValue(async () =>
+    Promise.resolve(Either.right(state.timeEntries))
+  );
+
+  mockToggl.TimeEntry.getInterval.mockImplementation(async () =>
+    Promise.resolve(Either.right(state.timeEntries))
   );
 
   mockToggl.TimeEntry.post.mockImplementation(
-    async (interval: Interval.Interval, newEntry: Toggl.TimeEntry.NewEntry) => {
-      const timeEntry = mockTimeEntry(interval, newEntry);
-
-      if (!state.timeEntries) {
-        state.timeEntries = [];
-      }
-
+    async (
+      start: Moment.Moment,
+      stop: Moment.Moment,
+      newEntry: Toggl.TimeEntry.NewEntry
+    ) => {
+      const timeEntry = mockTimeEntry(start, stop, newEntry);
       state.timeEntries.push(timeEntry);
       return Promise.resolve(Either.right(timeEntry));
     }
   );
 
-  // mockToggl.TimeEntry.put.mockResolvedValue(Either.right(newTimeEntry));
+  mockToggl.TimeEntry.put.mockImplementation(
+    async (updatedTimeEntry: Toggl.TimeEntry.TimeEntry) => {
+      Option.fromNullable(
+        state.timeEntries.find(({ id }) => id === updatedTimeEntry.id)
+      ).map(timeEntry => (timeEntry = updatedTimeEntry));
 
-  mockToggl.TimeEntry.start.mockResolvedValue(
-    async (interval: Interval.Interval, newEntry: Toggl.TimeEntry.NewEntry) => {
-      const timeEntry = mockTimeEntry(interval, newEntry);
+      return Promise.resolve(updatedTimeEntry);
+    }
+  );
 
-      if (!state.timeEntries) {
-        state.timeEntries = [];
-      }
+  mockToggl.TimeEntry.start.mockImplementation(
+    async (
+      start: Moment.Moment,
+      stop: Moment.Moment,
+      newEntry: Toggl.TimeEntry.NewEntry
+    ) => {
+      const timeEntry = mockTimeEntry(start, stop, newEntry);
 
       if (state.currentTimeEntry) {
         state.timeEntries.push(state.currentTimeEntry);
@@ -120,24 +133,37 @@ const mockTogglAPI = (state: TogglState): TogglState => {
     }
   );
 
-  // mockToggl.TimeEntry.stop.mockResolvedValue(Either.right(newTimeEntry));
+  mockToggl.TimeEntry.stop.mockImplementation(async (ID: number | string) =>
+    Option.fromNullable(state.timeEntries.find(({ id }) => id === ID)).map(
+      timeEntry => {
+        Option.fromNullable(state.currentTimeEntry).map(currentTimeEntry => {
+          if (currentTimeEntry.id === timeEntry.id) {
+            delete state.currentTimeEntry;
+          }
+        });
+
+        timeEntry.duration = 20;
+        state.timeEntries.push(timeEntry);
+        return Promise.resolve(Either.right(timeEntry));
+      }
+    )
+  );
 
   mockToggl.getProjects.mockResolvedValue(Either.right([]));
 
-  mockToggl.getTags.mockResolvedValue(
-    Either.right(
-      (state.timeEntries || []).reduce<Toggl.Tag[]>(
-        (previous, { tags }) => [
-          ...previous,
-          ...tags.map(name => ({ id: 1, wid: 1, name }))
-        ],
-        []
+  mockToggl.getTags.mockImplementation(async () =>
+    Promise.resolve(
+      Either.right(
+        state.timeEntries.reduce<Toggl.Tag[]>(
+          (previous, { tags }) => [
+            ...previous,
+            ...tags.map(name => ({ id: 1, wid: 1, name }))
+          ],
+          []
+        )
       )
     )
   );
 
-  return {
-    currentTimeEntry: state.currentTimeEntry,
-    timeEntries: state.timeEntries
-  };
+  return state;
 };

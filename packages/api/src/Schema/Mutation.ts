@@ -26,8 +26,12 @@ interface Args {
 }
 
 export const resolve = {
-  startTime: async (_source: undefined, args: Args): Promise<Time.Source> =>
-    Time.source(Option.fromNullable(args.start), Option.fromNullable(args.stop))
+  startTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
+    return Time.source(
+      Option.fromNullable(args.start),
+      Option.fromNullable(args.stop)
+    );
+  }
 };
 
 // /*
