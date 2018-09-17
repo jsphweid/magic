@@ -1,39 +1,13 @@
-import Moment from "moment";
 import { either as Either, option as Option } from "fp-ts";
 
-import { Interval, Tag, Score } from "~/time";
-import * as Toggl from "~/toggl";
+import Moment from "moment";
+
+import * as Toggl from "../Toggl";
+import * as Interval from "../Interval";
 
 import * as Mutation from "./Mutation";
 
-(Tag as any).fromName = (name: string) =>
-  Option.some({
-    name,
-    connections: [],
-    score: Score.nameFromString("NEUTRAL")
-  });
-
-// https://github.com/facebook/jest/issues/4262
-jest.mock("~/toggl", () => ({
-  TimeEntry: {
-    get: jest.fn(),
-    getInterval: jest.fn(),
-
-    post: jest.fn(),
-    put: jest.fn(),
-
-    start: jest.fn(),
-    stop: jest.fn()
-  },
-
-  getProject: jest.fn(),
-  getProjects: jest.fn(),
-  getTags: jest.fn()
-}));
-
-const mockToggl: jest.Mocked<typeof Toggl> & {
-  TimeEntry: jest.Mocked<typeof Toggl.TimeEntry>;
-} = Toggl as any;
+const mockToggl: jest.Mocked<typeof Toggl> = Toggl as any;
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -74,7 +48,7 @@ const mockTimeEntry = (
   at: interval.start.toISOString(),
   start: interval.start.toISOString(),
   stop: interval.stop ? interval.stop.toISOString() : undefined,
-  duration: Interval.duration(interval).asSeconds(),
+  duration: Interval.resolve.duration(interval).asSeconds(),
   description: newEntry.description,
   tags: newEntry.tags || []
 });

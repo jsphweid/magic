@@ -4,10 +4,10 @@ import gql from "graphql-tag";
 import Moment from "moment";
 
 import * as Toggl from "../Toggl";
-
 import * as Interval from "./Interval";
 import * as Narrative from "./Narrative";
 import * as TagOccurrence from "./TagOccurrence";
+import * as Tag from "./Tag";
 
 export const schema = gql`
   type Time implements HasInterval {
@@ -62,6 +62,12 @@ export const source = async (
   return { ...togglDataToSource(togglData), interval };
 };
 
+/*
+  Toggl stores both the narrative and tags as one `TimeEntry` entity. This
+  isn't how magic represents time (narratives and tags are independent) so we
+  need to seperate time entries to fake the correct shape of the data until
+  Toggl is no longer in use.
+*/
 const togglDataToSource = (togglData: TogglData): Source =>
   togglData.timeEntries.reduce<Source>(
     (previous, timeEntry) => {
@@ -96,11 +102,18 @@ const togglDataToSource = (togglData: TogglData): Source =>
             ];
 
       const tagOccurrences = [
-        previous.tagOccurrences,
-        ...togglData.tags
-          // Don't add tags which aren't defined in Toggl
-          .filter(({ name }) => timeEntry.tags.includes(name))
-          .map(({ name }) => ({ ID, interval, tag: name }))
+        ...previous.tagOccurrences,
+        ...timeEntry.tags.map(name => {
+          if (!togglData.tags.find(togglTag => togglTag.name === name)) {
+            throw new Error(`"${name}" isn't defined in Toggl.`);
+          }
+
+          return {
+            ID,
+            interval,
+            tag: Tag.sourceFromName(name)
+          };
+        })
       ];
 
       return { ...previous, narratives, tagOccurrences };
@@ -112,6 +125,10 @@ const togglDataToSource = (togglData: TogglData): Source =>
     }
   );
 
+/*
+  Both time entries and the tags defined in Toggl are needed to generate the
+  `Time` type
+*/
 const getTogglData = async (
   start: Moment.Moment,
   stop: Moment.Moment

@@ -59,7 +59,7 @@ export const sourceFromName = (name: string): Source => {
   const { score, connections } = Option.fromNullable(
     DATA.find(({ name }) => name === formattedName)
   ).getOrElseL(() => {
-    throw new Error(`"${formattedName}" isn't a valid tag.`);
+    throw new Error(`"${formattedName}" isn't defined in Magic.`);
   });
 
   return {

@@ -22,10 +22,9 @@ const save = async (): Promise<void> => {
 
   writeAsJSON(`${BACKUP_DIR}/toggl-tags.json`, togglTags);
 
-  // Save every time entry
+  // Save every time entry since tracking began
 
   const { value: togglTimeEntries } = await Toggl.TimeEntry.getInterval(
-    // This is when tracking began
     Moment("2018-06-22T13:10:55+00:00"),
     Moment()
   );
