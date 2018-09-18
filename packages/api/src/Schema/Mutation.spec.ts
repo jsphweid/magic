@@ -32,13 +32,7 @@ const mockToggl: jest.Mocked<typeof Toggl> & {
   Entry: jest.Mocked<typeof Toggl.Entry>;
 } = Toggl as any;
 
-beforeEach(() => {
-  togglState = {
-    now: Moment(),
-    currentEntry: Option.none,
-    entries: []
-  };
-});
+beforeEach(() => (togglState.now = Moment()));
 
 describe("Mutation", () => {
   describe("startTime", () => {
@@ -49,42 +43,44 @@ describe("Mutation", () => {
       tags: ["tag-1", "tag-2"]
     };
 
-    describe("no current entry or existing entries", () => {
-      test("Start the current entry starting now", async () => {
+    describe("No current entry or existing entries", () => {
+      describe("Start the current entry starting now", () => {
         const entry = mockEntryFromArgs(defaultArgs);
 
-        await Mutation.resolve.startTime(undefined, defaultArgs);
+        test("When nothing has recently been tracked", async () => {
+          togglState = {
+            ...togglState,
+            currentEntry: Option.none,
+            entries: []
+          };
 
-        expect(togglState).toEqual({
-          ...togglState,
-          currentEntry: Option.some(entry),
-          entries: [entry]
+          await Mutation.resolve.startTime(undefined, defaultArgs);
+
+          expect(togglState).toEqual({
+            ...togglState,
+            currentEntry: Option.some(entry),
+            entries: [entry]
+          });
         });
 
-        const oldEntry = mockEntry(
-          {
-            start: Option.some(Moment().subtract(1, "hour")),
-            stop: Option.none
-          },
-          {
-            pid: Option.none,
-            description: Option.some("This entry is currently running"),
-            tags: Option.some(["tag-3", "tag-4"])
-          }
-        );
+        test("When an entry is already started as the current entry", async () => {
+          const oldEntry = mockEntry(
+            {
+              start: Option.some(Moment().subtract(1, "hour")),
+              stop: Option.none
+            },
+            {
+              pid: Option.none,
+              description: Option.some("This entry is currently running"),
+              tags: Option.some(["tag-3", "tag-4"])
+            }
+          );
 
-        togglState = {
-          ...togglState,
-          currentEntry: Option.some(oldEntry),
-          entries: [oldEntry]
-        };
-
-        await Mutation.resolve.startTime(undefined, defaultArgs);
-
-        expect(togglState).toEqual({
-          ...togglState,
-          currentEntry: Option.some(entry),
-          entries: [oldEntry, entry]
+          togglState = {
+            ...togglState,
+            currentEntry: Option.some(oldEntry),
+            entries: [oldEntry]
+          };
         });
       });
 
