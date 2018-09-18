@@ -6,9 +6,13 @@ import * as Toggl from "../Toggl";
 import * as Interval from "./Interval";
 import * as Mutation from "./Mutation";
 
+jest.mock("../../.data/tags.json", () =>
+  [1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => ({ name: `tag-${number}` }))
+);
+
 // https://github.com/facebook/jest/issues/4262
 jest.mock("../Toggl", () => ({
-  TimeEntry: {
+  Entry: {
     get: jest.fn(),
     getInterval: jest.fn(),
 
@@ -25,145 +29,245 @@ jest.mock("../Toggl", () => ({
 }));
 
 const mockToggl: jest.Mocked<typeof Toggl> & {
-  TimeEntry: jest.Mocked<typeof Toggl.TimeEntry>;
+  Entry: jest.Mocked<typeof Toggl.Entry>;
 } = Toggl as any;
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  togglState = {
+    now: Moment(),
+    currentEntry: Option.none,
+    entries: []
+  };
 });
 
 describe("Mutation", () => {
   describe("startTime", () => {
-    const args = {
+    const defaultArgs = {
       start: null,
       stop: null,
-      narrative: "narrative",
+      narrative: "This is the new narrative",
       tags: ["tag-1", "tag-2"]
     };
 
-    test("no time entries running or near the new entry", async () => {
-      const { currentTimeEntry } = mockTogglAPI({
-        timeEntries: []
+    describe("no current entry or existing entries", () => {
+      test("Start the current entry starting now", async () => {
+        const entry = mockEntryFromArgs(defaultArgs);
+
+        await Mutation.resolve.startTime(undefined, defaultArgs);
+
+        expect(togglState).toEqual({
+          ...togglState,
+          currentEntry: Option.some(entry),
+          entries: [entry]
+        });
+
+        const oldEntry = mockEntry(
+          {
+            start: Option.some(Moment().subtract(1, "hour")),
+            stop: Option.none
+          },
+          {
+            pid: Option.none,
+            description: Option.some("This entry is currently running"),
+            tags: Option.some(["tag-3", "tag-4"])
+          }
+        );
+
+        togglState = {
+          ...togglState,
+          currentEntry: Option.some(oldEntry),
+          entries: [oldEntry]
+        };
+
+        await Mutation.resolve.startTime(undefined, defaultArgs);
+
+        expect(togglState).toEqual({
+          ...togglState,
+          currentEntry: Option.some(entry),
+          entries: [oldEntry, entry]
+        });
       });
 
-      await Mutation.resolve.startTime(undefined, args);
+      test("Start the current entry in the past", async () => {
+        const args = { ...defaultArgs, start: Moment().subtract(2, "minutes") };
+        const entry = mockEntryFromArgs(args);
 
-      expect(currentTimeEntry).toEqual(
-        mockTimeEntry(Moment(), null, {
-          description: args.narrative,
-          tags: args.tags
-        })
-      );
+        await Mutation.resolve.startTime(undefined, args);
+
+        expect(togglState).toEqual({
+          ...togglState,
+          currentEntry: Option.some(entry),
+          entries: [entry]
+        });
+      });
+
+      test("Start the current entry in the future", async () => {
+        const args = { ...defaultArgs, start: Moment().add(2, "minutes") };
+        const entry = mockEntryFromArgs(args);
+
+        await Mutation.resolve.startTime(undefined, args);
+
+        expect(togglState).toEqual({
+          ...togglState,
+          currentEntry: Option.some(entry),
+          entries: [entry]
+        });
+      });
+
+      test("Create an entry from some `start` and `stop`", async () => {
+        const args = {
+          ...defaultArgs,
+          start: Moment().subtract(3, "minutes"),
+          stop: Moment().add(3, "minutes")
+        };
+
+        const entry = mockEntryFromArgs(args);
+
+        await Mutation.resolve.startTime(undefined, args);
+
+        expect(togglState).toEqual({
+          ...togglState,
+          entries: [entry]
+        });
+      });
     });
   });
 });
 
-const mockTimeEntry = (
-  start: Moment.Moment,
-  stop: Moment.Moment | null,
-  newEntry: Toggl.TimeEntry.NewEntry
-): Toggl.TimeEntry.TimeEntry => ({
-  id: 1,
-  billable: false,
-  created_with: "HireMeForMoney",
-  at: start.toISOString(),
-  start: start.toISOString(),
-  stop: stop ? stop.toISOString() : undefined,
-  duration: Interval.resolve.duration({ start, stop }).asSeconds(),
-  description: newEntry.description,
-  tags: newEntry.tags || []
-});
+// The following mocks enable us to emulate a stateful Toggl API
 
-/*
-  Creates a stateful mock Toggl API which behaves as if real reads and writes
-  are occuring
-*/
+let togglState: {
+  now: Moment.Moment;
+  currentEntry: Option.Option<Toggl.Entry.Entry>;
+  entries: Toggl.Entry.Entry[];
+};
 
-interface TogglState {
-  currentTimeEntry?: Toggl.TimeEntry.TimeEntry;
-  timeEntries: Toggl.TimeEntry.TimeEntry[];
-}
+const mockEntry = (
+  interval: {
+    start: Option.Option<Moment.Moment>;
+    stop: Option.Option<Moment.Moment>;
+  },
+  newEntry: Toggl.Entry.NewEntry
+): Toggl.Entry.Entry => {
+  const start = interval.start.getOrElse(togglState.now);
 
-const mockTogglAPI = (state: TogglState): TogglState => {
-  mockToggl.TimeEntry.get.mockResolvedValue(async () =>
-    Promise.resolve(Either.right(state.timeEntries))
-  );
+  return {
+    id: 1,
+    billable: false,
+    created_with: "HireMeForMoney",
 
-  mockToggl.TimeEntry.getInterval.mockImplementation(async () =>
-    Promise.resolve(Either.right(state.timeEntries))
-  );
+    at: start.toISOString(),
+    start: start.toISOString(),
+    stop: interval.stop.map(stop => stop.toISOString()).toUndefined(),
 
-  mockToggl.TimeEntry.post.mockImplementation(
-    async (
-      start: Moment.Moment,
-      stop: Moment.Moment,
-      newEntry: Toggl.TimeEntry.NewEntry
-    ) => {
-      const timeEntry = mockTimeEntry(start, stop, newEntry);
-      state.timeEntries.push(timeEntry);
-      return Promise.resolve(Either.right(timeEntry));
+    duration: Interval.resolve
+      .duration({
+        start,
+        stop: interval.stop.getOrElse(togglState.now)
+      })
+      .asSeconds(),
+
+    description: newEntry.description.toUndefined(),
+    tags: newEntry.tags.getOrElse([])
+  };
+};
+
+const mockEntryFromArgs = (args: Mutation.Args): Toggl.Entry.Entry =>
+  mockEntry(
+    {
+      start: Option.fromNullable(args.start),
+      stop: Option.fromNullable(args.stop)
+    },
+    {
+      pid: Option.none,
+      description: Option.fromNullable(args.narrative),
+      tags: Option.fromNullable(args.tags)
     }
   );
 
-  mockToggl.TimeEntry.put.mockImplementation(
-    async (updatedTimeEntry: Toggl.TimeEntry.TimeEntry) => {
-      Option.fromNullable(
-        state.timeEntries.find(({ id }) => id === updatedTimeEntry.id)
-      ).map(timeEntry => (timeEntry = updatedTimeEntry));
+mockToggl.Entry.get.mockResolvedValue(async () =>
+  Promise.resolve(Either.right(togglState.entries))
+);
 
-      return Promise.resolve(updatedTimeEntry);
+mockToggl.Entry.getInterval.mockImplementation(async () =>
+  Promise.resolve(Either.right(togglState.entries))
+);
+
+mockToggl.Entry.post.mockImplementation(
+  async (
+    start: Moment.Moment,
+    stop: Moment.Moment,
+    newEntry: Toggl.Entry.NewEntry
+  ) => {
+    togglState.entries.push(
+      mockEntry(
+        {
+          start: Option.some(start),
+          stop: Option.some(stop)
+        },
+        newEntry
+      )
+    );
+
+    return Promise.resolve(Either.right(togglState.entries[0]));
+  }
+);
+
+mockToggl.Entry.put.mockImplementation(async (entry: Toggl.Entry.Entry) =>
+  Promise.resolve(
+    Option.fromNullable(togglState.entries.find(({ id }) => id === entry.id))
+      .map(oldEntry => (oldEntry = entry))
+      .toUndefined()
+  )
+);
+
+mockToggl.Entry.start.mockImplementation(
+  async (
+    start: Option.Option<Moment.Moment>,
+    newEntry: Toggl.Entry.NewEntry
+  ) => {
+    const entry = mockEntry({ start, stop: Option.none }, newEntry);
+
+    togglState.currentEntry = Option.some(entry);
+    togglState.entries.push(entry);
+
+    return Promise.resolve(Either.right(entry));
+  }
+);
+
+mockToggl.Entry.stop.mockImplementation(async (ID: number | string) =>
+  Option.fromNullable(togglState.entries.find(({ id }) => id === ID)).map(
+    entry => {
+      togglState.currentEntry.map(
+        () => (togglState.currentEntry = Option.none)
+      );
+
+      entry.duration = Interval.resolve
+        .duration({
+          start: Moment(entry.start),
+          stop: togglState.now
+        })
+        .asSeconds();
+
+      togglState.entries.push(entry);
+
+      return Promise.resolve(Either.right(entry));
     }
-  );
+  )
+);
 
-  mockToggl.TimeEntry.start.mockImplementation(
-    async (
-      start: Moment.Moment,
-      stop: Moment.Moment,
-      newEntry: Toggl.TimeEntry.NewEntry
-    ) => {
-      const timeEntry = mockTimeEntry(start, stop, newEntry);
+mockToggl.getProjects.mockResolvedValue(Either.right([]));
 
-      if (state.currentTimeEntry) {
-        state.timeEntries.push(state.currentTimeEntry);
-      }
-
-      state.currentTimeEntry = timeEntry;
-      state.timeEntries.push(timeEntry);
-      return Promise.resolve(Either.right(timeEntry));
-    }
-  );
-
-  mockToggl.TimeEntry.stop.mockImplementation(async (ID: number | string) =>
-    Option.fromNullable(state.timeEntries.find(({ id }) => id === ID)).map(
-      timeEntry => {
-        Option.fromNullable(state.currentTimeEntry).map(currentTimeEntry => {
-          if (currentTimeEntry.id === timeEntry.id) {
-            delete state.currentTimeEntry;
-          }
-        });
-
-        timeEntry.duration = 20;
-        state.timeEntries.push(timeEntry);
-        return Promise.resolve(Either.right(timeEntry));
-      }
-    )
-  );
-
-  mockToggl.getProjects.mockResolvedValue(Either.right([]));
-
-  mockToggl.getTags.mockImplementation(async () =>
-    Promise.resolve(
-      Either.right(
-        state.timeEntries.reduce<Toggl.Tag[]>(
-          (previous, { tags }) => [
-            ...previous,
-            ...tags.map(name => ({ id: 1, wid: 1, name }))
-          ],
-          []
-        )
+mockToggl.getTags.mockImplementation(async () =>
+  Promise.resolve(
+    Either.right(
+      togglState.entries.reduce<Toggl.Tag[]>(
+        (previous, { tags }) => [
+          ...previous,
+          ...tags.map(name => ({ id: 1, wid: 1, name }))
+        ],
+        []
       )
     )
-  );
-
-  return state;
-};
+  )
+);

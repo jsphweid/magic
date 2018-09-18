@@ -3,7 +3,8 @@ import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-// import * as Toggl from "../Toggl";
+import * as Utility from "../Utility";
+import * as Toggl from "../Toggl";
 // import * as Tag from "./Tag";
 import * as Time from "./Time";
 
@@ -18,7 +19,7 @@ export const schema = gql`
   }
 `;
 
-interface Args {
+export interface Args {
   start: Moment.Moment | null;
   stop: Moment.Moment | null;
   narrative: string | null;
@@ -27,6 +28,23 @@ interface Args {
 
 export const resolve = {
   startTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
+    const start = Option.fromNullable(args.start);
+    const stop = Option.fromNullable(args.stop);
+
+    const newEntry = {
+      pid: Option.none,
+      description: Option.fromNullable(args.narrative),
+      tags: Option.fromNullable(args.tags)
+    };
+
+    const { value: entry } = (await stop
+      .map(stop =>
+        Toggl.Entry.post(start.getOrElseL(() => Moment()), stop, newEntry)
+      )
+      .getOrElseL(() => Toggl.Entry.start(start, newEntry))).mapLeft(
+      Utility.throwError
+    );
+
     return Time.source(
       Option.fromNullable(args.start),
       Option.fromNullable(args.stop)

@@ -3,6 +3,7 @@ import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment";
 
+import * as Utility from "../Utility";
 import * as Toggl from "../Toggl";
 import * as Interval from "./Interval";
 import * as Narrative from "./Narrative";
@@ -24,7 +25,6 @@ export const schema = gql`
 
 export interface Source {
   interval: Interval.Source;
-
   narratives: Narrative.Source[];
   tagOccurrences: TagOccurrence.Source[];
 }
@@ -35,7 +35,7 @@ interface TogglData {
     stop: Moment.Moment;
   };
 
-  timeEntries: Toggl.TimeEntry.TimeEntry[];
+  entries: Toggl.Entry.Entry[];
   tags: Toggl.Tag[];
 }
 
@@ -69,13 +69,13 @@ export const source = async (
   Toggl is no longer in use.
 */
 const togglDataToSource = (togglData: TogglData): Source =>
-  togglData.timeEntries.reduce<Source>(
-    (previous, timeEntry) => {
+  togglData.entries.reduce<Source>(
+    (previous, entry) => {
       const interval = {
-        start: Moment(timeEntry.start),
-        stop: Option.fromNullable(timeEntry.stop)
-          .map<Moment.Moment | null>(stop => Moment(stop))
-          .getOrElse(null)
+        start: Moment(entry.start),
+        stop: Option.fromNullable(entry.stop)
+          .map(stop => Moment(stop))
+          .toNullable()
       };
 
       // If started before our interval (with some padding), skip it
@@ -90,30 +90,34 @@ const togglDataToSource = (togglData: TogglData): Source =>
         Use the time entry's id as for the tag occurrences and narratives while
         we're still using Toggl
       */
-      const ID = `${timeEntry.id}`;
+      const ID = `${entry.id}`;
 
-      const narratives =
-        // If the narrative is empty, don't add it to the results
-        `${timeEntry.description}`.replace(/ /g, "") === ""
-          ? previous.narratives
-          : [
-              ...previous.narratives,
-              { ID, interval, description: timeEntry.description }
-            ];
+      // If the narrative is empty, don't add it to the results
+      const narratives = Option.fromNullable(entry.description)
+        .map(
+          description =>
+            description.replace(/ /g, "") !== ""
+              ? [...previous.narratives, { ID, interval, description }]
+              : previous.narratives
+        )
+        .getOrElse(previous.narratives);
 
+      // Any unrecognized tags are thrown so we know to add it ASAP
       const tagOccurrences = [
         ...previous.tagOccurrences,
-        ...timeEntry.tags.map(name => {
-          if (!togglData.tags.find(togglTag => togglTag.name === name)) {
-            throw new Error(`"${name}" isn't defined in Toggl.`);
-          }
-
-          return {
-            ID,
-            interval,
-            tag: Tag.sourceFromName(name)
-          };
-        })
+        ...entry.tags.map(name =>
+          Option.fromNullable(
+            togglData.tags.find(togglTag => togglTag.name === name)
+          )
+            .map(({ name }) => ({
+              ID,
+              interval,
+              tag: Tag.sourceFromName(name)
+            }))
+            .getOrElseL(() =>
+              Utility.throwError(new Error(`"${name}" isn't defined in Toggl.`))
+            )
+        )
       ];
 
       return { ...previous, narratives, tagOccurrences };
@@ -133,22 +137,14 @@ const getTogglData = async (
   start: Moment.Moment,
   stop: Moment.Moment
 ): Promise<TogglData> => {
-  const [{ value: timeEntries }, { value: tags }] = await Promise.all([
-    Toggl.TimeEntry.getInterval(start, stop),
+  const [entries, tags] = await Promise.all([
+    Toggl.Entry.getInterval(start, stop),
     Toggl.getTags()
   ]);
 
-  if (timeEntries instanceof Error) {
-    throw timeEntries;
-  }
-
-  if (tags instanceof Error) {
-    throw tags;
-  }
-
   return {
     interval: { start, stop },
-    timeEntries,
-    tags
+    entries: entries.mapLeft(Utility.throwError).value,
+    tags: tags.mapLeft(Utility.throwError).value
   };
 };

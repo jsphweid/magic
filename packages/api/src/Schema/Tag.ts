@@ -3,6 +3,8 @@ import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import _ from "lodash";
 
+import * as Utility from "../Utility";
+
 import DATA from "../../.data/tags.json";
 
 export const schema = gql`
@@ -58,9 +60,9 @@ export const sourceFromName = (name: string): Source => {
 
   const { score, connections } = Option.fromNullable(
     DATA.find(({ name }) => name === formattedName)
-  ).getOrElseL(() => {
-    throw new Error(`"${formattedName}" isn't defined in Magic.`);
-  });
+  ).getOrElseL(() =>
+    Utility.throwError(new Error(`"${formattedName}" isn't defined in Magic.`))
+  );
 
   return {
     ID: formattedName,

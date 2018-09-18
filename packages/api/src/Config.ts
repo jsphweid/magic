@@ -2,6 +2,16 @@ import { option as Option } from "fp-ts";
 
 import * as Functions from "firebase-functions";
 
+import * as Utility from "./Utility";
+
+const REQUIRED_ENVIRONMENT_VARIABLES = [
+  "TIME_ZONE",
+  "API_TOKEN",
+  "TOGGL_TOKEN",
+  "TOGGL_WORKSPACE_ID",
+  "TWILIO_NUMBERS_OWNER"
+];
+
 if (process.env.NODE_ENV === "production") {
   const config = Functions.config();
   process.env = {
@@ -14,18 +24,12 @@ if (process.env.NODE_ENV === "production") {
   };
 }
 
-const required = [
-  "TIME_ZONE",
-  "API_TOKEN",
-  "TOGGL_TOKEN",
-  "TOGGL_WORKSPACE_ID",
-  "TWILIO_NUMBERS_OWNER"
-];
-
 if (!__dirname.includes("functions")) {
-  for (const variable of required) {
-    if (Option.fromNullable(process.env[variable]).isNone()) {
-      throw new Error(`\`${variable}\` is missing from the environment!`);
-    }
-  }
+  REQUIRED_ENVIRONMENT_VARIABLES.forEach(variableName =>
+    Option.fromNullable(process.env[variableName]).getOrElseL(() =>
+      Utility.throwError(
+        new Error(`\`${variableName}\` is missing from the environment!`)
+      )
+    )
+  );
 }

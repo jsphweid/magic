@@ -2,6 +2,7 @@ import * as FS from "fs";
 import * as Path from "path";
 import Moment from "moment";
 
+import * as Utility from "./Utility";
 import * as Toggl from "./Toggl";
 
 const DATA_DIR = Path.join(__dirname, "../.data");
@@ -15,25 +16,20 @@ const save = async (): Promise<void> => {
     FS.readFileSync(`${DATA_DIR}/tags.json`).toJSON()
   );
 
-  const { value: togglTags } = await Toggl.getTags();
-  if (togglTags instanceof Error) {
-    throw togglTags;
-  }
+  const { value: togglTags } = (await Toggl.getTags()).mapLeft(
+    Utility.throwError
+  );
 
   writeAsJSON(`${BACKUP_DIR}/toggl-tags.json`, togglTags);
 
-  // Save every time entry since tracking began
+  // Save every entry since tracking began
 
-  const { value: togglTimeEntries } = await Toggl.TimeEntry.getInterval(
+  const { value: entries } = (await Toggl.Entry.getInterval(
     Moment("2018-06-22T13:10:55+00:00"),
     Moment()
-  );
+  )).mapLeft(Utility.throwError);
 
-  if (togglTimeEntries instanceof Error) {
-    throw togglTimeEntries;
-  }
-
-  writeAsJSON(`${BACKUP_DIR}/toggl-time-entries.json`, togglTimeEntries);
+  writeAsJSON(`${BACKUP_DIR}/toggl-time-entries.json`, entries);
 };
 
 const writeAsJSON = (filePath: string, contents: object): void =>

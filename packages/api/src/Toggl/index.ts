@@ -1,5 +1,5 @@
 import * as Request from "./Request";
-import * as TimeEntry from "./TimeEntry";
+import * as Entry from "./Entry";
 
 /*
   Projects are only really used for basic reporting and the timeline view in the
@@ -43,4 +43,4 @@ export interface Tag {
 export const getTags = async (): Promise<Request.Result<Tag[]>> =>
   Request.workspace<Tag[]>("/tags");
 
-export { TimeEntry };
+export { Entry };

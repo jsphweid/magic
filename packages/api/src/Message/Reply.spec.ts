@@ -1,7 +1,6 @@
 import * as Reply from "./Reply";
 
-const trim = (indent: string, text: string): string =>
-  text.replace(new RegExp(indent, "g"), "").trim();
+import * as Utility from "../Utility";
 
 describe("transforming JSON into an SMS-friendly format", () => {
   const STRING = "string";
@@ -30,17 +29,14 @@ describe("transforming JSON into an SMS-friendly format", () => {
 
     test("long arrays are on multiple lines", () => {
       expect(Reply.fromJSONValue(primitives)).toBe(
-        trim(
-          "            ",
-          `
-            ${STRING}
-            ${INT}
-            ${FLOAT}
-            true
-            false
-            null
-          `
-        )
+        Utility.trim`
+          ${STRING}
+          ${INT}
+          ${FLOAT}
+          true
+          false
+          null
+        `
       );
     });
   });
@@ -50,16 +46,13 @@ describe("transforming JSON into an SMS-friendly format", () => {
       .filter(value => value !== null)
       .reduce((acc, value, index) => ({ ...acc, [`key${index}`]: value }), {});
 
-    const objectAsString = trim(
-      "        ",
-      `
-        key0: ${STRING}
-        key1: ${INT}
-        key2: ${FLOAT}
-        key3: true
-        key4: false
-      `
-    );
+    const objectAsString = Utility.trim`
+      key0: ${STRING}
+      key1: ${INT}
+      key2: ${FLOAT}
+      key3: true
+      key4: false
+    `;
 
     test("small objects are one-liners", () => {
       expect(Reply.fromJSONValue({ a: "a", b: 1 })).toBe(`a: a b: 1`);
@@ -89,21 +82,18 @@ describe("transforming JSON into an SMS-friendly format", () => {
           parent2: { child3: object, child4: object }
         })
       ).toBe(
-        trim(
-          "            ",
-          `
-            parent1:
-             child1:
-              ${objectAsString.replace(/\n/g, "\n              ")}
-             child2:
-              ${objectAsString.replace(/\n/g, "\n              ")}
-            parent2:
-             child3:
-              ${objectAsString.replace(/\n/g, "\n              ")}
-             child4:
-              ${objectAsString.replace(/\n/g, "\n              ")}
-          `
-        )
+        Utility.trim`
+          parent1:
+           child1:
+            ${objectAsString.replace(/\n/g, "\n            ")}
+           child2:
+            ${objectAsString.replace(/\n/g, "\n            ")}
+          parent2:
+           child3:
+            ${objectAsString.replace(/\n/g, "\n            ")}
+           child4:
+            ${objectAsString.replace(/\n/g, "\n            ")}
+        `
       );
     });
 
@@ -134,17 +124,14 @@ describe("transforming JSON into an SMS-friendly format", () => {
           "item"
         ])
       ).toBe(
-        trim(
-          "            ",
-          `
-            item
-            x: true
-            y: false
-            z: false
-            a: false
-            item
-          `
-        )
+        Utility.trim`
+          item
+          x: true
+          y: false
+          z: false
+          a: false
+          item
+        `
       );
     });
   });

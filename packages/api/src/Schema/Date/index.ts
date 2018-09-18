@@ -6,6 +6,7 @@ import Moment from "moment-timezone";
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
+import * as Utility from "../../Utility";
 import * as Interval from "../Interval";
 import * as English from "./English";
 
@@ -17,19 +18,16 @@ export const resolve = new GraphQL.GraphQLScalarType({
   name: "Date",
   serialize: (value: Moment.Moment): number => value.valueOf(),
   parseValue: (value: string): Moment.Moment => parseDate(value),
-  parseLiteral: (ast: GraphQL.ValueNode): Moment.Moment => {
-    if (ast.kind === GraphQL.Kind.INT || ast.kind === GraphQL.Kind.FLOAT) {
-      return Moment(parseFloat(ast.value));
-    }
-
-    if (ast.kind !== GraphQL.Kind.STRING) {
-      throw new GraphQL.GraphQLError(
-        `"${ast.kind}" must be an \`Int\`, \`Float\`, or \`String\``
-      );
-    }
-
-    return parseDate(ast.value, ast);
-  }
+  parseLiteral: (ast: GraphQL.ValueNode): Moment.Moment =>
+    ast.kind === GraphQL.Kind.INT || ast.kind === GraphQL.Kind.FLOAT
+      ? Moment(parseFloat(ast.value))
+      : ast.kind === GraphQL.Kind.STRING
+        ? parseDate(ast.value, ast)
+        : Utility.throwError(
+            new GraphQL.GraphQLError(
+              `"${ast.kind}" must be an \`Int\`, \`Float\`, or \`String\``
+            )
+          )
 });
 
 const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
@@ -82,10 +80,9 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
   }
 
   // Try parsing the date from english-like values i.e. "in five minutes"
-  const { value: date } = English.toDate(source);
-  if (date instanceof Error) {
-    throw new GraphQL.GraphQLError(date.message, ast);
-  }
+  const { value: date } = English.toDate(source).mapLeft(error =>
+    Utility.throwError(new GraphQL.GraphQLError(error.message, ast))
+  );
 
   return date;
 };
