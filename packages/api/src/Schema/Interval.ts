@@ -19,9 +19,14 @@ export interface Source {
 }
 
 export const resolve = {
-  duration: (source: Source): Duration.Source => {
-    // The default stop for an interval is *now*
-    const stop = Option.fromNullable(source.stop).getOrElseL(() => Moment());
-    return Moment.duration(stop.diff(source.start));
-  }
+  duration: (source: Source): Duration.Source =>
+    duration(
+      source.start,
+      Option.fromNullable(source.stop).getOrElseL(() => Moment())
+    )
 };
+
+export const duration = (
+  start: Moment.Moment,
+  stop: Moment.Moment
+): Moment.Duration => Moment.duration(stop.diff(start));

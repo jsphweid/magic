@@ -127,14 +127,14 @@ export const post = async (
         time_entry: {
           ...newEntryToTogglData(newEntry),
           start: start.toISOString(),
-          duration: Interval.resolve.duration({ start, stop }).asSeconds()
+          duration: Interval.duration(start, stop).asSeconds()
         }
       })
     )
   );
 
 export const start = async (
-  start: Option.Option<Moment.Moment>,
+  start: Moment.Moment,
   newEntry: NewEntry
 ): Promise<Request.Result<Entry>> =>
   extractData(
@@ -143,7 +143,7 @@ export const start = async (
       JSON.stringify({
         time_entry: {
           ...newEntryToTogglData(newEntry),
-          start: start.getOrElseL(() => Moment()).toISOString()
+          start: start.toISOString()
         }
       })
     )

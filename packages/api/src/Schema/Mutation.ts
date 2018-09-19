@@ -5,9 +5,7 @@ import Moment from "moment";
 
 import * as Utility from "../Utility";
 import * as Toggl from "../Toggl";
-// import * as Tag from "./Tag";
 import * as Time from "./Time";
-import { fromNullable } from "fp-ts/lib/Option";
 
 export const schema = gql`
   type Mutation {
@@ -30,8 +28,7 @@ export interface Args {
 export const resolve = {
   startTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
     const now = Moment();
-
-    const start = Option.fromNullable(args.start);
+    const start = Option.fromNullable(args.start).getOrElse(now);
     const stop = Option.fromNullable(args.stop);
 
     const newEntry = {
@@ -40,24 +37,28 @@ export const resolve = {
       tags: Option.fromNullable(args.tags)
     };
 
-    const { value: entries } = (await Toggl.Entry.getInterval(
-      start.getOrElse(now),
-      stop.getOrElse(now)
-    )).mapLeft(Utility.throwError);
-
     const { value: entry } = (await stop
-      .map(stop =>
-        Toggl.Entry.post(start.getOrElseL(() => Moment()), stop, newEntry)
-      )
+      .map(stop => Toggl.Entry.post(start, stop, newEntry))
       .getOrElseL(() => Toggl.Entry.start(start, newEntry))).mapLeft(
       Utility.throwError
     );
+
+    const { value: entries } = (await Toggl.Entry.getInterval(
+      start,
+      stop.getOrElse(now)
+    )).mapLeft(Utility.throwError);
+
+    const newEntryStartMS = start.valueOf();
+    const newEntryStopMS = stop.getOrElse(now).valueOf();
 
     for (const oldEntry of entries) {
       const oldEntryStart = Moment(oldEntry.start);
       const oldEntryStop = Option.fromNullable(oldEntry.stop)
         .map(stop => Moment(stop))
         .getOrElse(now);
+
+      const oldEntryStartMS = oldEntryStart.valueOf();
+      const oldEntryStopMS = oldEntryStop.valueOf();
 
       if (
         /*
@@ -68,8 +69,8 @@ export const resolve = {
 
           Result:   |=================|
         */
-        start.getOrElse(now).valueOf() < oldEntryStart.valueOf() &&
-        oldEntryStop.valueOf() < stop.getOrElse(now).valueOf()
+        newEntryStartMS < oldEntryStartMS &&
+        oldEntryStopMS < newEntryStopMS
       ) {
         console.log(1);
         // (await Toggl.Entry.delete(oldEntry.id)).mapLeft(Utility.throwError);
@@ -82,13 +83,13 @@ export const resolve = {
 
           Result:   |----||=====||----|
         */
-        oldEntryStart.valueOf() < start.getOrElse(now).valueOf() &&
-        stop.getOrElse(now).valueOf() < oldEntryStop.valueOf()
+        oldEntryStartMS < newEntryStartMS &&
+        newEntryStopMS < oldEntryStopMS
       ) {
         (await Promise.all([
           Toggl.Entry.put({
             ...oldEntry,
-            stop: start.getOrElse(now).toISOString()
+            stop: start.toISOString()
           }),
           Toggl.Entry.post(oldEntryStart, oldEntryStop, {
             pid: Option.fromNullable(oldEntry.pid),
@@ -107,14 +108,15 @@ export const resolve = {
 
           Result:   |----||===============|
         */
-        start.getOrElse(now).valueOf() < oldEntryStop.valueOf()
+        oldEntryStartMS < newEntryStartMS &&
+        oldEntryStopMS < newEntryStopMS
       ) {
         (await Toggl.Entry.put({
           ...oldEntry,
-          stop: start.getOrElse(now).toISOString()
+          stop: start.toISOString()
         })).mapLeft(Utility.throwError);
 
-        console.log(3, entry);
+        console.log(3);
       } else if (
         /*
           New:      |===============|
@@ -124,19 +126,15 @@ export const resolve = {
 
           Result:   |===============||------|
         */
-        oldEntryStart.valueOf() < stop.getOrElse(now).valueOf()
+        newEntryStartMS < oldEntryStartMS &&
+        newEntryStopMS < oldEntryStopMS
       ) {
         (await Toggl.Entry.put({
           ...oldEntry,
           start: stop.getOrElse(now).toISOString()
         })).mapLeft(Utility.throwError);
 
-        console.log(
-          oldEntryStart.format("h:mm"),
-          stop.getOrElse(now).format("h:mm")
-        );
-
-        console.log(4, entry);
+        console.log(4);
       }
     }
 

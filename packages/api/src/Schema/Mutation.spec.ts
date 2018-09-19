@@ -44,48 +44,35 @@ let togglState: TogglState = {
   entries: []
 };
 
+Moment.now = () => togglState.now.valueOf();
+
 const mockEntry = (
-  interval: {
-    start: Option.Option<Moment.Moment>;
-    stop: Option.Option<Moment.Moment>;
-  },
+  start: Moment.Moment,
+  stop: Option.Option<Moment.Moment>,
   newEntry: Toggl.Entry.NewEntry
-): Toggl.Entry.Entry => {
-  const start = interval.start.getOrElse(togglState.now);
+): Toggl.Entry.Entry => ({
+  id: 1,
+  billable: false,
+  created_with: "HireMeForMoney",
 
-  return {
-    id: 1,
-    billable: false,
-    created_with: "HireMeForMoney",
+  at: start.toISOString(),
+  start: start.toISOString(),
+  stop: stop.map(stop => stop.toISOString()).toUndefined(),
+  duration: Interval.duration(
+    start,
+    stop.getOrElse(togglState.now)
+  ).asSeconds(),
 
-    at: start.toISOString(),
-    start: start.toISOString(),
-    stop: interval.stop.map(stop => stop.toISOString()).toUndefined(),
-
-    duration: Interval.resolve
-      .duration({
-        start,
-        stop: interval.stop.getOrElse(togglState.now)
-      })
-      .asSeconds(),
-
-    description: newEntry.description.toUndefined(),
-    tags: newEntry.tags.getOrElse([])
-  };
-};
+  description: newEntry.description.toUndefined(),
+  tags: newEntry.tags.getOrElse([])
+});
 
 const MOCK_ENTRIES = [
-  mockEntry(
-    {
-      start: Option.some(Moment(togglState.now).subtract(1, "hour")),
-      stop: Option.none
-    },
-    {
-      pid: Option.none,
-      description: Option.some("This entry is currently running"),
-      tags: Option.some(["tag-3", "tag-4"])
-    }
-  )
+  mockEntry(Moment(togglState.now).subtract(1, "hour"), Option.none, {
+    pid: Option.none,
+    description: Option.some("This entry is currently running"),
+    tags: Option.some(["tag-3", "tag-4"])
+  })
 ];
 
 enum TogglStatePreset {
@@ -108,10 +95,8 @@ const togglStates: { [Preset in TogglStatePreset]: TogglState } = {
 
 const mockEntryFromArgs = (args: Mutation.Args): Toggl.Entry.Entry =>
   mockEntry(
-    {
-      start: Option.fromNullable(args.start),
-      stop: Option.fromNullable(args.stop)
-    },
+    Option.fromNullable(args.start).getOrElse(togglState.now),
+    Option.fromNullable(args.stop),
     {
       pid: Option.none,
       description: Option.fromNullable(args.narrative),
@@ -164,7 +149,7 @@ describe("Mutation", () => {
         expect(togglState).toEqual({
           ...togglState,
           currentEntry: Option.some(entry),
-          entries: [oldEntry, entry]
+          entries: [entry, oldEntry]
         });
       });
     });
@@ -259,17 +244,9 @@ mockToggl.Entry.post.mockImplementation(
     stop: Moment.Moment,
     newEntry: Toggl.Entry.NewEntry
   ) => {
-    const entry = mockEntry(
-      { start: Option.some(start), stop: Option.some(stop) },
-      newEntry
-    );
-
-    togglState = {
-      ...togglState,
-      entries: [...togglState.entries, entry]
-    };
-
-    return Promise.resolve(Either.right(togglState.entries[0]));
+    const entry = mockEntry(start, Option.some(stop), newEntry);
+    togglState = { ...togglState, entries: [entry, ...togglState.entries] };
+    return Promise.resolve(Either.right(entry));
   }
 );
 
@@ -288,55 +265,39 @@ mockToggl.Entry.put.mockImplementation(async (entry: Toggl.Entry.Entry) => {
         : oldEntry
   );
 
-  togglState = {
-    ...togglState,
-    currentEntry,
-    entries
-  };
-
+  togglState = { ...togglState, currentEntry, entries };
   return Promise.resolve(Either.right(entry));
 });
 
 mockToggl.Entry.start.mockImplementation(
-  async (
-    start: Option.Option<Moment.Moment>,
-    newEntry: Toggl.Entry.NewEntry
-  ) => {
-    const entry = mockEntry({ start, stop: Option.none }, newEntry);
-
-    togglState = {
-      ...togglState,
-      currentEntry: Option.some(entry),
-      entries: [...togglState.entries, entry]
-    };
-
+  async (start: Moment.Moment, newEntry: Toggl.Entry.NewEntry) => {
+    const entry = mockEntry(start, Option.none, newEntry);
+    const currentEntry = Option.some(entry);
+    const entries = [entry, ...togglState.entries];
+    togglState = { ...togglState, currentEntry, entries };
     return Promise.resolve(Either.right(entry));
   }
 );
 
 mockToggl.Entry.stop.mockImplementation(async () =>
   togglState.currentEntry.map(currentEntry => {
-    const stop = togglState.now.toISOString();
-    const duration = Interval.resolve
-      .duration({
-        start: Moment(currentEntry.start),
-        stop: togglState.now
-      })
-      .asSeconds();
-
-    const stoppedCurrentEntry = { ...currentEntry, stop, duration };
-
-    togglState = {
-      ...togglState,
-      currentEntry: Option.none,
-      entries: togglState.entries.map(
-        entry =>
-          entry.description === currentEntry.description
-            ? stoppedCurrentEntry
-            : entry
-      )
+    const stoppedCurrentEntry = {
+      ...currentEntry,
+      stop: togglState.now.toISOString(),
+      duration: Interval.duration(
+        Moment(currentEntry.start),
+        togglState.now
+      ).asSeconds()
     };
 
+    const entries = togglState.entries.map(
+      entry =>
+        entry.description === currentEntry.description
+          ? stoppedCurrentEntry
+          : entry
+    );
+
+    togglState = { ...togglState, currentEntry: Option.none, entries };
     return Promise.resolve(Either.right(stoppedCurrentEntry));
   })
 );
