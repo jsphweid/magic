@@ -32,110 +32,16 @@ const mockToggl: jest.Mocked<typeof Toggl> & {
   Entry: jest.Mocked<typeof Toggl.Entry>;
 } = Toggl as any;
 
-beforeEach(() => (togglState.now = Moment()));
-
-describe("Mutation", () => {
-  describe("startTime", () => {
-    const defaultArgs = {
-      start: null,
-      stop: null,
-      narrative: "This is the new narrative",
-      tags: ["tag-1", "tag-2"]
-    };
-
-    describe("No current entry or existing entries", () => {
-      describe("Start the current entry starting now", () => {
-        const entry = mockEntryFromArgs(defaultArgs);
-
-        test("When nothing has recently been tracked", async () => {
-          togglState = {
-            ...togglState,
-            currentEntry: Option.none,
-            entries: []
-          };
-
-          await Mutation.resolve.startTime(undefined, defaultArgs);
-
-          expect(togglState).toEqual({
-            ...togglState,
-            currentEntry: Option.some(entry),
-            entries: [entry]
-          });
-        });
-
-        test("When an entry is already started as the current entry", async () => {
-          const oldEntry = mockEntry(
-            {
-              start: Option.some(Moment().subtract(1, "hour")),
-              stop: Option.none
-            },
-            {
-              pid: Option.none,
-              description: Option.some("This entry is currently running"),
-              tags: Option.some(["tag-3", "tag-4"])
-            }
-          );
-
-          togglState = {
-            ...togglState,
-            currentEntry: Option.some(oldEntry),
-            entries: [oldEntry]
-          };
-        });
-      });
-
-      test("Start the current entry in the past", async () => {
-        const args = { ...defaultArgs, start: Moment().subtract(2, "minutes") };
-        const entry = mockEntryFromArgs(args);
-
-        await Mutation.resolve.startTime(undefined, args);
-
-        expect(togglState).toEqual({
-          ...togglState,
-          currentEntry: Option.some(entry),
-          entries: [entry]
-        });
-      });
-
-      test("Start the current entry in the future", async () => {
-        const args = { ...defaultArgs, start: Moment().add(2, "minutes") };
-        const entry = mockEntryFromArgs(args);
-
-        await Mutation.resolve.startTime(undefined, args);
-
-        expect(togglState).toEqual({
-          ...togglState,
-          currentEntry: Option.some(entry),
-          entries: [entry]
-        });
-      });
-
-      test("Create an entry from some `start` and `stop`", async () => {
-        const args = {
-          ...defaultArgs,
-          start: Moment().subtract(3, "minutes"),
-          stop: Moment().add(3, "minutes")
-        };
-
-        const entry = mockEntryFromArgs(args);
-
-        await Mutation.resolve.startTime(undefined, args);
-
-        expect(togglState).toEqual({
-          ...togglState,
-          entries: [entry]
-        });
-      });
-    });
-  });
-});
-
-// The following mocks enable us to emulate a stateful Toggl API
-
-let togglState: {
+interface TogglState {
   now: Moment.Moment;
   currentEntry: Option.Option<Toggl.Entry.Entry>;
   entries: Toggl.Entry.Entry[];
+}
+
+let togglState: TogglState = {
+  now: Moment(),
+  currentEntry: Option.none,
+  entries: []
 };
 
 const mockEntry = (
@@ -168,6 +74,38 @@ const mockEntry = (
   };
 };
 
+const MOCK_ENTRIES = [
+  mockEntry(
+    {
+      start: Option.some(Moment(togglState.now).subtract(1, "hour")),
+      stop: Option.none
+    },
+    {
+      pid: Option.none,
+      description: Option.some("This entry is currently running"),
+      tags: Option.some(["tag-3", "tag-4"])
+    }
+  )
+];
+
+enum TogglStatePreset {
+  NOTHING_HAS_BEEN_TRACKED = "When nothing has recently been tracked",
+  CURRENT_ENTRY_ALREADY_STARTED = "When the current entry is already started "
+}
+
+const togglStates: { [Preset in TogglStatePreset]: TogglState } = {
+  [TogglStatePreset.NOTHING_HAS_BEEN_TRACKED]: {
+    ...togglState,
+    currentEntry: Option.none,
+    entries: []
+  },
+  [TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED]: {
+    ...togglState,
+    currentEntry: Option.some(MOCK_ENTRIES[0]),
+    entries: [MOCK_ENTRIES[0]]
+  }
+};
+
 const mockEntryFromArgs = (args: Mutation.Args): Toggl.Entry.Entry =>
   mockEntry(
     {
@@ -180,6 +118,132 @@ const mockEntryFromArgs = (args: Mutation.Args): Toggl.Entry.Entry =>
       tags: Option.fromNullable(args.tags)
     }
   );
+
+describe("Mutation", () => {
+  describe("startTime", () => {
+    const defaultArgs = {
+      start: null,
+      stop: null,
+      narrative: "This is the new entry",
+      tags: ["tag-1", "tag-2"]
+    };
+
+    describe("Start the current entry now", () => {
+      const entry = mockEntryFromArgs(defaultArgs);
+
+      test(TogglStatePreset.NOTHING_HAS_BEEN_TRACKED, async () => {
+        togglState = {
+          ...togglState,
+          ...togglStates[TogglStatePreset.NOTHING_HAS_BEEN_TRACKED]
+        };
+
+        await Mutation.resolve.startTime(undefined, defaultArgs);
+        expect(togglState).toEqual({
+          ...togglState,
+          currentEntry: Option.some(entry),
+          entries: [entry]
+        });
+      });
+
+      test(TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED, async () => {
+        togglState = {
+          ...togglState,
+          ...togglStates[TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED]
+        };
+
+        const oldEntry =
+          togglStates[TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED]
+            .entries[0];
+
+        console.log(togglState);
+
+        await Mutation.resolve.startTime(undefined, defaultArgs);
+
+        console.log(togglState);
+
+        expect(togglState).toEqual({
+          ...togglState,
+          currentEntry: Option.some(entry),
+          entries: [oldEntry, entry]
+        });
+      });
+    });
+
+    // describe("Start the current entry in the past", () => {
+    //   const args = { ...defaultArgs, start: Moment().subtract(5, "minutes") };
+    //   const entry = mockEntryFromArgs(args);
+
+    //   test(TogglStatePreset.NOTHING_HAS_BEEN_TRACKED, async () => {
+    //     togglState = {
+    //       ...togglState,
+    //       ...togglStates[TogglStatePreset.NOTHING_HAS_BEEN_TRACKED]
+    //     };
+
+    //     await Mutation.resolve.startTime(undefined, args);
+    //     expect(togglState).toEqual({
+    //       ...togglState,
+    //       currentEntry: Option.some(entry),
+    //       entries: [entry]
+    //     });
+    //   });
+
+    //   test(TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED, async () => {
+    //     togglState = {
+    //       ...togglState,
+    //       ...togglStates[TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED]
+    //     };
+
+    //     const oldEntry =
+    //       togglStates[TogglStatePreset.CURRENT_ENTRY_ALREADY_STARTED]
+    //         .entries[0];
+
+    //     const oldEntryWithUpdatedStop = {
+    //       ...oldEntry,
+    //       stop: args.start.toISOString()
+    //     };
+
+    //     await Mutation.resolve.startTime(undefined, args);
+    //     expect(togglState).toEqual({
+    //       ...togglState,
+    //       currentEntry: Option.some(entry),
+    //       entries: [oldEntryWithUpdatedStop, entry]
+    //     });
+    //   });
+    // });
+  });
+});
+
+// test("Start the current entry in the future", async () => {
+//   const args = { ...defaultArgs, start: Moment().add(2, "minutes") };
+//   const entry = mockEntryFromArgs(args);
+
+//   await Mutation.resolve.startTime(undefined, args);
+
+//   expect(togglState).toEqual({
+//     ...togglState,
+//     currentEntry: Option.some(entry),
+//     entries: [entry]
+//   });
+// });
+
+// test("Create an entry from some `start` and `stop`", async () => {
+//   const args = {
+//     ...defaultArgs,
+//     start: Moment().subtract(3, "minutes"),
+//     stop: Moment().add(3, "minutes")
+//   };
+
+//   const entry = mockEntryFromArgs(args);
+
+//   await Mutation.resolve.startTime(undefined, args);
+
+//   expect(togglState).toEqual({
+//     ...togglState,
+//     entries: [entry]
+//   });
+// });
+
+// The following mocks enable us to emulate a stateful Toggl API
 
 mockToggl.Entry.get.mockResolvedValue(async () =>
   Promise.resolve(Either.right(togglState.entries))
@@ -195,27 +259,43 @@ mockToggl.Entry.post.mockImplementation(
     stop: Moment.Moment,
     newEntry: Toggl.Entry.NewEntry
   ) => {
-    togglState.entries.push(
-      mockEntry(
-        {
-          start: Option.some(start),
-          stop: Option.some(stop)
-        },
-        newEntry
-      )
+    const entry = mockEntry(
+      { start: Option.some(start), stop: Option.some(stop) },
+      newEntry
     );
+
+    togglState = {
+      ...togglState,
+      entries: [...togglState.entries, entry]
+    };
 
     return Promise.resolve(Either.right(togglState.entries[0]));
   }
 );
 
-mockToggl.Entry.put.mockImplementation(async (entry: Toggl.Entry.Entry) =>
-  Promise.resolve(
-    Option.fromNullable(togglState.entries.find(({ id }) => id === entry.id))
-      .map(oldEntry => (oldEntry = entry))
-      .toUndefined()
-  )
-);
+mockToggl.Entry.put.mockImplementation(async (entry: Toggl.Entry.Entry) => {
+  const currentEntry = togglState.currentEntry.map(
+    currentEntry =>
+      currentEntry.description === entry.description
+        ? { ...currentEntry, ...entry }
+        : currentEntry
+  );
+
+  const entries = togglState.entries.map(
+    oldEntry =>
+      oldEntry.description === entry.description
+        ? { ...oldEntry, ...entry }
+        : oldEntry
+  );
+
+  togglState = {
+    ...togglState,
+    currentEntry,
+    entries
+  };
+
+  return Promise.resolve(Either.right(entry));
+});
 
 mockToggl.Entry.start.mockImplementation(
   async (
@@ -224,32 +304,41 @@ mockToggl.Entry.start.mockImplementation(
   ) => {
     const entry = mockEntry({ start, stop: Option.none }, newEntry);
 
-    togglState.currentEntry = Option.some(entry);
-    togglState.entries.push(entry);
+    togglState = {
+      ...togglState,
+      currentEntry: Option.some(entry),
+      entries: [...togglState.entries, entry]
+    };
 
     return Promise.resolve(Either.right(entry));
   }
 );
 
-mockToggl.Entry.stop.mockImplementation(async (ID: number | string) =>
-  Option.fromNullable(togglState.entries.find(({ id }) => id === ID)).map(
-    entry => {
-      togglState.currentEntry.map(
-        () => (togglState.currentEntry = Option.none)
-      );
+mockToggl.Entry.stop.mockImplementation(async () =>
+  togglState.currentEntry.map(currentEntry => {
+    const stop = togglState.now.toISOString();
+    const duration = Interval.resolve
+      .duration({
+        start: Moment(currentEntry.start),
+        stop: togglState.now
+      })
+      .asSeconds();
 
-      entry.duration = Interval.resolve
-        .duration({
-          start: Moment(entry.start),
-          stop: togglState.now
-        })
-        .asSeconds();
+    const stoppedCurrentEntry = { ...currentEntry, stop, duration };
 
-      togglState.entries.push(entry);
+    togglState = {
+      ...togglState,
+      currentEntry: Option.none,
+      entries: togglState.entries.map(
+        entry =>
+          entry.description === currentEntry.description
+            ? stoppedCurrentEntry
+            : entry
+      )
+    };
 
-      return Promise.resolve(Either.right(entry));
-    }
-  )
+    return Promise.resolve(Either.right(stoppedCurrentEntry));
+  })
 );
 
 mockToggl.getProjects.mockResolvedValue(Either.right([]));
