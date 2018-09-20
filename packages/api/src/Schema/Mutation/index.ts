@@ -37,16 +37,30 @@ export const resolve = {
       tags: Option.fromNullable(args.tags)
     };
 
-    const { value: entry } = (await stop
-      .map(stop => Toggl.Entry.POST(start, stop, newEntry))
-      .getOrElseL(() => Toggl.Entry.start(start, newEntry))).mapLeft(
-      Utility.throwError
-    );
-
+    // Grab the entries we might affect
     const { value: entries } = (await Toggl.Entry.getInterval(
       start,
       stop.getOrElse(now)
     )).mapLeft(Utility.throwError);
+
+    // Get the value of the new entry after it is either created or started
+    const { value: entry } = (await stop
+      /*
+          If stop was defined, create this entry without changing the current
+          entry
+        */
+      .map(stop => Toggl.Entry.POST(start, stop, newEntry))
+
+      // If there is a running entry, stop it and start the new entry
+      .getOrElseL(async () => {
+        (await Toggl.Entry.getCurrentEntry()).fold(
+          Utility.throwError,
+          currentEntry =>
+            currentEntry.map(currentEntry => Toggl.Entry.stop(currentEntry))
+        );
+
+        return Toggl.Entry.start(start, newEntry);
+      })).mapLeft(Utility.throwError);
 
     const newEntryStartMS = start.valueOf();
     const newEntryStopMS = stop.getOrElse(now).valueOf();
@@ -60,6 +74,15 @@ export const resolve = {
       const oldEntryStartMS = oldEntryStart.valueOf();
       const oldEntryStopMS = oldEntryStop.valueOf();
 
+      // if (oldEntry.description === "Doing a cool thing") {
+      //   console.log({
+      //     newEntryStartMS: Moment(newEntryStartMS).format("h:mm"),
+      //     oldEntryStartMS: Moment(oldEntryStartMS).format("h:mm"),
+      //     oldEntryStopMS: Moment(oldEntryStopMS).format("h:mm"),
+      //     newEntryStopMS: Moment(newEntryStopMS).format("h:mm")
+      //   });
+      // }
+
       if (
         /*
           New:      |=================|
@@ -69,8 +92,8 @@ export const resolve = {
 
           Result:   |=================|
         */
-        newEntryStartMS < oldEntryStartMS &&
-        oldEntryStopMS < newEntryStopMS
+        newEntryStartMS <= oldEntryStartMS &&
+        oldEntryStopMS <= newEntryStopMS
       ) {
         (await Toggl.Entry.DELETE(oldEntry)).mapLeft(Utility.throwError);
       } else if (
@@ -106,7 +129,7 @@ export const resolve = {
           Result:   |----||===============|
         */
         oldEntryStartMS < newEntryStartMS &&
-        oldEntryStopMS < newEntryStopMS
+        newEntryStartMS < oldEntryStopMS
       ) {
         (await Toggl.Entry.PUT({
           ...oldEntry,
@@ -122,7 +145,7 @@ export const resolve = {
           Result:   |===============||------|
         */
         newEntryStartMS < oldEntryStartMS &&
-        newEntryStopMS < oldEntryStopMS
+        oldEntryStartMS < newEntryStopMS
       ) {
         (await Toggl.Entry.PUT({
           ...oldEntry,

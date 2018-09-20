@@ -10,6 +10,9 @@ jest.mock("../../../.data/tags.json", () =>
   [1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => ({ name: `tag-${number}` }))
 );
 
+// Ensure tests can refer to the exact same start time
+(Moment as any).now = () => MockToggl.state.now.valueOf();
+
 const mockEntryFromArgs = (args: Mutation.Args): Toggl.Entry.Entry =>
   MockToggl.entry(
     Option.fromNullable(args.start).getOrElse(MockToggl.state.now),
@@ -45,14 +48,17 @@ describe("Mutation", () => {
 
       test(MockToggl.StatePreset.CURRENT_ENTRY_STARTED, async () => {
         MockToggl.setState(MockToggl.StatePreset.CURRENT_ENTRY_STARTED);
-
-        const oldEntry = MockToggl.state.entries[0];
-
         await Mutation.resolve.startTime(undefined, defaultArgs);
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),
-          entries: [entry, oldEntry]
+          entries: [
+            entry,
+            {
+              ...MockToggl.ENTRIES[0],
+              stop: Moment().toISOString()
+            }
+          ]
         });
       });
     });
@@ -60,7 +66,7 @@ describe("Mutation", () => {
     describe("Start time in the recent past", () => {
       const args = {
         ...defaultArgs,
-        start: Moment(MockToggl.state.now).subtract(30, "minutes")
+        start: Moment().subtract(30, "minutes")
       };
 
       const entry = mockEntryFromArgs(args);
@@ -81,7 +87,13 @@ describe("Mutation", () => {
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),
-          entries: [entry, MockToggl.ENTRIES[0]]
+          entries: [
+            entry,
+            {
+              ...MockToggl.ENTRIES[0],
+              stop: args.start.toISOString()
+            }
+          ]
         });
       });
     });
@@ -102,7 +114,10 @@ describe("Mutation", () => {
           currentEntry: Option.some(entry),
           entries: [
             entry,
-            { ...MockToggl.ENTRIES[2], stop: args.start },
+            {
+              ...MockToggl.ENTRIES[2],
+              stop: args.start.toISOString()
+            },
             MockToggl.ENTRIES[3]
           ]
         });

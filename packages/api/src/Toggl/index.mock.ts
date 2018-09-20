@@ -50,7 +50,7 @@ export let state: State = {
   entries: []
 };
 
-// This ensures tests can refer to the exact same start time
+// Ensure tests can refer to the exact same start time
 (Moment as any).now = () => state.now.valueOf();
 
 // Construct mock entries from the arguments we normally pass into Toggl
@@ -77,8 +77,8 @@ export const entry = (
 
   Timeline:
   
-  |  -4hr        |  -3hr        |  -2hr        |  -1hr         | Now
-  |  ENTRIES[3]  |  ENTRIES[2]  |  ENTRIES[1]  |   ENTRIES[0]  |
+  |  -4hr        |  -3hr        |  -2hr        |  -1hr        | Now
+  |  ENTRIES[3]  |  ENTRIES[2]  |  ENTRIES[1]  |  ENTRIES[0]  |
 */
 export const ENTRIES = [
   {
@@ -102,7 +102,7 @@ export const ENTRIES = [
     Moment(state.now).subtract(index + 1, "hour"),
     index === 0
       ? Option.none
-      : Option.some(Moment(state.now).subtract(index + 2, "hour")),
+      : Option.some(Moment(state.now).subtract(index, "hour")),
     {
       pid: Option.none,
       description: Option.some(description),
@@ -112,7 +112,6 @@ export const ENTRIES = [
 );
 
 // These represent common Toggl API states
-
 export enum StatePreset {
   NOTHING_RECENTLY_TRACKED = "When nothing has recently been tracked",
   CURRENT_ENTRY_STARTED = "When the current entry is already started",
@@ -189,12 +188,30 @@ MockToggl.Entry.PUT.mockImplementation(async (entry: Toggl.Entry.Entry) => {
   return Promise.resolve(Either.right(entry));
 });
 
+MockToggl.Entry.DELETE.mockImplementation(async (entry: Toggl.Entry.Entry) => {
+  // If the entry is the current entry, unset it
+  const currentEntry = state.currentEntry.chain(
+    currentEntry =>
+      currentEntry.description !== entry.description
+        ? Option.some(currentEntry)
+        : Option.none
+  );
+
+  // Remove the entry from the list of entries
+  const entries = state.entries.filter(
+    ({ description }) => description !== entry.description
+  );
+
+  state = { ...state, currentEntry, entries };
+  return Promise.resolve(Either.right(entry));
+});
+
 MockToggl.Entry.getInterval.mockImplementation(async () =>
   Promise.resolve(Either.right(state.entries))
 );
 
 MockToggl.Entry.getCurrentEntry.mockImplementation(async () =>
-  Promise.resolve(Either.right(state.currentEntry.map))
+  Promise.resolve(Either.right(state.currentEntry))
 );
 
 MockToggl.Entry.start.mockImplementation(
