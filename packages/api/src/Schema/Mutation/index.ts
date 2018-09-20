@@ -3,9 +3,9 @@ import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Utility from "../Utility";
-import * as Toggl from "../Toggl";
-import * as Time from "./Time";
+import * as Utility from "../../Utility";
+import * as Toggl from "../../Toggl";
+import * as Time from "../Time";
 
 export const schema = gql`
   type Mutation {
@@ -38,7 +38,7 @@ export const resolve = {
     };
 
     const { value: entry } = (await stop
-      .map(stop => Toggl.Entry.post(start, stop, newEntry))
+      .map(stop => Toggl.Entry.POST(start, stop, newEntry))
       .getOrElseL(() => Toggl.Entry.start(start, newEntry))).mapLeft(
       Utility.throwError
     );
@@ -72,8 +72,7 @@ export const resolve = {
         newEntryStartMS < oldEntryStartMS &&
         oldEntryStopMS < newEntryStopMS
       ) {
-        console.log(1);
-        // (await Toggl.Entry.delete(oldEntry.id)).mapLeft(Utility.throwError);
+        (await Toggl.Entry.DELETE(oldEntry)).mapLeft(Utility.throwError);
       } else if (
         /*
           New:            |=====|
@@ -87,18 +86,16 @@ export const resolve = {
         newEntryStopMS < oldEntryStopMS
       ) {
         (await Promise.all([
-          Toggl.Entry.put({
+          Toggl.Entry.PUT({
             ...oldEntry,
             stop: start.toISOString()
           }),
-          Toggl.Entry.post(oldEntryStart, oldEntryStop, {
+          Toggl.Entry.POST(oldEntryStart, oldEntryStop, {
             pid: Option.fromNullable(oldEntry.pid),
             description: Option.fromNullable(oldEntry.description),
             tags: Option.fromNullable(oldEntry.tags)
           })
         ])).map(result => result.mapLeft(Utility.throwError));
-
-        console.log(2);
       } else if (
         /*
           New:            |===============|
@@ -111,12 +108,10 @@ export const resolve = {
         oldEntryStartMS < newEntryStartMS &&
         oldEntryStopMS < newEntryStopMS
       ) {
-        (await Toggl.Entry.put({
+        (await Toggl.Entry.PUT({
           ...oldEntry,
           stop: start.toISOString()
         })).mapLeft(Utility.throwError);
-
-        console.log(3);
       } else if (
         /*
           New:      |===============|
@@ -129,12 +124,10 @@ export const resolve = {
         newEntryStartMS < oldEntryStartMS &&
         newEntryStopMS < oldEntryStopMS
       ) {
-        (await Toggl.Entry.put({
+        (await Toggl.Entry.PUT({
           ...oldEntry,
           start: stop.getOrElse(now).toISOString()
         })).mapLeft(Utility.throwError);
-
-        console.log(4);
       }
     }
 

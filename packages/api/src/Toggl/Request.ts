@@ -1,45 +1,22 @@
-import { default as Axios, AxiosRequestConfig } from "axios";
-
 import { either as Either } from "fp-ts";
+
+import { default as Axios, AxiosRequestConfig } from "axios";
 
 export type Result<Data> = Either.Either<Error, Data>;
 
-export const get = <Data>(
+export const method = <Data>(
+  method: "GET" | "POST" | "PUT" | "DELETE",
   resource: string,
   params?: any
-): Promise<Result<Data>> =>
-  request<Data>({
-    method: "get",
-    url: resource,
-    params
-  });
-
-export const post = <Data>(
-  resource: string,
-  data?: string
-): Promise<Result<Data>> =>
-  request<Data>({
-    headers: { "Content-Type": "application/json" },
-    method: "post",
-    url: resource,
-    data
-  });
-
-export const put = <Data>(
-  resource: string,
-  data?: string
-): Promise<Result<Data>> =>
-  request<Data>({
-    headers: { "Content-Type": "application/json" },
-    method: "put",
-    url: resource,
-    data
-  });
+): Promise<Result<Data>> => request<Data>({ method, url: resource, params });
 
 export const workspace = async <Data>(
   resource: string
 ): Promise<Result<Data>> =>
-  get<Data>(`/workspaces/${process.env.TOGGL_WORKSPACE_ID}/${resource}`);
+  method<Data>(
+    "GET",
+    `/workspaces/${process.env.TOGGL_WORKSPACE_ID}/${resource}`
+  );
 
 const request = async <Data>(
   config: AxiosRequestConfig
