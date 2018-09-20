@@ -75,8 +75,6 @@ export const entry = (
 /*
   Static mock entries for creating preset states...
 
-  Timeline:
-  
   |  -4hr        |  -3hr        |  -2hr        |  -1hr        | Now
   |  ENTRIES[3]  |  ENTRIES[2]  |  ENTRIES[1]  |  ENTRIES[0]  |
 */

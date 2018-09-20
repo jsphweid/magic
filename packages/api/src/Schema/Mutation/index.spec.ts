@@ -38,7 +38,7 @@ describe("Mutation", () => {
 
       test(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED, async () => {
         MockToggl.setState(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED);
-        await Mutation.resolve.startTime(undefined, defaultArgs);
+        await Mutation.resolve.setTime(undefined, defaultArgs);
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),
@@ -48,7 +48,7 @@ describe("Mutation", () => {
 
       test(MockToggl.StatePreset.CURRENT_ENTRY_STARTED, async () => {
         MockToggl.setState(MockToggl.StatePreset.CURRENT_ENTRY_STARTED);
-        await Mutation.resolve.startTime(undefined, defaultArgs);
+        await Mutation.resolve.setTime(undefined, defaultArgs);
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),
@@ -73,7 +73,7 @@ describe("Mutation", () => {
 
       test(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED, async () => {
         MockToggl.setState(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED);
-        await Mutation.resolve.startTime(undefined, args);
+        await Mutation.resolve.setTime(undefined, args);
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),
@@ -83,7 +83,7 @@ describe("Mutation", () => {
 
       test(MockToggl.StatePreset.CURRENT_ENTRY_STARTED, async () => {
         MockToggl.setState(MockToggl.StatePreset.CURRENT_ENTRY_STARTED);
-        await Mutation.resolve.startTime(undefined, args);
+        await Mutation.resolve.setTime(undefined, args);
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),
@@ -101,14 +101,14 @@ describe("Mutation", () => {
     describe("Start time in the distant past", () => {
       const args = {
         ...defaultArgs,
-        start: Moment(MockToggl.state.now).subtract(2.5, "hours")
+        start: Moment().subtract(2.5, "hours")
       };
 
       const entry = mockEntryFromArgs(args);
 
       test(MockToggl.StatePreset.SEVERAL_RECENT_ENTRIES, async () => {
         MockToggl.setState(MockToggl.StatePreset.SEVERAL_RECENT_ENTRIES);
-        await Mutation.resolve.startTime(undefined, args);
+        await Mutation.resolve.setTime(undefined, args);
         expect(MockToggl.state).toEqual({
           ...MockToggl.state,
           currentEntry: Option.some(entry),

@@ -40,7 +40,7 @@ export const source = gql`
   ${GraphQL.print(Tag.schema)}
   ${GraphQL.print(TagOccurrence.schema)}
 
-  scalar Date
+  ${GraphQL.print(Date.schema)}
 `;
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789

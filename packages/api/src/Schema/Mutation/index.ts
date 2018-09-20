@@ -1,4 +1,4 @@
-import { option as Option } from "fp-ts";
+import { either as Either, option as Option } from "fp-ts";
 
 import gql from "graphql-tag";
 import Moment from "moment";
@@ -9,12 +9,7 @@ import * as Time from "../Time";
 
 export const schema = gql`
   type Mutation {
-    startTime(
-      start: Date
-      stop: Date
-      narrative: String
-      tags: [String!]
-    ): Time!
+    setTime(start: Date, stop: Date, narrative: String, tags: [String!]): Time!
   }
 `;
 
@@ -26,7 +21,7 @@ export interface Args {
 }
 
 export const resolve = {
-  startTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
+  setTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
     const now = Moment();
     const start = Option.fromNullable(args.start).getOrElse(now);
     const stop = Option.fromNullable(args.stop);
@@ -51,16 +46,10 @@ export const resolve = {
         */
       .map(stop => Toggl.Entry.POST(start, stop, newEntry))
 
-      // If there is a running entry, stop it and start the new entry
-      .getOrElseL(async () => {
-        (await Toggl.Entry.getCurrentEntry()).fold(
-          Utility.throwError,
-          currentEntry =>
-            currentEntry.map(currentEntry => Toggl.Entry.stop(currentEntry))
-        );
-
-        return Toggl.Entry.start(start, newEntry);
-      })).mapLeft(Utility.throwError);
+      // If there is a running entry, stop it then start the new entry
+      .getOrElseL(async () => startCurrentEntry(start, newEntry))).mapLeft(
+      Utility.throwError
+    );
 
     const newEntryStartMS = start.valueOf();
     const newEntryStopMS = stop.getOrElse(now).valueOf();
@@ -160,6 +149,23 @@ export const resolve = {
     );
   }
 };
+
+const startCurrentEntry = async (
+  start: Moment.Moment,
+  newEntry: Toggl.Entry.NewEntry
+): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
+  (await Toggl.Entry.getCurrentEntry()).fold(
+    Utility.throwError,
+    async currentEntry => {
+      // If there is an existing current entry, stop it
+      currentEntry.map(async currentEntry =>
+        (await Toggl.Entry.stop(currentEntry)).getOrElseL(Utility.throwError)
+      );
+
+      // Start the new entry
+      return Toggl.Entry.start(start, newEntry);
+    }
+  );
 
 // /*
 //   If any of the tags or their connections has a name which matches a project,
