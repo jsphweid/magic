@@ -125,11 +125,90 @@ describe("Mutation", () => {
     });
 
     describe("Start time in the future", () => {
-      // TODO
+      const args = {
+        ...defaultArgs,
+        start: Moment().add(30, "minutes")
+      };
+
+      const entry = mockEntryFromArgs(args);
+
+      test(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED, async () => {
+        MockToggl.setState(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED);
+        await Mutation.resolve.setTime(undefined, args);
+        expect(MockToggl.state).toEqual({
+          ...MockToggl.state,
+          currentEntry: Option.some(entry),
+          entries: [entry]
+        });
+      });
+
+      test(MockToggl.StatePreset.CURRENT_ENTRY_STARTED, async () => {
+        MockToggl.setState(MockToggl.StatePreset.CURRENT_ENTRY_STARTED);
+        await Mutation.resolve.setTime(undefined, args);
+        expect(MockToggl.state).toEqual({
+          ...MockToggl.state,
+          currentEntry: Option.some(entry),
+          entries: [
+            entry,
+            {
+              ...MockToggl.ENTRIES[0],
+              stop: args.start.toISOString()
+            }
+          ]
+        });
+      });
+
+      test(MockToggl.StatePreset.SEVERAL_RECENT_ENTRIES, async () => {
+        MockToggl.setState(MockToggl.StatePreset.SEVERAL_RECENT_ENTRIES);
+        await Mutation.resolve.setTime(undefined, args);
+        expect(MockToggl.state).toEqual({
+          ...MockToggl.state,
+          currentEntry: Option.some(entry),
+          entries: [
+            entry,
+            {
+              ...MockToggl.ENTRIES[0],
+              stop: args.start.toISOString()
+            },
+            MockToggl.ENTRIES[1],
+            MockToggl.ENTRIES[2],
+            MockToggl.ENTRIES[3]
+          ]
+        });
+      });
     });
 
     describe("Set time which isn't ongoing", () => {
-      // TODO
+      // test(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED, async () => {
+      //   MockToggl.setState(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED);
+      //   const args = {
+      //     ...defaultArgs,
+      //     start: Moment().subtract(2.5, "hour"),
+      //     stop: Moment().subtract(15, "minutes")
+      //   };
+      //   const entry = mockEntryFromArgs(args);
+      //   await Mutation.resolve.setTime(undefined, args);
+      //   expect(MockToggl.state).toEqual({
+      //     ...MockToggl.state,
+      //     currentEntry: Option.some(entry),
+      //     entries: [entry]
+      //   });
+      // });
+      // test(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED, async () => {
+      //   MockToggl.setState(MockToggl.StatePreset.NOTHING_RECENTLY_TRACKED);
+      //   const args = {
+      //     ...defaultArgs,
+      //     start: Moment().subtract(25, "minutes"),
+      //     stop: Moment().subtract(15, "minutes")
+      //   };
+      //   const entry = mockEntryFromArgs(args);
+      //   await Mutation.resolve.setTime(undefined, args);
+      //   expect(MockToggl.state).toEqual({
+      //     ...MockToggl.state,
+      //     currentEntry: Option.some(entry),
+      //     entries: [entry]
+      //   });
+      // });
     });
   });
 });

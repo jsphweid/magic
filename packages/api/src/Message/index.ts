@@ -1,5 +1,3 @@
-import _ from "lodash/fp";
-
 import * as GraphQL from "graphql";
 import * as Express from "express";
 

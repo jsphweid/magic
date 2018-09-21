@@ -1,4 +1,4 @@
-import { option as Option } from "fp-ts";
+import { option as Option, field } from "fp-ts";
 
 import gql from "graphql-tag";
 import Moment from "moment";
@@ -100,7 +100,7 @@ const togglDataToSource = (togglData: TogglData): Source =>
         )
         .getOrElse(previous.narratives);
 
-      // Any unrecognized tags are thrown so we know to add it ASAP
+      // Any unrecognized tags are thrown so we know to add them ASAP
       const tagOccurrences = [
         ...previous.tagOccurrences,
         ...entry.tags.map(name =>

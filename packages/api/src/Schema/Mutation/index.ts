@@ -40,14 +40,8 @@ export const resolve = {
 
     // Get the value of the new entry after it is either created or started
     const { value: entry } = (await stop
-      /*
-          If stop was defined, create this entry without changing the current
-          entry
-        */
       .map(stop => Toggl.Entry.POST(start, stop, newEntry))
-
-      // If there is a running entry, stop it then start the new entry
-      .getOrElseL(async () => startCurrentEntry(start, newEntry))).mapLeft(
+      .getOrElseL(async () => startCurrentEntry(now, start, newEntry))).mapLeft(
       Utility.throwError
     );
 
@@ -151,6 +145,7 @@ export const resolve = {
 };
 
 const startCurrentEntry = async (
+  now: Moment.Moment,
   start: Moment.Moment,
   newEntry: Toggl.Entry.NewEntry
 ): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
@@ -158,9 +153,20 @@ const startCurrentEntry = async (
     Utility.throwError,
     async currentEntry => {
       // If there is an existing current entry, stop it
-      currentEntry.map(async currentEntry =>
-        (await Toggl.Entry.stop(currentEntry)).getOrElseL(Utility.throwError)
-      );
+      currentEntry.map(async currentEntry => {
+        (await Toggl.Entry.stop(currentEntry)).getOrElseL(Utility.throwError);
+
+        /*
+          Since we're starting the current time entry in the future, the old
+          entry's stop needs to be set to the new entry's start
+        */
+        if (now.valueOf() < start.valueOf()) {
+          (await Toggl.Entry.PUT({
+            ...currentEntry,
+            stop: start.toISOString()
+          })).getOrElseL(Utility.throwError);
+        }
+      });
 
       // Start the new entry
       return Toggl.Entry.start(start, newEntry);
