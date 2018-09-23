@@ -189,6 +189,25 @@ MockToggl.Entry.PUT.mockImplementation(async (entry: Toggl.Entry.Entry) => {
   return Promise.resolve(Either.right(entry));
 });
 
+MockToggl.Entry.DELETE.mockImplementation(async (entry: Toggl.Entry.Entry) => {
+  // If the entry is the current entry, update it
+  const currentEntry = state.currentEntry.map(
+    currentEntry =>
+      currentEntry.description === entry.description
+        ? { ...currentEntry, ...entry }
+        : currentEntry
+  );
+
+  // Update the entry in the list of all entries
+  const entries = state.entries.find(
+    ({ description }) =>
+      description !== entry.description ? { ...oldEntry, ...entry } : oldEntry
+  );
+
+  state = { ...state, currentEntry, entries };
+  return Promise.resolve(Either.right(entry));
+});
+
 MockToggl.Entry.getInterval.mockImplementation(async () =>
   Promise.resolve(Either.right(state.entries))
 );
