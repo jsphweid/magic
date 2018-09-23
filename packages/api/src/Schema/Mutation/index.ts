@@ -23,8 +23,12 @@ export interface Args {
 export const resolve = {
   setTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
     const now = Moment();
-    const start = Option.fromNullable(args.start).getOrElse(now);
-    const stop = Option.fromNullable(args.stop);
+
+    const newEntryStart = Option.fromNullable(args.start).getOrElse(now);
+    const newEntryStop = Option.fromNullable(args.stop).getOrElse(now);
+
+    const newEntryStartMS = newEntryStart.valueOf();
+    const newEntryStopMS = newEntryStop.valueOf();
 
     const newEntry = {
       pid: Option.none,
@@ -34,19 +38,15 @@ export const resolve = {
 
     // Grab the entries we might affect
     const { value: entries } = (await Toggl.Entry.getInterval(
-      start,
-      stop.getOrElse(now)
+      newEntryStart,
+      newEntryStop
     )).mapLeft(Utility.throwError);
 
     // Get the value of the new entry after it is either created or started
-    const { value: entry } = (await stop
-      .map(stop => Toggl.Entry.POST(start, stop, newEntry))
-      .getOrElseL(async () => startCurrentEntry(now, start, newEntry))).mapLeft(
-      Utility.throwError
-    );
-
-    const newEntryStartMS = start.valueOf();
-    const newEntryStopMS = stop.getOrElse(now).valueOf();
+    const { value: entry } = (args.stop
+      ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
+      : await startCurrentEntry(now, newEntryStart, newEntry)
+    ).mapLeft(Utility.throwError);
 
     for (const oldEntry of entries) {
       const oldEntryStart = Moment(oldEntry.start);
@@ -92,14 +92,14 @@ export const resolve = {
         newEntryStopMS < oldEntryStopMS
       ) {
         (await Promise.all([
-          Toggl.Entry.PUT({
-            ...oldEntry,
-            stop: start.toISOString()
-          }),
-          Toggl.Entry.POST(oldEntryStart, oldEntryStop, {
+          Toggl.Entry.POST(oldEntryStart, newEntryStart, {
             pid: Option.fromNullable(oldEntry.pid),
             description: Option.fromNullable(oldEntry.description),
             tags: Option.fromNullable(oldEntry.tags)
+          }),
+          Toggl.Entry.PUT({
+            ...oldEntry,
+            start: newEntryStop.toISOString()
           })
         ])).map(result => result.mapLeft(Utility.throwError));
       } else if (
@@ -116,7 +116,7 @@ export const resolve = {
       ) {
         (await Toggl.Entry.PUT({
           ...oldEntry,
-          stop: start.toISOString()
+          stop: newEntryStart.toISOString()
         })).mapLeft(Utility.throwError);
       } else if (
         /*
@@ -132,7 +132,7 @@ export const resolve = {
       ) {
         (await Toggl.Entry.PUT({
           ...oldEntry,
-          start: stop.getOrElse(now).toISOString()
+          start: newEntryStop.toISOString()
         })).mapLeft(Utility.throwError);
       }
     }
