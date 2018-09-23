@@ -1,4 +1,4 @@
-import { option as Option } from "fp-ts";
+import { either as Either, option as Option } from "fp-ts";
 
 import gql from "graphql-tag";
 import Moment from "moment";
@@ -9,12 +9,7 @@ import * as Time from "../Time";
 
 export const schema = gql`
   type Mutation {
-    startTime(
-      start: Date
-      stop: Date
-      narrative: String
-      tags: [String!]
-    ): Time!
+    setTime(start: Date, stop: Date, narrative: String, tags: [String!]): Time!
   }
 `;
 
@@ -26,10 +21,14 @@ export interface Args {
 }
 
 export const resolve = {
-  startTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
+  setTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
     const now = Moment();
-    const start = Option.fromNullable(args.start).getOrElse(now);
-    const stop = Option.fromNullable(args.stop);
+
+    const newEntryStart = Option.fromNullable(args.start).getOrElse(now);
+    const newEntryStop = Option.fromNullable(args.stop).getOrElse(now);
+
+    const newEntryStartMS = newEntryStart.valueOf();
+    const newEntryStopMS = newEntryStop.valueOf();
 
     const newEntry = {
       pid: Option.none,
@@ -37,19 +36,17 @@ export const resolve = {
       tags: Option.fromNullable(args.tags)
     };
 
-    const { value: entry } = (await stop
-      .map(stop => Toggl.Entry.POST(start, stop, newEntry))
-      .getOrElseL(() => Toggl.Entry.start(start, newEntry))).mapLeft(
-      Utility.throwError
-    );
-
+    // Grab the entries we might affect
     const { value: entries } = (await Toggl.Entry.getInterval(
-      start,
-      stop.getOrElse(now)
+      newEntryStart,
+      newEntryStop
     )).mapLeft(Utility.throwError);
 
-    const newEntryStartMS = start.valueOf();
-    const newEntryStopMS = stop.getOrElse(now).valueOf();
+    // Get the value of the new entry after it is either created or started
+    const { value: entry } = (args.stop
+      ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
+      : await startCurrentEntry(now, newEntryStart, newEntry)
+    ).mapLeft(Utility.throwError);
 
     for (const oldEntry of entries) {
       const oldEntryStart = Moment(oldEntry.start);
@@ -60,6 +57,15 @@ export const resolve = {
       const oldEntryStartMS = oldEntryStart.valueOf();
       const oldEntryStopMS = oldEntryStop.valueOf();
 
+      // if (oldEntry.description === "Doing a cool thing") {
+      //   console.log({
+      //     newEntryStartMS: Moment(newEntryStartMS).format("h:mm"),
+      //     oldEntryStartMS: Moment(oldEntryStartMS).format("h:mm"),
+      //     oldEntryStopMS: Moment(oldEntryStopMS).format("h:mm"),
+      //     newEntryStopMS: Moment(newEntryStopMS).format("h:mm")
+      //   });
+      // }
+
       if (
         /*
           New:      |=================|
@@ -69,8 +75,8 @@ export const resolve = {
 
           Result:   |=================|
         */
-        newEntryStartMS < oldEntryStartMS &&
-        oldEntryStopMS < newEntryStopMS
+        newEntryStartMS <= oldEntryStartMS &&
+        oldEntryStopMS <= newEntryStopMS
       ) {
         (await Toggl.Entry.DELETE(oldEntry)).mapLeft(Utility.throwError);
       } else if (
@@ -86,14 +92,14 @@ export const resolve = {
         newEntryStopMS < oldEntryStopMS
       ) {
         (await Promise.all([
-          Toggl.Entry.PUT({
-            ...oldEntry,
-            stop: start.toISOString()
-          }),
-          Toggl.Entry.POST(oldEntryStart, oldEntryStop, {
+          Toggl.Entry.POST(oldEntryStart, newEntryStart, {
             pid: Option.fromNullable(oldEntry.pid),
             description: Option.fromNullable(oldEntry.description),
             tags: Option.fromNullable(oldEntry.tags)
+          }),
+          Toggl.Entry.PUT({
+            ...oldEntry,
+            start: newEntryStop.toISOString()
           })
         ])).map(result => result.mapLeft(Utility.throwError));
       } else if (
@@ -106,11 +112,11 @@ export const resolve = {
           Result:   |----||===============|
         */
         oldEntryStartMS < newEntryStartMS &&
-        oldEntryStopMS < newEntryStopMS
+        newEntryStartMS < oldEntryStopMS
       ) {
         (await Toggl.Entry.PUT({
           ...oldEntry,
-          stop: start.toISOString()
+          stop: newEntryStart.toISOString()
         })).mapLeft(Utility.throwError);
       } else if (
         /*
@@ -122,11 +128,11 @@ export const resolve = {
           Result:   |===============||------|
         */
         newEntryStartMS < oldEntryStartMS &&
-        newEntryStopMS < oldEntryStopMS
+        oldEntryStartMS < newEntryStopMS
       ) {
         (await Toggl.Entry.PUT({
           ...oldEntry,
-          start: stop.getOrElse(now).toISOString()
+          start: newEntryStop.toISOString()
         })).mapLeft(Utility.throwError);
       }
     }
@@ -137,6 +143,35 @@ export const resolve = {
     );
   }
 };
+
+const startCurrentEntry = async (
+  now: Moment.Moment,
+  start: Moment.Moment,
+  newEntry: Toggl.Entry.NewEntry
+): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
+  (await Toggl.Entry.getCurrentEntry()).fold(
+    Utility.throwError,
+    async currentEntry => {
+      // If there is an existing current entry, stop it
+      currentEntry.map(async currentEntry => {
+        (await Toggl.Entry.stop(currentEntry)).getOrElseL(Utility.throwError);
+
+        /*
+          Since we're starting the current time entry in the future, the old
+          entry's stop needs to be set to the new entry's start
+        */
+        if (now.valueOf() < start.valueOf()) {
+          (await Toggl.Entry.PUT({
+            ...currentEntry,
+            stop: start.toISOString()
+          })).getOrElseL(Utility.throwError);
+        }
+      });
+
+      // Start the new entry
+      return Toggl.Entry.start(start, newEntry);
+    }
+  );
 
 // /*
 //   If any of the tags or their connections has a name which matches a project,

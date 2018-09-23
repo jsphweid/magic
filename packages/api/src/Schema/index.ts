@@ -1,5 +1,4 @@
 import gql from "graphql-tag";
-import * as GraphQL from "graphql";
 
 import * as Query from "./Query";
 import * as Mutation from "./Mutation";
@@ -18,29 +17,29 @@ import * as TagOccurrence from "./TagOccurrence";
 import * as Date from "./Date";
 
 export const source = gql`
-  ${GraphQL.print(Query.schema)}
-  ${GraphQL.print(Mutation.schema)}
+  ${Query.schema}
+  ${Mutation.schema}
 
   interface HasInterval {
     interval: Interval!
   }
 
-  ${GraphQL.print(Interval.schema)}
-  ${GraphQL.print(FormattedDate.schema)}
-  ${GraphQL.print(Duration.schema)}
+  ${Interval.schema}
+  ${FormattedDate.schema}
+  ${Duration.schema}
 
-  ${GraphQL.print(Time.schema)}
+  ${Time.schema}
 
   interface Node {
     ID: ID!
   }
 
-  ${GraphQL.print(Narrative.schema)}
+  ${Narrative.schema}
 
-  ${GraphQL.print(Tag.schema)}
-  ${GraphQL.print(TagOccurrence.schema)}
+  ${Tag.schema}
+  ${TagOccurrence.schema}
 
-  scalar Date
+  ${Date.schema}
 `;
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789

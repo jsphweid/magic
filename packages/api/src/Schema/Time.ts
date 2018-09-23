@@ -1,4 +1,4 @@
-import { option as Option } from "fp-ts";
+import { option as Option, field } from "fp-ts";
 
 import gql from "graphql-tag";
 import Moment from "moment";
@@ -56,7 +56,7 @@ export const source = async (
   const interval = {
     // Use the orginal start if it was provided
     start: start.isSome() ? start.value : togglData.interval.start,
-    stop: stop.isSome() ? stop.value : null
+    stop
   };
 
   return { ...togglDataToSource(togglData), interval };
@@ -73,9 +73,7 @@ const togglDataToSource = (togglData: TogglData): Source =>
     (previous, entry) => {
       const interval = {
         start: Moment(entry.start),
-        stop: Option.fromNullable(entry.stop)
-          .map(stop => Moment(stop))
-          .toNullable()
+        stop: Option.fromNullable(entry.stop).map(stop => Moment(stop))
       };
 
       // If started before our interval (with some padding), skip it
@@ -102,7 +100,7 @@ const togglDataToSource = (togglData: TogglData): Source =>
         )
         .getOrElse(previous.narratives);
 
-      // Any unrecognized tags are thrown so we know to add it ASAP
+      // Any unrecognized tags are thrown so we know to add them ASAP
       const tagOccurrences = [
         ...previous.tagOccurrences,
         ...entry.tags.map(name =>
@@ -123,7 +121,11 @@ const togglDataToSource = (togglData: TogglData): Source =>
       return { ...previous, narratives, tagOccurrences };
     },
     {
-      interval: togglData.interval,
+      interval: {
+        ...togglData.interval,
+        stop: Option.some(togglData.interval.stop)
+      },
+
       narratives: [],
       tagOccurrences: []
     }

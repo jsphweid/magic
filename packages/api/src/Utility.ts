@@ -1,6 +1,9 @@
 import { option as Option } from "fp-ts";
 
 export const throwError = (error: Error) => {
+  // tslint:disable-next-line:no-console
+  console.log(error);
+
   throw error;
 };
 
