@@ -1,9 +1,6 @@
-import * as GraphQL from "graphql";
 import * as Express from "express";
-
+import * as GraphQL from "graphql";
 import { twiml as TWIML } from "twilio";
-
-import { either as Either, option as Option } from "fp-ts";
 
 import * as GraphQLOperation from "./GraphQLOperation";
 import * as Reply from "./Reply";

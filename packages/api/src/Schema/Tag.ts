@@ -1,5 +1,4 @@
 import { option as Option } from "fp-ts";
-
 import gql from "graphql-tag";
 import _ from "lodash";
 
@@ -43,31 +42,33 @@ interface Result {
 export const resolve = (source: Source): Result => ({
   ...source,
   ID: source.name,
-  connections: Option.fromNullable(source.connections)
-    .map(connections => connections.map(name => resolve(sourceFromName(name))))
-    .getOrElse([])
+  connections: source.connections.map(name =>
+    resolve(
+      sourceFromName(name).getOrElseL(() =>
+        Utility.throwError(new Error(`"${name}" isn't defined in Magic.`))
+      )
+    )
+  )
 });
 
-/*
-  If trying to source a tag which isn't defined in the data, throw the error to
-  GraphQL
-*/
-export const sourceFromName = (name: string): Source => {
+export const sourceFromName = (name: string): Option.Option<Source> => {
   const formattedName = name
     .trim()
     .toLowerCase()
     .replace(/ /g, "-");
 
-  const { score, connections } = Option.fromNullable(
+  return Option.fromNullable(
     DATA.find(({ name }) => name === formattedName)
-  ).getOrElseL(() =>
-    Utility.throwError(new Error(`"${formattedName}" isn't defined in Magic.`))
-  );
-
-  return {
+  ).map(({ score, connections }) => ({
     ID: formattedName,
     name: formattedName,
     score: Option.fromNullable(score).getOrElse("NEUTRAL"),
     connections: Option.fromNullable(connections).getOrElse([])
-  };
+  }));
 };
+
+export const roots = (source: Source): Source =>
+  source.connections.length === 0 ? source : source;
+
+const x = roots(sourceFromName("eleanor-ruhl").getOrElse(null as any));
+console.log(x);

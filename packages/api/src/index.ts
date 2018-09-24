@@ -1,14 +1,14 @@
-import { GraphQLServer } from "graphql-yoga";
 import * as GraphQLTools from "graphql-tools";
+import { GraphQLServer } from "graphql-yoga";
 
+import * as BodyParser from "body-parser";
 import CORS from "cors";
 import BasicAuth from "express-basic-auth";
-import * as BodyParser from "body-parser";
 
 import * as Functions from "firebase-functions";
 
-import * as Schema from "./Schema";
 import * as Message from "./Message";
+import * as Schema from "./Schema";
 
 import "./Config";
 // import "./Backup";
@@ -25,9 +25,14 @@ server.express
   .post("/messages", BodyParser.json(), Message.handler(schema))
   .post("/graphql", BasicAuth({ users: { api: `${process.env.API_TOKEN}` } }));
 
-server.start({
-  endpoint: "/graphql",
-  playground: false
-});
+server.start(
+  {
+    endpoint: "/graphql",
+    playground: false
+  },
+
+  // tslint:disable-next-line:no-console
+  () => console.log("Server running...")
+);
 
 exports.api = Functions.https.onRequest(server.express);

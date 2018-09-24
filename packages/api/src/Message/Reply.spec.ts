@@ -1,6 +1,5 @@
-import * as Reply from "./Reply";
-
 import * as Utility from "../Utility";
+import * as Reply from "./Reply";
 
 describe("transforming JSON into an SMS-friendly format", () => {
   const STRING = "string";

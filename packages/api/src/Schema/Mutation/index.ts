@@ -1,10 +1,9 @@
 import { either as Either, option as Option } from "fp-ts";
-
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Utility from "../../Utility";
 import * as Toggl from "../../Toggl";
+import * as Utility from "../../Utility";
 import * as Time from "../Time";
 
 export const schema = gql`
@@ -22,6 +21,12 @@ export interface Args {
 
 export const resolve = {
   setTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
+    // const tags = Option.fromNullable(args.tags)
+    //   .getOrElse([])
+    //   .map(tagName =>
+    //     Tag.resolve(Tag.sourceFromName(tagName).getOrElseL(Utility.throwError))
+    //   );
+
     const now = Moment();
 
     const newEntryStart = Option.fromNullable(args.start).getOrElse(now);
@@ -56,15 +61,6 @@ export const resolve = {
 
       const oldEntryStartMS = oldEntryStart.valueOf();
       const oldEntryStopMS = oldEntryStop.valueOf();
-
-      // if (oldEntry.description === "Doing a cool thing") {
-      //   console.log({
-      //     newEntryStartMS: Moment(newEntryStartMS).format("h:mm"),
-      //     oldEntryStartMS: Moment(oldEntryStartMS).format("h:mm"),
-      //     oldEntryStopMS: Moment(oldEntryStopMS).format("h:mm"),
-      //     newEntryStopMS: Moment(newEntryStopMS).format("h:mm")
-      //   });
-      // }
 
       if (
         /*
@@ -157,7 +153,7 @@ const startCurrentEntry = async (
         (await Toggl.Entry.stop(currentEntry)).getOrElseL(Utility.throwError);
 
         /*
-          Since we're starting the current time entry in the future, the old
+          If we're starting the current time entry in the future, the old
           entry's stop needs to be set to the new entry's start
         */
         if (now.valueOf() < start.valueOf()) {

@@ -1,14 +1,13 @@
-import { option as Option, field } from "fp-ts";
-
+import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Utility from "../Utility";
 import * as Toggl from "../Toggl";
+import * as Utility from "../Utility";
 import * as Interval from "./Interval";
 import * as Narrative from "./Narrative";
-import * as TagOccurrence from "./TagOccurrence";
 import * as Tag from "./Tag";
+import * as TagOccurrence from "./TagOccurrence";
 
 export const schema = gql`
   type Time implements HasInterval {
@@ -38,6 +37,11 @@ interface TogglData {
   entries: Toggl.Entry.Entry[];
   tags: Toggl.Tag[];
 }
+
+export const resolve = {
+  tagOccurrences: (source: Source): TagOccurrence.Source[] =>
+    source.tagOccurrences
+};
 
 export const source = async (
   start: Option.Option<Moment.Moment>,
@@ -110,7 +114,7 @@ const togglDataToSource = (togglData: TogglData): Source =>
             .map(({ name }) => ({
               ID,
               interval,
-              tag: Tag.sourceFromName(name)
+              tag: Tag.sourceFromName(name).getOrElseL(Utility.throwError)
             }))
             .getOrElseL(() =>
               Utility.throwError(new Error(`"${name}" isn't defined in Toggl.`))

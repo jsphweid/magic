@@ -1,6 +1,5 @@
+import { AxiosRequestConfig, default as Axios } from "axios";
 import { either as Either } from "fp-ts";
-
-import { default as Axios, AxiosRequestConfig } from "axios";
 
 export type Result<Data> = Either.Either<Error, Data>;
 

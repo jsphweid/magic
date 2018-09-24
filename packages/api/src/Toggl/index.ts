@@ -1,5 +1,5 @@
-import * as Request from "./Request";
 import * as Entry from "./Entry";
+import * as Request from "./Request";
 
 /*
   Projects are only really used for basic reporting and the timeline view in the
