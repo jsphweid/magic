@@ -1,4 +1,5 @@
 import * as Express from "express";
+import { either as Either, option as Option } from "fp-ts";
 import * as GraphQL from "graphql";
 import { twiml as TWIML } from "twilio";
 
@@ -31,7 +32,7 @@ const responses = {
     messageIsMissing: {
       statusCode: 400,
       contentType: "text/plain",
-      body: "`From` is expected in the post body"
+      body: "`Body` is expected in the post body"
     }
   },
   success: {
@@ -48,7 +49,9 @@ export const handler = (
     return respond(response, validatedRequest.value);
   }
 
-  const { sender, message } = validatedRequest.value;
+  const {
+    value: { sender, message }
+  } = validatedRequest;
 
   const operationSource = GraphQL.print(
     GraphQLOperation.documentFromMessage(schema, message)
@@ -66,31 +69,36 @@ export const handler = (
     )
   });
 
-  const TWIML = replyToTWIML(sender, reply);
-  respond(response, { ...responses.success, body: TWIML });
+  const body = new TWIML.MessagingResponse()
+    .message({ to: sender }, reply)
+    .toString();
+
+  respond(response, { ...responses.success, body });
 };
 
 const validateRequest = (
   request: Express.Request
 ): Either.Either<Response, ValidRequest> =>
   validateSender(request).chain(sender =>
-    Either.fromNullable(responses.errors.messageIsMissing)(
-      request.body.Body
-    ).map(message => ({ sender, message }))
+    validateMessage(request).map(message => ({ sender, message }))
   );
 
-const validateSender = ({
-  body
-}: Express.Request): Either.Either<Response, string> =>
-  Either.fromNullable(responses.errors.senderIsMissing)(body.From).chain(
+const validateMessage = (
+  request: Express.Request
+): Either.Either<Response, string> =>
+  Either.fromNullable(responses.errors.messageIsMissing)(request.body.Body);
+
+const validateSender = (
+  request: Express.Request
+): Either.Either<Response, string> =>
+  Either.fromNullable(responses.errors.senderIsMissing)(
+    request.body.From
+  ).chain(
     from =>
       from !== "+16185205959"
         ? Either.left(responses.errors.senderIsNotOwner)
         : Either.right(from)
   );
-
-const replyToTWIML = (to: string, reply: string): string =>
-  new TWIML.MessagingResponse().message({ to }, reply).toString();
 
 const respond = (
   response: Express.Response,

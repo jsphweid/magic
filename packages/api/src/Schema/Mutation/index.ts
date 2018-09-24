@@ -53,6 +53,8 @@ export const resolve = {
       : await startCurrentEntry(now, newEntryStart, newEntry)
     ).mapLeft(Utility.throwError);
 
+    console.log(entry);
+
     for (const oldEntry of entries) {
       const oldEntryStart = Moment(oldEntry.start);
       const oldEntryStop = Option.fromNullable(oldEntry.stop)

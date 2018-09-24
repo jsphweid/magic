@@ -1,4 +1,4 @@
-import { option as Option } from "fp-ts";
+import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import _ from "lodash";
 
@@ -51,13 +51,13 @@ export const resolve = (source: Source): Result => ({
   )
 });
 
-export const sourceFromName = (name: string): Option.Option<Source> => {
+export const sourceFromName = (name: string): Either.Either<Error, Source> => {
   const formattedName = name
     .trim()
     .toLowerCase()
     .replace(/ /g, "-");
 
-  return Option.fromNullable(
+  return Either.fromNullable(new Error(`"${name}" isn't defined in Magic.`))(
     DATA.find(({ name }) => name === formattedName)
   ).map(({ score, connections }) => ({
     ID: formattedName,
@@ -67,8 +67,28 @@ export const sourceFromName = (name: string): Option.Option<Source> => {
   }));
 };
 
-export const roots = (source: Source): Source =>
-  source.connections.length === 0 ? source : source;
+export const roots = (source: Source): Either.Either<Error, Source[]> => {
+  if (source.connections.length === 0) {
+    return Either.right([source]);
+  }
 
-const x = roots(sourceFromName("eleanor-ruhl").getOrElse(null as any));
+  const { errors, connections } = source.connections.reduce<{
+    errors: Error[];
+    connections: Source[];
+  }>(
+    (previous, tagName) => {
+      const { value: source } = sourceFromName(tagName);
+      return source instanceof Error
+        ? { ...previous, errors: [...previous.errors, source] }
+        : { ...previous, connections: [...previous.connections, source] };
+    },
+    { errors: [], connections: [] }
+  );
+
+  return errors.length > 0
+    ? Either.left(new Error(errors.map(({ message }) => message).join(" ")))
+    : Either.right(connections);
+};
+
+const x = roots(sourceFromName("weed").getOrElse(null as any));
 console.log(x);
