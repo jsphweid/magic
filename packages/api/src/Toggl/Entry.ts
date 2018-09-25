@@ -25,7 +25,7 @@ export interface Entry {
   stop?: string;
   duration: number;
   created_with: string;
-  tags: string[];
+  tags?: string[];
   duronly?: boolean;
   at: string;
 }
@@ -38,20 +38,18 @@ export interface NewEntry {
   tags: Option.Option<string[]>;
 }
 
-const newEntryToTogglData = ({
-  pid,
-  description,
-  tags
-}: NewEntry): {
+const newEntryToTogglData = (
+  newEntry: NewEntry
+): {
   created_with: "HireMeForMoney";
-  pid: number | null;
-  description: string | null;
-  tags: string[] | null;
+  pid?: number;
+  description?: string;
+  tags?: string[];
 } => ({
   created_with: "HireMeForMoney",
-  pid: pid.toNullable(),
-  description: description.toNullable(),
-  tags: tags.toNullable()
+  pid: newEntry.pid.toUndefined(),
+  description: newEntry.description.toUndefined(),
+  tags: newEntry.tags.toUndefined()
 });
 
 /*
@@ -70,7 +68,12 @@ const extractData = async <Data>(
 // Standard HTTP verbs
 
 export const GET = async (id: number): Promise<Request.Result<Entry>> =>
-  Request.method<Entry>("GET", `/time_entries/${id}`);
+  Request.execute<Entry>({
+    method: "GET",
+    resource: `/time_entries/${id}`,
+    params: Option.none,
+    data: Option.none
+  });
 
 export const POST = async (
   start: Moment.Moment,
@@ -78,30 +81,48 @@ export const POST = async (
   newEntry: NewEntry
 ): Promise<Request.Result<Entry>> =>
   extractData(
-    Request.method<DataResponse<Entry>>(
-      "POST",
-      `/time_entries`,
-      JSON.stringify({
+    Request.execute<DataResponse<Entry>>({
+      method: "POST",
+      resource: `/time_entries`,
+      params: Option.none,
+      data: Option.some({
         time_entry: {
           ...newEntryToTogglData(newEntry),
           start: start.toISOString(),
-          duration: Interval.duration(start, stop).asSeconds()
+          duration: Math.abs(Interval.duration(start, stop).asSeconds())
         }
       })
-    )
+    })
   );
 
-export const PUT = async (entry: Entry): Promise<Request.Result<Entry>> =>
-  extractData(
-    Request.method<DataResponse<Entry>>(
-      "PUT",
-      `/time_entries/${entry.id}`,
-      JSON.stringify({ time_entry: entry })
-    )
+export const PUT = async (entry: Entry): Promise<Request.Result<Entry>> => {
+  return extractData(
+    Request.execute<DataResponse<Entry>>({
+      method: "PUT",
+      resource: `/time_entries/${entry.id}`,
+      params: Option.none,
+      data: Option.some({
+        time_entry: {
+          ...entry,
+          duration: Option.fromNullable(entry.stop)
+            .map(stop =>
+              Math.abs(
+                Interval.duration(Moment(entry.start), Moment(stop)).asSeconds()
+              )
+            )
+            .getOrElse(entry.duration)
+        }
+      })
+    })
   );
-
+};
 export const DELETE = async (entry: Entry): Promise<Request.Result<void>> =>
-  Request.method<void>("DELETE", `/time_entries/${entry.id}`);
+  Request.execute<void>({
+    method: "DELETE",
+    resource: `/time_entries/${entry.id}`,
+    params: Option.none,
+    data: Option.none
+  });
 
 // Non standard API actions
 
@@ -121,16 +142,17 @@ export const getInterval = async (
     stop.valueOf(),
     batchSizeMS
   )) {
-    const { value: batch } = await Request.method<Entry[]>(
-      "GET",
-      "/time_entries",
-      {
+    const { value: batch } = await Request.execute<Entry[]>({
+      method: "GET",
+      resource: "/time_entries",
+      params: Option.some({
         start_date: Moment(batchStart).toISOString(),
         end_date: Moment(batchStart)
           .add(batchSizeMS, "ms")
           .toISOString()
-      }
-    );
+      }),
+      data: Option.none
+    });
 
     if (batch instanceof Error) {
       return Either.left(batch);
@@ -152,27 +174,34 @@ export const getCurrentEntry = async (): Promise<
   Request.Result<Option.Option<Entry>>
 > =>
   (await extractData(
-    Request.method<DataResponse<Entry>>("GET", `/time_entries/current`)
+    Request.execute<DataResponse<Entry>>({
+      method: "GET",
+      resource: `/time_entries/current`,
+      params: Option.none,
+      data: Option.none
+    })
   )).map(entry => Option.fromNullable(entry));
 
 export const start = async (
-  start: Moment.Moment,
   newEntry: NewEntry
 ): Promise<Request.Result<Entry>> =>
   extractData(
-    Request.method<DataResponse<Entry>>(
-      "POST",
-      `/time_entries/start`,
-      JSON.stringify({
-        time_entry: {
-          ...newEntryToTogglData(newEntry),
-          start: start.toISOString()
-        }
+    Request.execute<DataResponse<Entry>>({
+      method: "POST",
+      resource: `/time_entries/start`,
+      params: Option.none,
+      data: Option.some({
+        time_entry: newEntryToTogglData(newEntry)
       })
-    )
+    })
   );
 
 export const stop = async (entry: Entry): Promise<Request.Result<Entry>> =>
   extractData(
-    Request.method<DataResponse<Entry>>("PUT", `/time_entries/${entry.id}/stop`)
+    Request.execute<DataResponse<Entry>>({
+      method: "PUT",
+      resource: `/time_entries/${entry.id}/stop`,
+      params: Option.none,
+      data: Option.none
+    })
   );

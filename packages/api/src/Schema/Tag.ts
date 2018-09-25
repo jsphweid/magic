@@ -43,14 +43,14 @@ export const resolve = (source: Source): Result => ({
   ...source,
   ID: source.name,
   connections: source.connections.map(name =>
-    resolve(
-      sourceFromName(name).getOrElseL(() =>
-        Utility.throwError(new Error(`"${name}" isn't defined in Magic.`))
-      )
-    )
+    resolve(sourceFromName(name).getOrElseL(Utility.throwError))
   )
 });
 
+/*
+  If we have a name, does it exist withing the defined set of tags? If so,
+  convert it into a `Source`
+*/
 export const sourceFromName = (name: string): Either.Either<Error, Source> => {
   const formattedName = name
     .trim()
@@ -67,8 +67,12 @@ export const sourceFromName = (name: string): Either.Either<Error, Source> => {
   }));
 };
 
-export const roots = (tagName: string): Either.Either<Error, Source[]> => {
-  const { value: source } = sourceFromName(tagName);
+/*
+  Given a tag name, which tags is it connected to which are most general?
+  e.g. The roots for "browsing" are ["recreation"]
+*/
+export const roots = (name: string): Either.Either<Error, Source[]> => {
+  const { value: source } = sourceFromName(name);
   if (source instanceof Error) {
     return Either.left(source);
   }
@@ -77,20 +81,23 @@ export const roots = (tagName: string): Either.Either<Error, Source[]> => {
     return Either.right([source]);
   }
 
+  /*
+    For all of the connections, try recursively expanding child connections
+    and keep track of any errors we receive
+  */
   const { errors, connections } = source.connections
     .map(name => roots(name))
     .reduce<{
       errors: Error[];
       connections: Source[];
     }>(
-      (previous, { value: connections }) => {
-        return connections instanceof Error
+      (previous, { value: connections }) =>
+        connections instanceof Error
           ? { ...previous, errors: [...previous.errors, connections] }
           : {
               ...previous,
               connections: [...previous.connections, ...connections]
-            };
-      },
+            },
       { errors: [], connections: [] }
     );
 
@@ -98,6 +105,3 @@ export const roots = (tagName: string): Either.Either<Error, Source[]> => {
     ? Either.left(new Error(errors.map(({ message }) => message).join(" ")))
     : Either.right(_.uniqBy("ID", connections));
 };
-
-const x = roots("john-sabath");
-console.log(x);

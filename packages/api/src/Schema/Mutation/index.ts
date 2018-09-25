@@ -43,7 +43,7 @@ export const resolve = {
 
     // Grab the entries we might affect
     const { value: entries } = (await Toggl.Entry.getInterval(
-      newEntryStart,
+      Moment(newEntryStart).subtract(5, "hours"),
       newEntryStop
     )).mapLeft(Utility.throwError);
 
@@ -149,10 +149,12 @@ const startCurrentEntry = async (
 ): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
   (await Toggl.Entry.getCurrentEntry()).fold(
     Utility.throwError,
-    async currentEntry => {
+    async oldCurrentEntry => {
       // If there is an existing current entry, stop it
-      currentEntry.map(async currentEntry => {
-        (await Toggl.Entry.stop(currentEntry)).getOrElseL(Utility.throwError);
+      oldCurrentEntry.map(async oldCurrentEntry => {
+        (await Toggl.Entry.stop(oldCurrentEntry)).getOrElseL(
+          Utility.throwError
+        );
 
         /*
           If we're starting the current time entry in the future, the old
@@ -160,14 +162,22 @@ const startCurrentEntry = async (
         */
         if (now.valueOf() < start.valueOf()) {
           (await Toggl.Entry.PUT({
-            ...currentEntry,
+            ...oldCurrentEntry,
             stop: start.toISOString()
           })).getOrElseL(Utility.throwError);
         }
       });
 
       // Start the new entry
-      return Toggl.Entry.start(start, newEntry);
+      const currentEntry = await Toggl.Entry.start(newEntry);
+
+      // If the current entry starts now, we're done, otherwise update the start
+      return start === now
+        ? currentEntry
+        : Toggl.Entry.PUT({
+            ...currentEntry.getOrElseL(Utility.throwError),
+            start: start.toISOString()
+          });
     }
   );
 

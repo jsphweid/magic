@@ -64,10 +64,10 @@ export const entry = (
   billable: false,
   created_with: "HireMeForMoney",
 
-  at: start.toISOString(),
+  at: state.now.toISOString(),
   start: start.toISOString(),
   stop: stop.map(stop => stop.toISOString()).toUndefined(),
-  duration: Interval.duration(start, stop.getOrElse(state.now)).asSeconds(),
+  duration: 0,
 
   description: newEntry.description.toUndefined(),
   tags: newEntry.tags.getOrElse([])
@@ -227,8 +227,8 @@ MockToggl.Entry.getCurrentEntry.mockImplementation(async () =>
 );
 
 MockToggl.Entry.start.mockImplementation(
-  async (start: Moment.Moment, newEntry: Toggl.Entry.NewEntry) => {
-    const currentEntry = entry(start, Option.none, newEntry);
+  async (newEntry: Toggl.Entry.NewEntry) => {
+    const currentEntry = entry(state.now, Option.none, newEntry);
     const entries = sortEntries([currentEntry, ...state.entries]);
 
     state = { ...state, currentEntry: Option.some(currentEntry), entries };
@@ -239,14 +239,10 @@ MockToggl.Entry.start.mockImplementation(
 MockToggl.Entry.stop.mockImplementation(async () =>
   // Only stop the current entry if it exists
   state.currentEntry.map(currentEntry => {
-    // Stop the current entry now and update its duration
+    // Stop the current entry now
     const stoppedCurrentEntry = {
       ...currentEntry,
-      stop: state.now.toISOString(),
-      duration: Interval.duration(
-        Moment(currentEntry.start),
-        state.now
-      ).asSeconds()
+      stop: state.now.toISOString()
     };
 
     // Update the entry with its new timing information
@@ -269,7 +265,9 @@ MockToggl.getTags.mockImplementation(async () =>
     state.entries.reduce<Toggl.Tag[]>(
       (previous, { tags }) => [
         ...previous,
-        ...tags.map(name => ({ id: 1, wid: 1, name }))
+        ...Option.fromNullable(tags)
+          .getOrElse([])
+          .map(name => ({ id: 1, wid: 1, name }))
       ],
       []
     )

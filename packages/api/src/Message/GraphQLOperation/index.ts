@@ -80,17 +80,17 @@ const messageToRootField = (
   );
 
   /*
-    Use the root field we found or default to `Mutation.startTime`...
+    Use the root field we found or default to `Mutation.setTime`...
 
     "time" => parentType is `Query` and rootField is `time`
-    "driving home" => parentType is `Mutation` and rootField is `startTime`
+    "driving home" => parentType is `Mutation` and rootField is `setTime`
     "stopTags browsing" => parentType is `Mutation` and rootField is `stopTags`
   */
   return rootField
     ? rootField
     : {
         parentType: mutationType,
-        rootField: mutationType.getFields().startTime
+        rootField: mutationType.getFields().setTime
       };
 };
 
@@ -109,7 +109,7 @@ const messageToArgs = (
       arg,
 
       /*
-        Since the short-hand `Mutation.startTime` message looks like...
+        Since the short-hand `Mutation.setTime` message looks like...
         - "bathroom"
         - "cutting the grass"
         - "cooking dinner tags cooking, not dinner"
@@ -201,7 +201,7 @@ const messageToArgValue = (
 
 /*
   Convert GraphQL names like...
-  `startTime`, `startTags`, and `thisIsLongerThanThose`
+  `setTime`, `startTags`, and `thisIsLongerThanThose`
 
   ...into what a human would provide...
   "start time", "start tags", "this is longer than those"

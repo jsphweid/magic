@@ -320,8 +320,7 @@ describe("Mutation", () => {
               {
                 ...MockToggl.ENTRIES[0],
                 id: 2,
-                stop: args.start.toISOString(),
-                duration: 35 * 60
+                stop: args.start.toISOString()
               }
             ]
           });

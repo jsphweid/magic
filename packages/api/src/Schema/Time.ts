@@ -29,11 +29,6 @@ export interface Source {
 }
 
 interface TogglData {
-  interval: {
-    start: Moment.Moment;
-    stop: Moment.Moment;
-  };
-
   entries: Toggl.Entry.Entry[];
   tags: Toggl.Tag[];
 }
@@ -57,13 +52,12 @@ export const source = async (
     stop.getOrElseL(() => Moment())
   );
 
-  const interval = {
+  return togglDataToSource(
     // Use the orginal start if it was provided
-    start: start.isSome() ? start.value : togglData.interval.start,
-    stop
-  };
-
-  return { ...togglDataToSource(togglData), interval };
+    start.getOrElseL(() => Moment(togglData.entries[0].start)),
+    stop,
+    togglData
+  );
 };
 
 /*
@@ -72,7 +66,11 @@ export const source = async (
   need to seperate time entries to fake the correct shape of the data until
   Toggl is no longer in use.
 */
-const togglDataToSource = (togglData: TogglData): Source =>
+const togglDataToSource = (
+  start: Moment.Moment,
+  stop: Option.Option<Moment.Moment>,
+  togglData: TogglData
+): Source =>
   togglData.entries.reduce<Source>(
     (previous, entry) => {
       const interval = {
@@ -81,10 +79,7 @@ const togglDataToSource = (togglData: TogglData): Source =>
       };
 
       // If started before our interval (with some padding), skip it
-      if (
-        interval.start.valueOf() <
-        togglData.interval.start.valueOf() - 2 * 1000
-      ) {
+      if (interval.start.valueOf() < start.valueOf() - 2 * 1000) {
         return previous;
       }
 
@@ -107,29 +102,29 @@ const togglDataToSource = (togglData: TogglData): Source =>
       // Any unrecognized tags are thrown so we know to add them ASAP
       const tagOccurrences = [
         ...previous.tagOccurrences,
-        ...entry.tags.map(name =>
-          Option.fromNullable(
-            togglData.tags.find(togglTag => togglTag.name === name)
-          )
-            .map(({ name }) => ({
-              ID,
-              interval,
-              tag: Tag.sourceFromName(name).getOrElseL(Utility.throwError)
-            }))
-            .getOrElseL(() =>
-              Utility.throwError(new Error(`"${name}" isn't defined in Toggl.`))
+        ...Option.fromNullable(entry.tags)
+          .getOrElse([])
+          .map(name =>
+            Option.fromNullable(
+              togglData.tags.find(togglTag => togglTag.name === name)
             )
-        )
+              .map(({ name }) => ({
+                ID,
+                interval,
+                tag: Tag.sourceFromName(name).getOrElseL(Utility.throwError)
+              }))
+              .getOrElseL(() =>
+                Utility.throwError(
+                  new Error(`"${name}" isn't defined in Toggl.`)
+                )
+              )
+          )
       ];
 
       return { ...previous, narratives, tagOccurrences };
     },
     {
-      interval: {
-        ...togglData.interval,
-        stop: Option.some(togglData.interval.stop)
-      },
-
+      interval: { start, stop },
       narratives: [],
       tagOccurrences: []
     }
@@ -149,7 +144,6 @@ const getTogglData = async (
   ]);
 
   return {
-    interval: { start, stop },
     entries: entries.mapLeft(Utility.throwError).value,
     tags: tags.mapLeft(Utility.throwError).value
   };
