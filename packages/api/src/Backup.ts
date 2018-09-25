@@ -1,9 +1,9 @@
 import * as FS from "fs";
-import * as Path from "path";
 import Moment from "moment";
+import * as Path from "path";
 
-import * as Utility from "./Utility";
 import * as Toggl from "./Toggl";
+import * as Utility from "./Utility";
 
 const DATA_DIR = Path.join(__dirname, "../.data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;

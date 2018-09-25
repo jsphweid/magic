@@ -1,20 +1,15 @@
 import gql from "graphql-tag";
 
-import * as Query from "./Query";
-import * as Mutation from "./Mutation";
-
-import * as Interval from "./Interval";
-import * as FormattedDate from "./FormattedDate";
+import * as Date from "./Date";
 import * as Duration from "./Duration";
-
-import * as Time from "./Time";
-
+import * as FormattedDate from "./FormattedDate";
+import * as Interval from "./Interval";
+import * as Mutation from "./Mutation";
 import * as Narrative from "./Narrative";
-
+import * as Query from "./Query";
 import * as Tag from "./Tag";
 import * as TagOccurrence from "./TagOccurrence";
-
-import * as Date from "./Date";
+import * as Time from "./Time";
 
 export const source = gql`
   ${Query.schema}
@@ -47,6 +42,7 @@ export const resolvers: any = {
   Query: Query.resolve,
   Mutation: Mutation.resolve,
 
+  Time: Time.resolve,
   Tag: Tag.resolve,
 
   Interval: Interval.resolve,

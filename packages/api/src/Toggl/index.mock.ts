@@ -1,9 +1,8 @@
 import { either as Either, option as Option } from "fp-ts";
-
 import Moment from "moment";
 
-import * as Toggl from "./index";
 import * as Interval from "../Schema/Interval";
+import * as Toggl from "./index";
 
 // Enable mocking of the `Toggl` module in other spec files
 
@@ -83,11 +82,11 @@ export const entry = (
 export const ENTRIES = [
   {
     description: "Doing a cool thing",
-    tags: ["tag-1", "tag-2"]
+    tags: ["tag-without-connections", "tag-with-a-connection"]
   },
   {
     description: "Look more things",
-    tags: ["tag-3", "tag-4"]
+    tags: ["tag-with-a-connection"]
   },
   {
     description: "Doing nothing",
@@ -95,7 +94,7 @@ export const ENTRIES = [
   },
   {
     description: "Doing everything!",
-    tags: ["tag-5", "tag-6", "tag-7"]
+    tags: ["tag-with-connections"]
   }
 ].map(({ description, tags }, index) =>
   entry(
@@ -207,16 +206,13 @@ MockToggl.Entry.DELETE.mockImplementation(async (entry: Toggl.Entry.Entry) => {
   // If the entry is the current entry, update it
   const currentEntry = state.currentEntry.map(
     currentEntry =>
-      currentEntry.description === entry.description
+      currentEntry.id === entry.id
         ? { ...currentEntry, ...entry }
         : currentEntry
   );
 
   // Update the entry in the list of all entries
-  const entries = state.entries.find(
-    ({ description }) =>
-      description !== entry.description ? { ...oldEntry, ...entry } : oldEntry
-  );
+  const entries = state.entries.filter(oldEntry => oldEntry.id !== entry.id);
 
   state = { ...state, currentEntry, entries };
   return Promise.resolve(Either.right(entry));
@@ -269,15 +265,13 @@ MockToggl.getProjects.mockResolvedValue(Either.right([]));
 
 // The tags which exist are the ones we can find in the state
 MockToggl.getTags.mockImplementation(async () =>
-  Promise.resolve(
-    Either.right(
-      state.entries.reduce<Toggl.Tag[]>(
-        (previous, { tags }) => [
-          ...previous,
-          ...tags.map(name => ({ id: 1, wid: 1, name }))
-        ],
-        []
-      )
+  Either.right(
+    state.entries.reduce<Toggl.Tag[]>(
+      (previous, { tags }) => [
+        ...previous,
+        ...tags.map(name => ({ id: 1, wid: 1, name }))
+      ],
+      []
     )
   )
 );

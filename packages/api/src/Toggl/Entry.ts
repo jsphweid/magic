@@ -1,10 +1,9 @@
 import { either as Either, option as Option } from "fp-ts";
-
 import _ from "lodash";
 import Moment from "moment";
 
-import * as Request from "./Request";
 import * as Interval from "../Schema/Interval";
+import * as Request from "./Request";
 
 /*
   Time entries are currently the fundemental method of storage. This is slightly

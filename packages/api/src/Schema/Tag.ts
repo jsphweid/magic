@@ -1,7 +1,6 @@
-import { option as Option } from "fp-ts";
-
+import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
-import _ from "lodash";
+import _ from "lodash/fp";
 
 import * as Utility from "../Utility";
 
@@ -43,31 +42,62 @@ interface Result {
 export const resolve = (source: Source): Result => ({
   ...source,
   ID: source.name,
-  connections: Option.fromNullable(source.connections)
-    .map(connections => connections.map(name => resolve(sourceFromName(name))))
-    .getOrElse([])
+  connections: source.connections.map(name =>
+    resolve(
+      sourceFromName(name).getOrElseL(() =>
+        Utility.throwError(new Error(`"${name}" isn't defined in Magic.`))
+      )
+    )
+  )
 });
 
-/*
-  If trying to source a tag which isn't defined in the data, throw the error to
-  GraphQL
-*/
-export const sourceFromName = (name: string): Source => {
+export const sourceFromName = (name: string): Either.Either<Error, Source> => {
   const formattedName = name
     .trim()
     .toLowerCase()
     .replace(/ /g, "-");
 
-  const { score, connections } = Option.fromNullable(
+  return Either.fromNullable(new Error(`"${name}" isn't defined in Magic.`))(
     DATA.find(({ name }) => name === formattedName)
-  ).getOrElseL(() =>
-    Utility.throwError(new Error(`"${formattedName}" isn't defined in Magic.`))
-  );
-
-  return {
+  ).map(({ score, connections }) => ({
     ID: formattedName,
     name: formattedName,
     score: Option.fromNullable(score).getOrElse("NEUTRAL"),
     connections: Option.fromNullable(connections).getOrElse([])
-  };
+  }));
 };
+
+export const roots = (tagName: string): Either.Either<Error, Source[]> => {
+  const { value: source } = sourceFromName(tagName);
+  if (source instanceof Error) {
+    return Either.left(source);
+  }
+
+  if (source.connections.length === 0) {
+    return Either.right([source]);
+  }
+
+  const { errors, connections } = source.connections
+    .map(name => roots(name))
+    .reduce<{
+      errors: Error[];
+      connections: Source[];
+    }>(
+      (previous, { value: connections }) => {
+        return connections instanceof Error
+          ? { ...previous, errors: [...previous.errors, connections] }
+          : {
+              ...previous,
+              connections: [...previous.connections, ...connections]
+            };
+      },
+      { errors: [], connections: [] }
+    );
+
+  return errors.length > 0
+    ? Either.left(new Error(errors.map(({ message }) => message).join(" ")))
+    : Either.right(_.uniqBy("ID", connections));
+};
+
+const x = roots("john-sabath");
+console.log(x);

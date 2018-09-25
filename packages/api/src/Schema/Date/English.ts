@@ -1,6 +1,5 @@
-import Moment from "moment";
-
 import { either as Either, option as Option } from "fp-ts";
+import Moment from "moment";
 
 /*
   Parse english date expressions...

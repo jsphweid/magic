@@ -1,10 +1,8 @@
 import { option as Option } from "fp-ts";
-
-import _ from "lodash";
-import Moment from "moment-timezone";
-
 import * as GraphQL from "graphql";
 import gql from "graphql-tag";
+import _ from "lodash";
+import Moment from "moment-timezone";
 
 import * as Utility from "../../Utility";
 import * as Interval from "../Interval";

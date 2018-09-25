@@ -1,6 +1,5 @@
-import { option as Option } from "fp-ts";
-
 import * as Functions from "firebase-functions";
+import { option as Option } from "fp-ts";
 
 import * as Utility from "./Utility";
 
