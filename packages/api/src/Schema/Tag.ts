@@ -52,20 +52,36 @@ export const resolve = (source: Source): Result => ({
   convert it into a `Source`
 */
 export const sourceFromName = (name: string): Either.Either<Error, Source> => {
-  const formattedName = name
+  const formattedName = nameFromString(name);
+  return Either.fromNullable(
+    new Error(`"${formattedName}" isn't defined in Magic.`)
+  )(DATA.find(({ name }) => name === formattedName)).map(
+    ({ score, connections }) => ({
+      ID: formattedName,
+      name: formattedName,
+      score: Option.fromNullable(score).getOrElse("NEUTRAL"),
+      connections: Option.fromNullable(connections).getOrElse([])
+    })
+  );
+};
+
+const sourcesFromString = (string: string): Source[] => {
+  const names = nameFromString(string);
+  return DATA.filter(source => names.includes(source.name)).map(source => ({
+    ID: source.name,
+    name: source.name,
+    score: Option.fromNullable(source.score).getOrElse("NEUTRAL"),
+    connections: Option.fromNullable(source.connections).getOrElse([])
+  }));
+};
+
+const nameFromString = (string: string): string =>
+  string
     .trim()
     .toLowerCase()
     .replace(/ /g, "-");
 
-  return Either.fromNullable(new Error(`"${name}" isn't defined in Magic.`))(
-    DATA.find(({ name }) => name === formattedName)
-  ).map(({ score, connections }) => ({
-    ID: formattedName,
-    name: formattedName,
-    score: Option.fromNullable(score).getOrElse("NEUTRAL"),
-    connections: Option.fromNullable(connections).getOrElse([])
-  }));
-};
+console.log(sourcesFromString("Lunch with John and Brian"));
 
 /*
   Given a tag name, which tags is it connected to which are most general?

@@ -20,8 +20,6 @@ export const execute = async <Data>(config: {
   data: Option.Option<any>;
 }): Promise<Result<Data>> => {
   try {
-    console.log(config.data);
-
     const { data } = await Axios.request({
       url: `https://www.toggl.com/api/v8${config.resource}`,
 

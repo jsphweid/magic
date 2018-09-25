@@ -47,13 +47,11 @@ export const resolve = {
       newEntryStop
     )).mapLeft(Utility.throwError);
 
-    // Get the value of the new entry after it is either created or started
-    const { value: entry } = (args.stop
+    // Create or start a new entry depending on if a stop time was provided
+    (args.stop
       ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
       : await startCurrentEntry(now, newEntryStart, newEntry)
     ).mapLeft(Utility.throwError);
-
-    console.log(entry);
 
     for (const oldEntry of entries) {
       const oldEntryStart = Moment(oldEntry.start);
