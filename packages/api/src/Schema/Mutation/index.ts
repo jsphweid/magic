@@ -4,6 +4,7 @@ import Moment from "moment";
 
 import * as Toggl from "../../Toggl";
 import * as Utility from "../../Utility";
+import * as Tag from "../Tag";
 import * as Time from "../Time";
 
 export const schema = gql`
@@ -21,11 +22,23 @@ export interface Args {
 
 export const resolve = {
   setTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
-    // const tags = Option.fromNullable(args.tags)
-    //   .getOrElse([])
-    //   .map(tagName =>
-    //     Tag.resolve(Tag.sourceFromName(tagName).getOrElseL(Utility.throwError))
-    //   );
+    const tags = [
+      // Get all the valid tags in the `tags` argument
+      ...Option.fromNullable(args.tags)
+        .getOrElse([])
+        .map(tagName =>
+          Tag.sourceFromName(tagName).getOrElseL(Utility.throwError)
+        ),
+
+      // Add any valid tags found in the `narrative`
+      ...Option.fromNullable(args.narrative)
+        .map(Tag.sourcesFromString)
+        .getOrElse([])
+    ];
+
+    const project = (await projectFromTags(tags)).getOrElseL(
+      Utility.throwError
+    );
 
     const now = Moment();
 
@@ -36,9 +49,9 @@ export const resolve = {
     const newEntryStopMS = newEntryStop.valueOf();
 
     const newEntry = {
-      pid: Option.none,
+      pid: project.map(({ id }) => id),
       description: Option.fromNullable(args.narrative),
-      tags: Option.fromNullable(args.tags)
+      tags: Option.some(tags.map(({ name }) => name))
     };
 
     // Grab the entries we might affect
@@ -179,20 +192,16 @@ const startCurrentEntry = async (
     }
   );
 
-// /*
-//   If any of the tags or their connections has a name which matches a project,
-//   return that match. This is primarily used to get the nice colored timeline
-//   view in Toggl's web interface.
-// */
-// const projectFromTags = async (
-//   tagNames: string[]
-// ): Promise<Either.Either<Error, Option.Option<Toggl.Project>>> =>
-//   (await Toggl.getProjects()).chain(projects => {
-//     // Get the data for every tag and their connections
-//     const expandedTagNames = Tag.allFromNames(tagNames).map(({ name }) => name);
-//     return Either.right(
-//       Option.fromNullable(
-//         projects.find(({ name }) => expandedTagNames.includes(name))
-//       )
-//     );
-//   });
+/*
+  If any of the tags or their connections has a name which matches a project,
+  return that match. This is primarily used to get the nice colored timeline
+  view in Toggl's web interface.
+*/
+const projectFromTags = async (
+  tags: Tag.Source[]
+): Promise<Either.Either<Error, Option.Option<Toggl.Project>>> =>
+  (await Toggl.getProjects()).map(projects =>
+    Option.fromNullable(
+      projects.find(({ name }) => tags.map(({ name }) => name).includes(name))
+    )
+  );

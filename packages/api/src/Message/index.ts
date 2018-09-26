@@ -83,11 +83,6 @@ const validateRequest = (
     validateMessage(request).map(message => ({ sender, message }))
   );
 
-const validateMessage = (
-  request: Express.Request
-): Either.Either<Response, string> =>
-  Either.fromNullable(responses.errors.messageIsMissing)(request.body.Body);
-
 const validateSender = (
   request: Express.Request
 ): Either.Either<Response, string> =>
@@ -99,6 +94,11 @@ const validateSender = (
         ? Either.left(responses.errors.senderIsNotOwner)
         : Either.right(from)
   );
+
+const validateMessage = (
+  request: Express.Request
+): Either.Either<Response, string> =>
+  Either.fromNullable(responses.errors.messageIsMissing)(request.body.Body);
 
 const respond = (
   response: Express.Response,

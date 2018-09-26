@@ -1,7 +1,6 @@
 import { either as Either, option as Option } from "fp-ts";
 import Moment from "moment";
 
-import * as Interval from "../Schema/Interval";
 import * as Toggl from "./index";
 
 // Enable mocking of the `Toggl` module in other spec files

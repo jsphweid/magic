@@ -2,14 +2,14 @@ import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import _ from "lodash/fp";
 
+import Data from "../../.data/tags.json";
 import * as Utility from "../Utility";
-
-import DATA from "../../.data/tags.json";
 
 export const schema = gql`
   type Tag implements Node {
     ID: ID!
     name: String!
+    aliases: [String!]!
     score: Score!
     connections: [Tag!]!
   }
@@ -25,9 +25,17 @@ export const schema = gql`
   }
 `;
 
+interface Json {
+  name: string;
+  aliases?: string[];
+  score?: string;
+  connections?: string[];
+}
+
 export interface Source {
   ID: string;
   name: string;
+  aliases: string[];
   score: string;
   connections: string[];
 }
@@ -35,6 +43,7 @@ export interface Source {
 interface Result {
   ID: string;
   name: string;
+  aliases: string[];
   score: string;
   connections: Result[];
 }
@@ -55,69 +64,68 @@ export const sourceFromName = (name: string): Either.Either<Error, Source> => {
   const formattedName = nameFromString(name);
   return Either.fromNullable(
     new Error(`"${formattedName}" isn't defined in Magic.`)
-  )(DATA.find(({ name }) => name === formattedName)).map(
-    ({ score, connections }) => ({
-      ID: formattedName,
-      name: formattedName,
-      score: Option.fromNullable(score).getOrElse("NEUTRAL"),
-      connections: Option.fromNullable(connections).getOrElse([])
-    })
+  )(Data.find(({ name }) => name === formattedName)).map(sourceFromJson);
+};
+
+// Return the source for occurrences of tag names or aliases
+export const sourcesFromString = (string: string): Source[] => {
+  const names = `-${nameFromString(string)}-`;
+
+  return Data.filter(source => {
+    const isSourcePerson =
+      Option.fromNullable(source.connections)
+        .getOrElse([])
+        .filter(connectionName =>
+          ["friend", "family", "coworker"].includes(connectionName)
+        ).length > 0;
+
+    const namesToMatch = [
+      source.name,
+      ...(isSourcePerson ? [source.name.split("-")[0]] : []), // First name
+      ...Option.fromNullable(source.aliases).getOrElse([])
+    ];
+
+    const matches = names.match(
+      new RegExp(`-${namesToMatch.join("-|-")}-`, "g")
+    );
+
+    return Option.fromNullable(matches).isSome();
+  }).map(sourceFromJson);
+};
+
+/*
+  Given a tag name, which tags is it connected to that are most general?
+  e.g. The roots for "browsing" are ["recreation"]
+*/
+export const roots = (source: Source): Source[] => {
+  if (source.connections.length === 0) {
+    return [source];
+  }
+
+  // Recursively expand child connections
+  return source.connections.reduce<Source[]>(
+    (previous, connectionName) =>
+      Option.fromNullable(Data.find(({ name }) => name === connectionName))
+        .map(json =>
+          _.uniqBy("ID", [...previous, ...roots(sourceFromJson(json))])
+        )
+        .getOrElse(previous),
+    []
   );
 };
 
-const sourcesFromString = (string: string): Source[] => {
-  const names = nameFromString(string);
-  return DATA.filter(source => names.includes(source.name)).map(source => ({
-    ID: source.name,
-    name: source.name,
-    score: Option.fromNullable(source.score).getOrElse("NEUTRAL"),
-    connections: Option.fromNullable(source.connections).getOrElse([])
-  }));
-};
+// Build a source from the data format in `../../.data/tags.json`
+const sourceFromJson = (json: Json): Source => ({
+  ID: json.name,
+  name: json.name,
+  aliases: Option.fromNullable(json.aliases).getOrElse([]),
+  score: Option.fromNullable(json.score).getOrElse("NEUTRAL"),
+  connections: Option.fromNullable(json.connections).getOrElse([])
+});
 
+// Converts human names to tag names e.g. "Getting ready" -> "getting-ready"
 const nameFromString = (string: string): string =>
   string
     .trim()
     .toLowerCase()
     .replace(/ /g, "-");
-
-console.log(sourcesFromString("Lunch with John and Brian"));
-
-/*
-  Given a tag name, which tags is it connected to which are most general?
-  e.g. The roots for "browsing" are ["recreation"]
-*/
-export const roots = (name: string): Either.Either<Error, Source[]> => {
-  const { value: source } = sourceFromName(name);
-  if (source instanceof Error) {
-    return Either.left(source);
-  }
-
-  if (source.connections.length === 0) {
-    return Either.right([source]);
-  }
-
-  /*
-    For all of the connections, try recursively expanding child connections
-    and keep track of any errors we receive
-  */
-  const { errors, connections } = source.connections
-    .map(name => roots(name))
-    .reduce<{
-      errors: Error[];
-      connections: Source[];
-    }>(
-      (previous, { value: connections }) =>
-        connections instanceof Error
-          ? { ...previous, errors: [...previous.errors, connections] }
-          : {
-              ...previous,
-              connections: [...previous.connections, ...connections]
-            },
-      { errors: [], connections: [] }
-    );
-
-  return errors.length > 0
-    ? Either.left(new Error(errors.map(({ message }) => message).join(" ")))
-    : Either.right(_.uniqBy("ID", connections));
-};
