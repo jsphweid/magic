@@ -98,9 +98,7 @@ export const sourcesFromString = (string: string): Source[] => {
   e.g. The roots for "browsing" are ["recreation"]
 */
 export const roots = (source: Source): Source[] => {
-  if (source.connections.length === 0) {
-    return [source];
-  }
+  if (source.connections.length === 0) return [source];
 
   // Recursively expand child connections
   return source.connections.reduce<Source[]>(

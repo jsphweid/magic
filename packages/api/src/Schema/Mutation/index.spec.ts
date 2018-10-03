@@ -329,9 +329,3 @@ describe("Mutation", () => {
     });
   });
 });
-
-// test("Start the current entry in the future", async () => {
-// });
-
-// test("Create an entry from some `start` and `stop`", async () => {
-// });

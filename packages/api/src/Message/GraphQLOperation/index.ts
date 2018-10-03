@@ -138,13 +138,12 @@ const messageToArgValue = (
 ): string => {
   /*
     What is the starting location of the argument name? If it wasn't provided
-    the argument is `null`
+    the argument is "null"
   */
   const argNameAsInputFormat = nameToWords(arg.name);
   const argNameStartIndex = message.toLowerCase().indexOf(argNameAsInputFormat);
-  if (argNameStartIndex < 0) {
-    return "null";
-  }
+
+  if (argNameStartIndex < 0) return "null";
 
   /*
     What is the starting location (index) of the next argument?

@@ -39,7 +39,6 @@ export const execute = async <Data>(config: {
 
     // tslint:disable-next-line:no-console
     console.log(formattedError);
-
     return Either.left(formattedError);
   }
 };

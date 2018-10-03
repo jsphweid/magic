@@ -86,9 +86,7 @@ const objectToString = (indent: string, object: JSONObject): string => {
           const valueAsString = toString(nextIndent, value);
 
           // Drop empty values
-          if (valueAsString.replace(/ /g, "") === "") {
-            return "";
-          }
+          if (valueAsString.replace(/ /g, "") === "") return "";
 
           // Always put the value on the next line so it's formatted correctly
           const spacing = valueAsString.includes("\n") ? "" : `\n${nextIndent}`;

@@ -154,10 +154,7 @@ export const getInterval = async (
       data: Option.none
     });
 
-    if (batch instanceof Error) {
-      return Either.left(batch);
-    }
-
+    if (batch instanceof Error) return Either.left(batch);
     entries = entries.concat(batch);
   }
 
