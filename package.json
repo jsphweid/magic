@@ -9,6 +9,7 @@
     "api:test:watch": "tst test api --watch",
     "api:dev": "tst dev api",
     "api:build": "tst build api",
+    "api:backup": "lerna run backup --stream --scope api",
     "reporting:test": "tst test reporting",
     "reporting:test:watch": "tst test reporting --watch",
     "reporting:dev": "lerna run dev --stream --scope reporting",

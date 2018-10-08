@@ -11,16 +11,16 @@ const BACKUP_DIR = `${DATA_DIR}/backup`;
 const save = async (): Promise<void> => {
   // Save the Toggl and Magic versions of every tag
 
-  writeAsJSON(
-    `${BACKUP_DIR}/magic-tags.json`,
-    FS.readFileSync(`${DATA_DIR}/tags.json`).toJSON()
+  FS.writeFileSync(
+    `${BACKUP_DIR}/magic/tags.json`,
+    FS.readFileSync(`${DATA_DIR}/tags.json`).toString()
   );
 
   const { value: togglTags } = (await Toggl.getTags()).mapLeft(
     Utility.throwError
   );
 
-  writeAsJSON(`${BACKUP_DIR}/toggl-tags.json`, togglTags);
+  writeAsJSON(`${BACKUP_DIR}/toggl/tags.json`, togglTags);
 
   // Save every entry since tracking began
 
@@ -29,7 +29,7 @@ const save = async (): Promise<void> => {
     Moment()
   )).mapLeft(Utility.throwError);
 
-  writeAsJSON(`${BACKUP_DIR}/toggl-time-entries.json`, entries);
+  writeAsJSON(`${BACKUP_DIR}/toggl/time-entries.json`, entries);
 };
 
 const writeAsJSON = (filePath: string, contents: object): void =>
@@ -38,7 +38,6 @@ const writeAsJSON = (filePath: string, contents: object): void =>
     JSON.stringify(contents, null, 2)
   );
 
-// Always backup while developing
 if (process.env.NODE_ENV !== "production" && !__dirname.includes("functions")) {
   save();
 }
