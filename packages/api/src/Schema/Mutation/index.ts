@@ -13,26 +13,25 @@ export const schema = gql`
   }
 `;
 
-export interface Args {
-  start: Moment.Moment | null;
-  stop: Moment.Moment | null;
-  narrative: string | null;
-  tags: string[] | null;
-}
-
 export const resolve = {
-  setTime: async (_source: undefined, args: Args): Promise<Time.Source> => {
+  setTime: async (
+    _source: undefined,
+    args: {
+      start: Moment.Moment | null;
+      stop: Moment.Moment | null;
+      narrative: string | null;
+      tags: string[] | null;
+    }
+  ): Promise<Time.Time> => {
     const tags = [
       // Get all the valid tags in the `tags` argument
       ...Option.fromNullable(args.tags)
         .getOrElse([])
-        .map(tagName =>
-          Tag.sourceFromName(tagName).getOrElseL(Utility.throwError)
-        ),
+        .map(tagName => Tag.fromName(tagName).getOrElseL(Utility.throwError)),
 
       // Add any valid tags found in the `narrative`
       ...Option.fromNullable(args.narrative)
-        .map(Tag.sourcesFromString)
+        .map(Tag.fromString)
         .getOrElse([])
     ];
 
@@ -146,7 +145,7 @@ export const resolve = {
       }
     }
 
-    return Time.source(
+    return Time.fromInterval(
       Option.fromNullable(args.start),
       Option.fromNullable(args.stop)
     );

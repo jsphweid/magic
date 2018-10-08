@@ -10,8 +10,8 @@ export const schema = gql`
   }
 `;
 
-export interface Source {
+export interface Narrative {
   ID: string;
-  interval: Interval.Source;
+  interval: Interval.Interval;
   description: string;
 }

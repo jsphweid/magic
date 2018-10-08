@@ -18,7 +18,12 @@ jest.mock("../../../.data/tags.json", () => [
 // Ensure tests can refer to the exact same start time
 (Moment as any).now = () => MockToggl.state.now.valueOf();
 
-const entryFromArgs = (args: Mutation.Args): Toggl.Entry.Entry => {
+const entryFromArgs = (args: {
+  start: Moment.Moment | null;
+  stop: Moment.Moment | null;
+  narrative: string | null;
+  tags: string[] | null;
+}): Toggl.Entry.Entry => {
   const entry = MockToggl.entry(
     Option.fromNullable(args.start).getOrElse(MockToggl.state.now),
     Option.fromNullable(args.stop),

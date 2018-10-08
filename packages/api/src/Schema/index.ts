@@ -42,9 +42,6 @@ export const resolvers: any = {
   Query: Query.resolve,
   Mutation: Mutation.resolve,
 
-  Time: Time.resolve,
-  Tag: Tag.resolve,
-
   Interval: Interval.resolve,
   FormattedDate: FormattedDate.resolve,
   Duration: Duration.resolve,

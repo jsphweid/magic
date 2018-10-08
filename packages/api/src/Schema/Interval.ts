@@ -13,20 +13,15 @@ export const schema = gql`
   }
 `;
 
-export interface Source {
+export interface Interval {
   start: Moment.Moment;
   stop: Option.Option<Moment.Moment>;
 }
 
 export const resolve = {
-  stop: (source: Source): FormattedDate.Source | null =>
+  stop: (source: Interval): FormattedDate.FormattedDate | null =>
     source.stop.toNullable(),
 
-  duration: (source: Source): Duration.Source =>
-    duration(source.start, source.stop.getOrElseL(() => Moment()))
+  duration: (source: Interval): Duration.Duration =>
+    Duration.fromInterval(source)
 };
-
-export const duration = (
-  start: Moment.Moment,
-  stop: Moment.Moment
-): Moment.Duration => Moment.duration(stop.diff(start));

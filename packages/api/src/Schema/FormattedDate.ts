@@ -26,12 +26,12 @@ export const schema = gql`
   }
 `;
 
-export type Source = Moment.Moment;
+export type FormattedDate = Moment.Moment;
 
 export const resolve = {
-  unix: (source: Source): number => Math.round(source.valueOf() / 1000),
-  ISO: (source: Source): string => source.toISOString(),
+  unix: (source: FormattedDate): number => Math.round(source.valueOf() / 1000),
+  ISO: (source: FormattedDate): string => source.toISOString(),
 
-  formatted: (source: Source, args: { format: string }): string =>
+  formatted: (source: FormattedDate, args: { format: string }): string =>
     Moment.tz(source, `${process.env.TIME_ZONE}`).format(args.format)
 };

@@ -22,9 +22,9 @@ export const schema = gql`
   }
 `;
 
-export interface Source {
-  interval: Interval.Source;
-  narratives: Narrative.Source[];
+export interface Time {
+  interval: Interval.Interval;
+  narratives: Narrative.Narrative[];
   tagOccurrences: TagOccurrence.Source[];
 }
 
@@ -33,15 +33,10 @@ interface TogglData {
   tags: Toggl.Tag[];
 }
 
-export const resolve = {
-  tagOccurrences: (source: Source): TagOccurrence.Source[] =>
-    source.tagOccurrences
-};
-
-export const source = async (
+export const fromDates = async (
   start: Option.Option<Moment.Moment>,
   stop: Option.Option<Moment.Moment>
-): Promise<Source> => {
+): Promise<Time> => {
   /*
     The default `start` is actually the start of the latest time entry when
     no `start` was provided, but we need to grab a small list of time entries
@@ -52,7 +47,7 @@ export const source = async (
     stop.getOrElseL(() => Moment())
   );
 
-  return togglDataToSource(
+  return fromTogglData(
     // Use the orginal start if it was provided
     start.getOrElseL(() => Moment(togglData.entries[0].start)),
     stop,
@@ -66,12 +61,12 @@ export const source = async (
   need to seperate time entries to fake the correct shape of the data until
   Toggl is no longer in use.
 */
-const togglDataToSource = (
+const fromTogglData = (
   start: Moment.Moment,
   stop: Option.Option<Moment.Moment>,
   togglData: TogglData
-): Source =>
-  togglData.entries.reduce<Source>(
+): Time =>
+  togglData.entries.reduce<Time>(
     (previous, entry) => {
       const interval = {
         start: Moment(entry.start),
@@ -111,7 +106,7 @@ const togglDataToSource = (
               .map(({ name }) => ({
                 ID,
                 interval,
-                tag: Tag.sourceFromName(name).getOrElseL(Utility.throwError)
+                tag: Tag.fromName(name).getOrElseL(Utility.throwError)
               }))
               .getOrElseL(() =>
                 Utility.throwError(
