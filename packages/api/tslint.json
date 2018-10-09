@@ -1,6 +1,12 @@
 {
   "extends": "../../tslint.json",
   "rules": {
-    "no-submodule-imports": [true, "~", "cross-fetch/polyfill", "lodash/fp"]
+    "no-submodule-imports": [
+      true,
+      "~",
+      "firebase/firestore",
+      "cross-fetch/polyfill",
+      "lodash/fp"
+    ]
   }
 }

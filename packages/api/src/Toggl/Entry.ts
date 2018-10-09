@@ -89,7 +89,7 @@ export const POST = async (
         time_entry: {
           ...newEntryToTogglData(newEntry),
           start: start.toISOString(),
-          duration: Math.abs(Interval.duration(start, stop).asSeconds())
+          duration: Math.abs(Duration.fromDates(start, stop).asSeconds())
         }
       })
     })
@@ -104,13 +104,11 @@ export const PUT = async (entry: Entry): Promise<Request.Result<Entry>> => {
       data: Option.some({
         time_entry: {
           ...entry,
-          duration: Option.fromNullable(entry.stop)
-            .map(stop =>
-              Math.abs(
-                Interval.duration(Moment(entry.start), Moment(stop)).asSeconds()
-              )
+          duration: Option.fromNullable(entry.stop).fold(entry.duration, stop =>
+            Math.abs(
+              Duration.fromDates(Moment(entry.start), Moment(stop)).asSeconds()
             )
-            .getOrElse(entry.duration)
+          )
         }
       })
     })
@@ -154,7 +152,9 @@ export const getInterval = async (
       data: Option.none
     });
 
-    if (batch instanceof Error) return Either.left(batch);
+    if (batch instanceof Error) {
+      return Either.left(batch);
+    }
     entries = entries.concat(batch);
   }
 

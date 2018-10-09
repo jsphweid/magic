@@ -29,12 +29,12 @@ export const resolve = {
   years: (source: Duration): number => toFixed(source.asYears())
 };
 
+const toFixed = (number: number): number => parseFloat(number.toFixed(2));
+
 export const fromInterval = ({ start, stop }: Interval.Interval): Duration =>
-  Moment.duration(stop.getOrElseL(Moment).diff(start));
+  fromDates(start, stop.getOrElseL(Moment));
 
 export const fromDates = (
   start: Moment.Moment,
-  stop?: Moment.Moment
-): Duration => Moment.duration(stop.getOrElseL(Moment).diff(start));
-
-const toFixed = (number: number): number => parseFloat(number.toFixed(2));
+  stop: Moment.Moment
+): Duration => Moment.duration(stop.diff(start));

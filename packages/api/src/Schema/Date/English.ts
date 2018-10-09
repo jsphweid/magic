@@ -52,7 +52,7 @@ const englishToWords = (
   return Either.right(
     word1 === "in"
       ? // e.g. "in two minutes"
-        { amount: word2, unit: word3, tense: "past" }
+        { amount: word2, unit: word3, tense: "ago" }
       : // e.g. "15 minutes later"
         { amount: word1, unit: word2, tense: word3 }
   );
@@ -61,9 +61,9 @@ const englishToWords = (
 type Tense = "past" | "future";
 
 const wordToTense = (word: string): Either.Either<Error, Tense> =>
-  `earlier ago prior`.includes(word)
+  "ago earlier prior".includes(word)
     ? Either.right("past" as Tense)
-    : `from ahead later`.includes(word)
+    : "from ahead later".includes(word)
       ? Either.right("future" as Tense)
       : Either.left(
           new Error(`Not sure if "${word}" is past or future tense.`)
@@ -81,9 +81,11 @@ const wordToAmount = (word: string): Either.Either<Error, number> => {
 };
 
 const wordsToNumbers: {
-  [word: string]: number | undefined;
+  [word: string]: number;
 } = {
   zero: 0,
+  a: 1,
+  an: 1,
   one: 1,
   two: 2,
   three: 3,

@@ -3,6 +3,7 @@ import Moment from "moment";
 import * as Path from "path";
 
 import Firebase from "firebase";
+// require("firebase/firestore");
 
 import * as Toggl from "./Toggl";
 import * as Utility from "./Utility";
@@ -10,21 +11,20 @@ import * as Utility from "./Utility";
 const DATA_DIR = Path.join(__dirname, "../.data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;
 
-Firebase.initializeApp({
-  apiKey: "### FIREBASE API KEY ###",
-  authDomain: "### FIREBASE AUTH DOMAIN ###",
-  projectId: "### CLOUD FIRESTORE PROJECT ID ###"
-});
+Firebase.initializeApp();
 
 const db = Firebase.firestore();
+db.settings({ timestampsInSnapshots: true });
 
-const writeTagsToFirebase = async () => {
-  (await db.collection("tags").get()).forEach(doc => {
-    console.log(`${doc.id} => ${doc.data()}`);
-  });
-};
+(async () => {
+  for (const document of (await db.collection("tags").get()).docs) {
+    console.log(document.data());
+  }
+})();
 
-const save = async (): Promise<void> => {
+console.log(1);
+
+const save = async () => {
   // Save the Toggl and Magic versions of every tag
 
   FS.writeFileSync(
@@ -55,6 +55,7 @@ const writeAsJSON = (filePath: string, contents: object): void =>
   );
 
 if (process.env.NODE_ENV !== "production" && !__dirname.includes("functions")) {
-  writeTagsToFirebase();
-  if (false) save();
+  if (false) {
+    save();
+  }
 }
