@@ -3,7 +3,6 @@ import gql from "graphql-tag";
 import _ from "lodash/fp";
 
 import Data from "../../.data/tags.json";
-import * as Utility from "../Utility";
 
 export const schema = gql`
   type Tag implements Node {
@@ -101,7 +100,7 @@ const fromJson = (json: Json): Tag => ({
   name: json.name,
   aliases: Option.fromNullable(json.aliases).getOrElse([]),
   score: Option.fromNullable(json.score).getOrElse("NEUTRAL"),
-  connections: Option.fromNullable(json.connections).getOrElse([])
+  connections: [] // Option.fromNullable(json.connections).getOrElse([])
 });
 
 // Converts human names to tag names e.g. "Getting ready" -> "getting-ready"

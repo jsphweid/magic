@@ -2,11 +2,27 @@ import * as FS from "fs";
 import Moment from "moment";
 import * as Path from "path";
 
+import Firebase from "firebase";
+
 import * as Toggl from "./Toggl";
 import * as Utility from "./Utility";
 
 const DATA_DIR = Path.join(__dirname, "../.data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;
+
+Firebase.initializeApp({
+  apiKey: "### FIREBASE API KEY ###",
+  authDomain: "### FIREBASE AUTH DOMAIN ###",
+  projectId: "### CLOUD FIRESTORE PROJECT ID ###"
+});
+
+const db = Firebase.firestore();
+
+const writeTagsToFirebase = async () => {
+  (await db.collection("tags").get()).forEach(doc => {
+    console.log(`${doc.id} => ${doc.data()}`);
+  });
+};
 
 const save = async (): Promise<void> => {
   // Save the Toggl and Magic versions of every tag
@@ -39,5 +55,6 @@ const writeAsJSON = (filePath: string, contents: object): void =>
   );
 
 if (process.env.NODE_ENV !== "production" && !__dirname.includes("functions")) {
-  save();
+  writeTagsToFirebase();
+  if (false) save();
 }

@@ -32,4 +32,9 @@ export const resolve = {
 export const fromInterval = ({ start, stop }: Interval.Interval): Duration =>
   Moment.duration(stop.getOrElseL(Moment).diff(start));
 
+export const fromDates = (
+  start: Moment.Moment,
+  stop?: Moment.Moment
+): Duration => Moment.duration(stop.getOrElseL(Moment).diff(start));
+
 const toFixed = (number: number): number => parseFloat(number.toFixed(2));

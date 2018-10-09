@@ -2,7 +2,7 @@ import { either as Either, option as Option } from "fp-ts";
 import _ from "lodash";
 import Moment from "moment";
 
-import * as Interval from "../Schema/Interval";
+import * as Duration from "../Schema/Duration";
 import * as Request from "./Request";
 
 /*
