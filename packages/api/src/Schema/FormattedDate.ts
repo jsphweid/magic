@@ -33,5 +33,5 @@ export const resolve = {
   ISO: (source: FormattedDate): string => source.toISOString(),
 
   formatted: (source: FormattedDate, args: { format: string }): string =>
-    Moment.tz(source, `${process.env.TIME_ZONE}`).format(args.format)
+    Moment.tz(source, `${process.env.MAGIC_TIME_ZONE}`).format(args.format)
 };

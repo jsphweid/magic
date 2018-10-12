@@ -7,10 +7,9 @@ import BasicAuth from "express-basic-auth";
 
 import * as Functions from "firebase-functions";
 
+import "./Config";
 import * as Message from "./Message";
 import * as Schema from "./Schema";
-
-import "./Config";
 
 const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.source,

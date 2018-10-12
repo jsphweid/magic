@@ -45,14 +45,19 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
     https://momentjs.com/docs/#/parsing/string-format/
   */
   for (const format of [Moment.ISO_8601, Moment.RFC_2822, ...formats]) {
-    const date = Moment.tz(source, format, true, `${process.env.TIME_ZONE}`);
+    const date = Moment.tz(
+      source,
+      format,
+      true,
+      `${process.env.MAGIC_TIME_ZONE}`
+    );
 
-    if (!date.isValid()) continue;
+    if (!date.isValid()) { continue; }
 
     // Parsing without a year can yield times way in the past
-    if (date.year() < 2018) date.year(2018);
+    if (date.year() < 2018) { date.year(2018); }
 
-    if (isSourceMissingMeridiem) return date;
+    if (isSourceMissingMeridiem) { return date; }
 
     /*
       Sometimes the date Moment parses can be off when "AM" or "PM" is missing.

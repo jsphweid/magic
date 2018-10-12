@@ -9,11 +9,11 @@
     "api:test:watch": "tst test api --watch",
     "api:dev": "tst dev api",
     "api:build": "tst build api",
-    "api:backup": "lerna run backup --stream --scope api",
     "reporting:test": "tst test reporting",
     "reporting:test:watch": "tst test reporting --watch",
     "reporting:dev": "lerna run dev --stream --scope reporting",
-    "reporting:build": "lerna run build --stream --scope reporting"
+    "reporting:build": "lerna run build --stream --scope reporting",
+    "api:backup": "lerna run backup --stream --scope api"
   },
   "devDependencies": {
     "@types/jest": "^23.3.2",
@@ -31,6 +31,6 @@
     "tslint-config-prettier": "^1.15.0",
     "twilio": "^3.19.2",
     "typescript": "^3.1.1",
-    "typescript-tooling": "^4.0.3"
+    "typescript-tooling": "^4.1.0-alpha.01ab903"
   }
 }

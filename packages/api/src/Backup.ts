@@ -1,42 +1,59 @@
+import Firebase from "firebase";
 import * as FS from "fs";
 import Moment from "moment";
 import * as Path from "path";
 
-import Firebase from "firebase";
-// require("firebase/firestore");
-
+import "./Config";
 import * as Toggl from "./Toggl";
 import * as Utility from "./Utility";
 
-const DATA_DIR = Path.join(__dirname, "../.data");
+const DATA_DIR = Path.join(__dirname, "../data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;
 
-Firebase.initializeApp();
+Firebase.initializeApp({
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID
+});
 
 const db = Firebase.firestore();
 db.settings({ timestampsInSnapshots: true });
 
+const saveJson = (filePath: string, contents: object): void => {
+  const backupPath = `${BACKUP_DIR}/${filePath}`;
+  FS.writeFileSync(backupPath, JSON.stringify(contents, null, 2));
+
+  // tslint:disable-next-line:no-console
+  console.log(`Saved \`${backupPath}\``);
+};
+
 (async () => {
-  for (const document of (await db.collection("tags").get()).docs) {
-    console.log(document.data());
-  }
-})();
+  if (__dirname.includes("functions")) return;
 
-console.log(1);
-
-const save = async () => {
   // Save the Toggl and Magic versions of every tag
 
-  FS.writeFileSync(
-    `${BACKUP_DIR}/magic/tags.json`,
-    FS.readFileSync(`${DATA_DIR}/tags.json`).toString()
-  );
+  const magicTags: { [id: string]: any } = {};
+  (await db.collection("tags").get()).forEach(document => {
+    const data = document.data();
+    if (data.connections) {
+      data.connections = data.connections.map(
+        (connection: any) => connection.id
+      );
+    }
+
+    magicTags[document.id] = data;
+  });
+
+  saveJson(`magic/tags.json`, magicTags);
 
   const { value: togglTags } = (await Toggl.getTags()).mapLeft(
     Utility.throwError
   );
 
-  writeAsJSON(`${BACKUP_DIR}/toggl/tags.json`, togglTags);
+  saveJson(`toggl/tags.json`, togglTags);
 
   // Save every entry since tracking began
 
@@ -45,17 +62,7 @@ const save = async () => {
     Moment()
   )).mapLeft(Utility.throwError);
 
-  writeAsJSON(`${BACKUP_DIR}/toggl/time-entries.json`, entries);
-};
+  saveJson(`toggl/time-entries.json`, entries);
 
-const writeAsJSON = (filePath: string, contents: object): void =>
-  FS.writeFileSync(
-    Path.resolve(__dirname, filePath),
-    JSON.stringify(contents, null, 2)
-  );
-
-if (process.env.NODE_ENV !== "production" && !__dirname.includes("functions")) {
-  if (false) {
-    save();
-  }
-}
+  process.exit(0);
+})();
