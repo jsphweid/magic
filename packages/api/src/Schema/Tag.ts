@@ -1,8 +1,10 @@
+import * as Firebase from "firebase";
 import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import _ from "lodash/fp";
 
-import Data from "../../.data/tags.json";
+const db = Firebase.firestore();
+db.settings({ timestampsInSnapshots: true });
 
 export const schema = gql`
   type Tag implements Node {
@@ -39,43 +41,58 @@ export interface Tag {
   connections: Tag[];
 }
 
-/*
-  If we have a name, does it exist withing the defined set of tags? If so,
-  convert it into a `Source`
-*/
-export const fromName = (name: string): Either.Either<Error, Tag> => {
-  const formattedName = nameFromString(name);
-
-  return Either.fromNullable(
-    new Error(`"${formattedName}" isn't defined in Magic.`)
-  )(Data.find(({ name }) => name === formattedName)).map(fromJson);
-};
-
 // Return the source for occurrences of tag names or aliases
-export const fromString = (string: string): Tag[] => {
-  const names = `-${nameFromString(string)}-`;
+export const search = async (
+  searchString: string
+): Promise<Either.Either<Error, Tag[]>> => {};
+// Either.tryCatch(db.collection("tags").get, e => e as Error).map(async query =>
+//   (await query).docs
+//     .map(doc => doc.data() as Tag)
+//     .filter(({ name }) => name === searchString)
+// );
 
-  return Data.filter(source => {
-    const isSourcePerson =
-      Option.fromNullable(source.connections)
-        .getOrElse([])
-        .filter(connectionName =>
-          ["friend", "family", "coworker"].includes(connectionName)
-        ).length > 0;
+// Either.tryCatch(() => db.collection("tags").get(), e => e as Error).map(
+//   async query =>
+//     (await query).docs
+//       .map(doc => doc.data() as Tag)
+//       .filter(({ name }) => name === searchString)
+// );
 
-    const namesToMatch = [
-      source.name,
-      ...(isSourcePerson ? [source.name.split("-")[0]] : []), // First name
-      ...Option.fromNullable(source.aliases).getOrElse([])
-    ];
+// {
+//   const {value: tags} = (Either.tryCatch(
+//     async () => fromUnsafe(db.collection("tags").get),
+//     e => e as Error
+//   ).map(({ docs }) => docs.map(doc => doc.data() as Tag)));
 
-    const matches = names.match(
-      new RegExp(`-${namesToMatch.join("-|-")}-`, "g")
-    );
+//   if ()
 
-    return Option.fromNullable(matches).isSome();
-  }).map(fromJson);
-};
+//   const names = `-${nameFromString(string)}-`;
+
+//   return Data.filter(source => {
+//     const isSourcePerson =
+//       Option.fromNullable(source.connections)
+//         .getOrElse([])
+//         .filter(connectionName =>
+//           ["friend", "family", "coworker"].includes(connectionName)
+//         ).length > 0;
+
+//     const namesToMatch = [
+//       source.name,
+//       ...(isSourcePerson ? [source.name.split("-")[0]] : []), // First name
+//       ...Option.fromNullable(source.aliases).getOrElse([])
+//     ];
+
+//     const matches = names.match(
+//       new RegExp(`-${namesToMatch.join("-|-")}-`, "g")
+//     );
+
+//     return Option.fromNullable(matches).isSome();
+//   }).map(fromJson);
+// };
+
+(async () => {
+  console.log(search("todd-elvers"));
+})();
 
 /*
   Given a tag name, which tags is it connected to that are most general?

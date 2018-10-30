@@ -5,7 +5,7 @@ import _ from "lodash";
 import Moment from "moment-timezone";
 
 import * as Utility from "../../Utility";
-import * as Interval from "../Interval";
+import * as Duration from "../Duration";
 import * as English from "./English";
 
 export const schema = gql`
@@ -52,12 +52,18 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
       `${process.env.MAGIC_TIME_ZONE}`
     );
 
-    if (!date.isValid()) { continue; }
+    if (!date.isValid()) {
+      continue;
+    }
 
     // Parsing without a year can yield times way in the past
-    if (date.year() < 2018) { date.year(2018); }
+    if (date.year() < 2018) {
+      date.year(2018);
+    }
 
-    if (isSourceMissingMeridiem) { return date; }
+    if (isSourceMissingMeridiem) {
+      return date;
+    }
 
     /*
       Sometimes the date Moment parses can be off when "AM" or "PM" is missing.
@@ -86,7 +92,7 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
 };
 
 const timeDifferenceMS = (start: Moment.Moment, stop: Moment.Moment): number =>
-  Math.abs(Interval.duration(start, stop).asMilliseconds());
+  Math.abs(Duration.fromDates(start, stop).asMilliseconds());
 
 const dateFormats = [
   "MM-DD-YYYY",

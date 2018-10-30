@@ -23,17 +23,17 @@ export const resolve = {
       tags: string[] | null;
     }
   ): Promise<Time.Time> => {
-    const tags = [
-      // Get all the valid tags in the `tags` argument
-      ...Option.fromNullable(args.tags)
-        .getOrElse([])
-        .map(tagName => Tag.fromName(tagName).getOrElseL(Utility.throwError)),
+    const tagsFromNarrative = await Option.fromNullable(args.narrative).fold(
+      [],
+      Tag.search
+    );
 
-      // Add any valid tags found in the `narrative`
-      ...Option.fromNullable(args.narrative)
-        .map(Tag.fromString)
-        .getOrElse([])
-    ];
+    const tagsFromTagNames = await Option.fromNullable(args.tags).fold(
+      [],
+      tags => Tag.search(tags.join(" "))
+    );
+
+    const tags = [...tagsFromNarrative, ...tagsFromTagNames];
 
     const project = (await projectFromTags(tags)).getOrElseL(
       Utility.throwError
@@ -145,7 +145,7 @@ export const resolve = {
       }
     }
 
-    return Time.fromInterval(
+    return Time.fromDates(
       Option.fromNullable(args.start),
       Option.fromNullable(args.stop)
     );
@@ -197,7 +197,7 @@ const startCurrentEntry = async (
   view in Toggl's web interface.
 */
 const projectFromTags = async (
-  tags: Tag.Source[]
+  tags: Tag.Tag[]
 ): Promise<Either.Either<Error, Option.Option<Toggl.Project>>> =>
   (await Toggl.getProjects()).map(projects =>
     Option.fromNullable(
