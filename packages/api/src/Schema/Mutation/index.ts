@@ -23,17 +23,18 @@ export const resolve = {
       tags: string[] | null;
     }
   ): Promise<Time.Time> => {
-    const tagsFromNarrative = await Option.fromNullable(args.narrative).fold(
-      [],
-      Tag.search
-    );
+    // const tagsFromNarrative = await Option.fromNullable(args.narrative).fold(
+    //   [],
+    //   Tag.search
+    // );
 
-    const tagsFromTagNames = await Option.fromNullable(args.tags).fold(
-      [],
-      tags => Tag.search(tags.join(" "))
-    );
+    // const tagsFromTagNames = await Option.fromNullable(args.tags).fold(
+    //   [],
+    //   tags => Tag.search(tags.join(" "))
+    // );
 
-    const tags = [...tagsFromNarrative, ...tagsFromTagNames];
+    // const tags = [...tagsFromNarrative, ...tagsFromTagNames];
+    const tags: Tag.Tag[] = [];
 
     const project = (await projectFromTags(tags)).getOrElseL(
       Utility.throwError

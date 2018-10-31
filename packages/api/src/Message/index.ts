@@ -1,7 +1,7 @@
 import * as Express from "express";
 import { either as Either, option as Option } from "fp-ts";
 import * as GraphQL from "graphql";
-import { twiml as TWIML } from "twilio";
+import { twiml as Twiml } from "twilio";
 
 import * as GraphQLOperation from "./GraphQLOperation";
 import * as Reply from "./Reply";
@@ -69,7 +69,7 @@ export const handler = (
     )
   });
 
-  const body = new TWIML.MessagingResponse()
+  const body = new Twiml.MessagingResponse()
     .message({ to: sender }, reply)
     .toString();
 

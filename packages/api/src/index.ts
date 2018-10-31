@@ -7,8 +7,6 @@ import * as GraphQLTools from "graphql-tools";
 import { GraphQLServer } from "graphql-yoga";
 
 import "./Config";
-import * as Message from "./Message";
-import * as Schema from "./Schema";
 
 Firebase.initializeApp({
   apiKey: process.env.FIREBASE_API_KEY,
@@ -18,6 +16,13 @@ Firebase.initializeApp({
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID
 });
+
+Firebase.firestore().settings({
+  timestampsInSnapshots: true
+});
+
+import * as Message from "./Message";
+import * as Schema from "./Schema";
 
 const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.source,

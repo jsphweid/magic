@@ -11,7 +11,6 @@ const DATA_DIR = Path.join(__dirname, "../data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;
 
 const db = Firebase.firestore();
-db.settings({ timestampsInSnapshots: true });
 
 const saveJson = (filePath: string, contents: object): void => {
   const backupPath = `${BACKUP_DIR}/${filePath}`;

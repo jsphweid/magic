@@ -13,6 +13,6 @@ export const schema = gql`
 
 export interface Source {
   ID: string;
-  interval: Interval.Source;
-  tag: Tag.Source;
+  interval: Interval.Interval;
+  tag: Tag.Tag;
 }

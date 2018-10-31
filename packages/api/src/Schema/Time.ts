@@ -6,7 +6,7 @@ import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
 import * as Interval from "./Interval";
 import * as Narrative from "./Narrative";
-import * as Tag from "./Tag";
+// import * as Tag from "./Tag";
 import * as TagOccurrence from "./TagOccurrence";
 
 export const schema = gql`
@@ -95,28 +95,28 @@ const fromTogglData = (
         .getOrElse(previous.narratives);
 
       // Any unrecognized tags are thrown so we know to add them ASAP
-      const tagOccurrences = [
-        ...previous.tagOccurrences,
-        ...Option.fromNullable(entry.tags)
-          .getOrElse([])
-          .map(name =>
-            Option.fromNullable(
-              togglData.tags.find(togglTag => togglTag.name === name)
-            )
-              .map(({ name }) => ({
-                ID,
-                interval,
-                tag: Tag.fromName(name).getOrElseL(Utility.throwError)
-              }))
-              .getOrElseL(() =>
-                Utility.throwError(
-                  new Error(`"${name}" isn't defined in Toggl.`)
-                )
-              )
-          )
-      ];
+      // const tagOccurrences = [
+      //   ...previous.tagOccurrences,
+      //   ...Option.fromNullable(entry.tags)
+      //     .getOrElse([])
+      //     .map(name =>
+      //       Option.fromNullable(
+      //         togglData.tags.find(togglTag => togglTag.name === name)
+      //       )
+      //         .map(({ name }) => ({
+      //           ID,
+      //           interval,
+      //           tag: Tag.fromName(name).getOrElseL(Utility.throwError)
+      //         }))
+      //         .getOrElseL(() =>
+      //           Utility.throwError(
+      //             new Error(`"${name}" isn't defined in Toggl.`)
+      //           )
+      //         )
+      //     )
+      // ];
 
-      return { ...previous, narratives, tagOccurrences };
+      return { ...previous, narratives, tagOccurrences: [] };
     },
     {
       interval: { start, stop },
