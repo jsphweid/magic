@@ -19,9 +19,9 @@ export interface Interval {
 }
 
 export const resolve = {
-  stop: (source: Interval): FormattedDate.FormattedDate | null =>
-    source.stop.toNullable(),
+  stop: (interval: Interval): FormattedDate.FormattedDate | null =>
+    interval.stop.toNullable(),
 
-  duration: (source: Interval): Duration.Duration =>
-    Duration.fromInterval(source)
+  duration: (interval: Interval): Duration.Duration =>
+    Duration.fromInterval(interval)
 };
