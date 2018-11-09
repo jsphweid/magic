@@ -1,8 +1,9 @@
-import DataLoader from "dataloader";
+// import DataLoader from "dataloader";
 import * as Firebase from "firebase";
 import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import _ from "lodash/fp";
+import Moment from "moment";
 
 import * as Utility from "../Utility";
 
@@ -12,6 +13,7 @@ export const schema = gql`
     name: String!
     aliases: [String!]!
     score: Int!
+    lastOccurrence: FormattedDate
     connections: [Tag!]!
   }
 `;
@@ -21,15 +23,17 @@ export interface Tag {
   name: string;
   aliases: string[];
   score: number;
+  lastOccurrence: Option.Option<Moment.Moment>;
   connections: Tag[];
 }
 
 interface Data {
-  id: string;
+  ID: string;
   name: string;
   aliases?: string[];
   score?: number;
   connections?: Firebase.firestore.DocumentReference[];
+  lastOccurrence?: Firebase.firestore.Timestamp;
 }
 
 const db = Firebase.firestore();
@@ -63,29 +67,50 @@ export const get = async (ID: string): Promise<Either.Either<Error, Tag>> => {
   }
 };
 
-// export const all = (): Either.Either<Error, Tag[]> => {
-
-// }
-
 // Return the source for occurrences of tag names or aliases
-export const search = async (
-  searchString: string
+export const findMatches = async (
+  search: string
 ): Promise<Either.Either<Error, Tag[]>> => {
   try {
     const { docs: documents } = await db.collection("tags").get();
-    return Either.right(
-      documents
-        .map(document => document.data() as Tag)
-        .filter(({ name }) => name === searchString)
-    );
+    const tags = documents.map(document => document.data() as Tag);
+
+    const matches = new Map<string, Tag>();
+    for (const tag of tags) {
+      if (tag.name === "magic") {
+        console.log(tag);
+      }
+
+      isMatch(search, tag).map(matchingWord =>
+        matches.set(
+          matchingWord,
+          Option.fromNullable(matches.get(matchingWord)).fold(
+            tag,
+            previousMatch => mostRecent(tag, previousMatch)
+          )
+        )
+      );
+    }
+
+    return Either.right(Array.from(matches.values()));
   } catch (e) {
     return Either.left(e);
   }
 };
 
+const isMatch = (_search: string, tag: Tag): Option.Option<string> => {
+  return Option.some(tag.name);
+};
+
+const mostRecent = (a: Tag, b: Tag): Tag =>
+  a.lastOccurrence.getOrElseL(() => Moment(0)).valueOf() >
+  b.lastOccurrence.getOrElseL(() => Moment(0)).valueOf()
+    ? a
+    : b;
+
 (async () => {
   // tslint:disable-next-line
-  console.log(await search("Outside browsing with Ellie"));
+  console.log(await findMatches("Outside browsing with Ellie"));
 })();
 
 //   const names = `-${nameFromString(string)}-`;
@@ -134,10 +159,11 @@ export const search = async (
   otherwise the `connections` field would be document references.
 */
 const fromData = (connections: Tag[], data: Data): Tag => ({
-  ID: data.id,
+  ID: data.ID,
   name: data.name,
   aliases: Option.fromNullable(data.aliases).getOrElse([]),
   score: Option.fromNullable(data.score).getOrElse(0),
+  lastOccurrence: Option.none,
   connections
 });
 

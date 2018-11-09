@@ -86,11 +86,10 @@ const fromTogglData = (
 
       // If the narrative is empty, don't add it to the results
       const narratives = Option.fromNullable(entry.description)
-        .map(
-          description =>
-            description.replace(/ /g, "") !== ""
-              ? [...previous.narratives, { ID, interval, description }]
-              : previous.narratives
+        .map(description =>
+          description.replace(/ /g, "") !== ""
+            ? [...previous.narratives, { ID, interval, description }]
+            : previous.narratives
         )
         .getOrElse(previous.narratives);
 
