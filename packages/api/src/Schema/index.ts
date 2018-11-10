@@ -1,9 +1,6 @@
 import gql from "graphql-tag";
 
-import * as Date from "./Date";
-import * as Duration from "./Duration";
-import * as FormattedDate from "./FormattedDate";
-import * as Interval from "./Interval";
+import * as History from "./History";
 import * as Mutation from "./Mutation";
 import * as Narrative from "./Narrative";
 import * as Query from "./Query";
@@ -19,22 +16,16 @@ export const source = gql`
     interval: Interval!
   }
 
-  ${Interval.schema}
-  ${FormattedDate.schema}
-  ${Duration.schema}
-
-  ${Time.schema}
-
   interface Node {
     ID: ID!
   }
 
+  ${History.schema}
   ${Narrative.schema}
-
   ${Tag.schema}
   ${TagOccurrence.schema}
 
-  ${Date.schema}
+  ${Time.schema}
 `;
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
@@ -42,12 +33,8 @@ export const resolvers: any = {
   Query: Query.resolve,
   Mutation: Mutation.resolve,
 
-  Interval: Interval.resolve,
-  FormattedDate: FormattedDate.resolve,
-  Duration: Duration.resolve,
+  ...Time.resolvers,
 
   Node: { __resolveType: () => "Node" },
-  HasInterval: { __resolveType: () => "HasInterval" },
-
-  Date: Date.resolve
+  HasInterval: { __resolveType: () => "HasInterval" }
 };

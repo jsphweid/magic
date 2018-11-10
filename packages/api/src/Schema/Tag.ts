@@ -6,6 +6,7 @@ import _ from "lodash/fp";
 import Moment from "moment";
 
 import * as Utility from "../Utility";
+import * as Time from "./Time";
 
 export const schema = gql`
   type Tag implements Node {
@@ -23,7 +24,7 @@ export interface Tag {
   name: string;
   aliases: string[];
   score: number;
-  lastOccurrence: Option.Option<Moment.Moment>;
+  lastOccurrence: Option.Option<Time.Date>;
   connections: Tag[];
 }
 
@@ -77,10 +78,6 @@ export const findMatches = async (
 
     const matches = new Map<string, Tag>();
     for (const tag of tags) {
-      if (tag.name === "magic") {
-        console.log(tag);
-      }
-
       isMatch(search, tag).map(matchingWord =>
         matches.set(
           matchingWord,
@@ -108,10 +105,10 @@ const mostRecent = (a: Tag, b: Tag): Tag =>
     ? a
     : b;
 
-(async () => {
-  // tslint:disable-next-line
-  console.log(await findMatches("Outside browsing with Ellie"));
-})();
+// (async () => {
+//   // tslint:disable-next-line
+//   console.log(await findMatches("Outside browsing with Ellie"));
+// })();
 
 //   const names = `-${nameFromString(string)}-`;
 

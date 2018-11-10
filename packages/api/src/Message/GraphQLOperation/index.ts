@@ -24,13 +24,13 @@ export const documentFromMessage = (
     .join(", ");
 
   /*
-    If we're selecting a root field which returns `Time`, use the default
-    time selection i.e. `...Time`
+    If we're selecting a root field which returns `History`, use the default
+    selection i.e. `...History`
   */
   const outputType = GraphQL.getNamedType(rootField.type);
   const selection =
     GraphQL.isObjectType(outputType) && outputType.name === "Time"
-      ? `{ ${Selection.time} }`
+      ? `{ ${Selection.history} }`
       : "{}";
 
   /*
@@ -80,11 +80,10 @@ const messageToRootField = (
   );
 
   /*
-    Use the root field we found or default to `Mutation.setTime`...
+    Use the root field we found or default to `Mutation.track`...
 
-    "time" => parentType is `Query` and rootField is `time`
-    "driving home" => parentType is `Mutation` and rootField is `setTime`
-    "stopTags browsing" => parentType is `Mutation` and rootField is `stopTags`
+    "history" => parentType is `Query` and rootField is `history`
+    "driving home" => parentType is `Mutation` and rootField is `track`
   */
   return rootField
     ? rootField
@@ -109,7 +108,7 @@ const messageToArgs = (
       arg,
 
       /*
-        Since the short-hand `Mutation.setTime` message looks like...
+        Since the short-hand `Mutation.track` message looks like...
         - "bathroom"
         - "cutting the grass"
         - "cooking dinner tags cooking, not dinner"
@@ -153,11 +152,10 @@ const messageToArgValue = (
   */
   const argValueStartIndex = argNameStartIndex + argNameAsInputFormat.length;
   const nextArgNameStartIndex = rootField.args
-    .map(
-      rootFieldArg =>
-        rootFieldArg !== arg
-          ? message.indexOf(nameToWords(rootFieldArg.name))
-          : -1
+    .map(rootFieldArg =>
+      rootFieldArg !== arg
+        ? message.indexOf(nameToWords(rootFieldArg.name))
+        : -1
     )
     .filter(index => index >= argValueStartIndex)
     .sort((a, b) => (a > b ? 1 : -1))[0];

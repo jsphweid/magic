@@ -1,38 +1,33 @@
 import { option as Option } from "fp-ts";
 import * as GraphQL from "graphql";
-import gql from "graphql-tag";
 import _ from "lodash";
 import Moment from "moment-timezone";
 
 import * as Utility from "../../Utility";
-import * as Duration from "../Duration";
 import * as English from "./English";
-
-export const schema = gql`
-  scalar Date
-`;
+import * as Time from "./index";
 
 export const resolve = new GraphQL.GraphQLScalarType({
   name: "Date",
-  serialize: (value: Moment.Moment): number => value.valueOf(),
-  parseValue: (value: string): Moment.Moment => parseDate(value),
-  parseLiteral: (ast: GraphQL.ValueNode): Moment.Moment =>
-    ast.kind === GraphQL.Kind.INT || ast.kind === GraphQL.Kind.FLOAT
-      ? Moment(parseFloat(ast.value))
-      : ast.kind === GraphQL.Kind.STRING
-        ? parseDate(ast.value, ast)
-        : Utility.throwError(
-            new GraphQL.GraphQLError(
-              `"${ast.kind}" must be an \`Int\`, \`Float\`, or \`String\``
-            )
+  serialize: (value: Time.Date): number => value.valueOf(),
+  parseValue: (value: string): Time.Date => parse(value),
+  parseLiteral: (valueNode: GraphQL.ValueNode): Time.Date =>
+    valueNode.kind === GraphQL.Kind.INT || valueNode.kind === GraphQL.Kind.FLOAT
+      ? Moment(parseFloat(valueNode.value))
+      : valueNode.kind === GraphQL.Kind.STRING
+      ? parse(valueNode.value, valueNode)
+      : Utility.throwError(
+          new GraphQL.GraphQLError(
+            `"${valueNode.kind}" must be an \`Int\`, \`Float\`, or \`String\``
           )
+        )
 });
 
-const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
+const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
   /*
-    Check if the source has the meridiem marker (A/AM/P/PM). If it doesn't we'll
-    use that information later to make a better guess about what time was meant.
-  */
+  Check if the source has the meridiem marker (A/AM/P/PM). If it doesn't we'll
+  use that information later to make a better guess about what time was meant.
+*/
   const [, lastTimePart] = source.split(":");
   const isSourceMissingMeridiem =
     lastTimePart &&
@@ -41,9 +36,9 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
   const now = Moment();
 
   /*
-    Try a bunch of hard-coded `Moment` formats (at the end of this file)
-    https://momentjs.com/docs/#/parsing/string-format/
-  */
+  Try a bunch of hard-coded `Moment` formats (at the end of this file)
+  https://momentjs.com/docs/#/parsing/string-format/
+*/
   for (const format of [Moment.ISO_8601, Moment.RFC_2822, ...formats]) {
     const date = Moment.tz(
       source,
@@ -66,18 +61,16 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
     }
 
     /*
-      Sometimes the date Moment parses can be off when "AM" or "PM" is missing.
-      12:30 might become 12:30 AM even though 12:30 PM is closer. We need to
-      check for that situation and adjust the date if it occurs.
-    */
+    Sometimes the date Moment parses can be off when "AM" or "PM" is missing.
+    12:30 might become 12:30 AM even though 12:30 PM is closer. We need to
+    check for that situation and adjust the date if it occurs.
+  */
 
-    const timeDifferenceFromNowMS = timeDifferenceMS(date, now);
     const closerDate = [
       Moment(date).subtract(12, "hours"),
       Moment(date).add(12, "hours")
     ].find(
-      alteredDate =>
-        timeDifferenceFromNowMS > timeDifferenceMS(now, alteredDate)
+      alteredDate => differenceMS(date, now) > differenceMS(now, alteredDate)
     );
 
     return Option.fromNullable(closerDate).getOrElse(date);
@@ -85,14 +78,14 @@ const parseDate = (source: string, ast?: GraphQL.ValueNode): Moment.Moment => {
 
   // Try parsing the date from english-like values i.e. "in five minutes"
   const { value: date } = English.toDate(source).mapLeft(error =>
-    Utility.throwError(new GraphQL.GraphQLError(error.message, ast))
+    Utility.throwError(new GraphQL.GraphQLError(error.message, valueNode))
   );
 
   return date;
 };
 
-const timeDifferenceMS = (start: Moment.Moment, stop: Moment.Moment): number =>
-  Math.abs(Duration.fromDates(start, stop).asMilliseconds());
+const differenceMS = (start: Time.Date, stop: Time.Date): number =>
+  Math.abs(Time.durationFromDates(start, stop).asMilliseconds());
 
 const dateFormats = [
   "MM-DD-YYYY",

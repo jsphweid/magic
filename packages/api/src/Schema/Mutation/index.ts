@@ -4,25 +4,26 @@ import Moment from "moment";
 
 import * as Toggl from "../../Toggl";
 import * as Utility from "../../Utility";
+import * as History from "../History";
 import * as Tag from "../Tag";
 import * as Time from "../Time";
 
 export const schema = gql`
   type Mutation {
-    setTime(start: Date, stop: Date, narrative: String, tags: [String!]): Time!
+    track(start: Date, stop: Date, narrative: String, tags: [String!]): History!
   }
 `;
 
 export const resolve = {
-  setTime: async (
+  track: async (
     _source: undefined,
     args: {
-      start: Moment.Moment | null;
-      stop: Moment.Moment | null;
+      start: Time.Date | null;
+      stop: Time.Date | null;
       narrative: string | null;
       tags: string[] | null;
     }
-  ): Promise<Time.Time> => {
+  ): Promise<History.History> => {
     // const tagsFromNarrative = await Option.fromNullable(args.narrative).fold(
     //   [],
     //   Tag.search
@@ -146,7 +147,7 @@ export const resolve = {
       }
     }
 
-    return Time.fromDates(
+    return History.fromDates(
       Option.fromNullable(args.start),
       Option.fromNullable(args.stop)
     );
@@ -154,8 +155,8 @@ export const resolve = {
 };
 
 const startCurrentEntry = async (
-  now: Moment.Moment,
-  start: Moment.Moment,
+  now: Time.Date,
+  start: Time.Date,
   newEntry: Toggl.Entry.NewEntry
 ): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
   (await Toggl.Entry.getCurrentEntry()).fold(

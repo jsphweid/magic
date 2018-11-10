@@ -5,6 +5,7 @@ import * as Toggl from "../../Toggl";
 import * as MockToggl from "../../Toggl/index.mock";
 import * as Utility from "../../Utility";
 import * as Mutation from "../Mutation";
+import * as Time from "../Time";
 
 jest.mock("../../../.data/tags.json", () => [
   { name: "tag-without-connections" },
@@ -19,8 +20,8 @@ jest.mock("../../../.data/tags.json", () => [
 (Moment as any).now = () => MockToggl.state.now.valueOf();
 
 const entryFromArgs = (args: {
-  start: Moment.Moment | null;
-  stop: Moment.Moment | null;
+  start: Time.Date | null;
+  stop: Time.Date | null;
   narrative: string | null;
   tags: string[] | null;
 }): Toggl.Entry.Entry => {

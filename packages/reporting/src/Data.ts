@@ -1,6 +1,6 @@
+import ApolloClient from "apollo-boost";
 import _ from "lodash";
 import Moment from "moment";
-import ApolloClient from "apollo-boost";
 
 import { Interval, Score } from "~/time";
 

@@ -2,7 +2,7 @@ import { either as Either, option as Option } from "fp-ts";
 import _ from "lodash";
 import Moment from "moment";
 
-import * as Duration from "../Schema/Duration";
+import * as Time from "../Schema/Time";
 import * as Request from "./Request";
 
 /*
@@ -76,8 +76,8 @@ export const GET = async (id: number): Promise<Request.Result<Entry>> =>
   });
 
 export const POST = async (
-  start: Moment.Moment,
-  stop: Moment.Moment,
+  start: Time.Date,
+  stop: Time.Date,
   newEntry: NewEntry
 ): Promise<Request.Result<Entry>> =>
   extractData(
@@ -89,7 +89,7 @@ export const POST = async (
         time_entry: {
           ...newEntryToTogglData(newEntry),
           start: start.toISOString(),
-          duration: Math.abs(Duration.fromDates(start, stop).asSeconds())
+          duration: Math.abs(Time.durationFromDates(start, stop).asSeconds())
         }
       })
     })
@@ -106,7 +106,10 @@ export const PUT = async (entry: Entry): Promise<Request.Result<Entry>> => {
           ...entry,
           duration: Option.fromNullable(entry.stop).fold(entry.duration, stop =>
             Math.abs(
-              Duration.fromDates(Moment(entry.start), Moment(stop)).asSeconds()
+              Time.durationFromDates(
+                Moment(entry.start),
+                Moment(stop)
+              ).asSeconds()
             )
           )
         }
@@ -125,8 +128,8 @@ export const DELETE = async (entry: Entry): Promise<Request.Result<void>> =>
 // Non standard API actions
 
 export const getInterval = async (
-  start: Moment.Moment,
-  stop: Moment.Moment
+  start: Time.Date,
+  stop: Time.Date
 ): Promise<Request.Result<Entry[]>> => {
   const batchSizeMS = 7 * 24 * 60 * 60 * 1000; // Seven days
 
@@ -160,9 +163,8 @@ export const getInterval = async (
 
   // Make sure time entries are returned in the order they were started in
   return Either.right(
-    entries.sort(
-      (a, b) =>
-        Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
+    entries.sort((a, b) =>
+      Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
     )
   );
 };

@@ -1,9 +1,9 @@
 import gql from "graphql-tag";
 
-export const time = "...Time";
+export const history = "...history";
 
 export const fragments = gql`
-  fragment Time on Time {
+  fragment History on History {
     ...Interval
     narratives {
       description

@@ -4,13 +4,12 @@ import Moment from "moment";
 
 import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
-import * as Interval from "./Interval";
 import * as Narrative from "./Narrative";
-// import * as Tag from "./Tag";
 import * as TagOccurrence from "./TagOccurrence";
+import * as Time from "./Time";
 
 export const schema = gql`
-  type Time implements HasInterval {
+  type History implements HasInterval {
     interval: Interval!
     narratives(sort: Sort = DESCENDING): [Narrative!]!
     tagOccurrences: [TagOccurrence!]!
@@ -22,8 +21,8 @@ export const schema = gql`
   }
 `;
 
-export interface Time {
-  interval: Interval.Interval;
+export interface History {
+  interval: Time.Interval;
   narratives: Narrative.Narrative[];
   tagOccurrences: TagOccurrence.Source[];
 }
@@ -34,9 +33,17 @@ interface TogglData {
 }
 
 export const fromDates = async (
-  start: Option.Option<Moment.Moment>,
-  stop: Option.Option<Moment.Moment>
-): Promise<Time> => {
+  start: Option.Option<Time.Date>,
+  stop: Option.Option<Time.Date>
+): Promise<History> => {
+  start.map(start =>
+    stop.map(
+      stop =>
+        start.valueOf() > stop.valueOf() &&
+        Utility.throwError(new Error("`stop` can't be larger than `start`"))
+    )
+  );
+
   /*
     The default `start` is actually the start of the latest time entry when
     no `start` was provided, but we need to grab a small list of time entries
@@ -62,11 +69,11 @@ export const fromDates = async (
   Toggl is no longer in use.
 */
 const fromTogglData = (
-  start: Moment.Moment,
-  stop: Option.Option<Moment.Moment>,
+  start: Time.Date,
+  stop: Option.Option<Time.Date>,
   togglData: TogglData
-): Time =>
-  togglData.entries.reduce<Time>(
+): History =>
+  togglData.entries.reduce<History>(
     (previous, entry) => {
       const interval = {
         start: Moment(entry.start),
@@ -129,8 +136,8 @@ const fromTogglData = (
   `Time` type
 */
 const getTogglData = async (
-  start: Moment.Moment,
-  stop: Moment.Moment
+  start: Time.Date,
+  stop: Time.Date
 ): Promise<TogglData> => {
   const [entries, tags] = await Promise.all([
     Toggl.Entry.getInterval(start, stop),

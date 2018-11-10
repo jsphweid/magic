@@ -1,6 +1,7 @@
 import { either as Either, option as Option } from "fp-ts";
 import Moment from "moment";
 
+import * as Time from "../Schema/Time";
 import * as Toggl from "./index";
 
 // Enable mocking of the `Toggl` module in other spec files
@@ -37,7 +38,7 @@ const MockToggl: MockToggl = Toggl as any;
 */
 
 interface State {
-  now: Moment.Moment;
+  now: Time.Date;
   nextNewEntryID: number;
   currentEntry: Option.Option<Toggl.Entry.Entry>;
   entries: Toggl.Entry.Entry[];
@@ -55,8 +56,8 @@ export let state: State = {
 
 // Construct mock entries from the arguments we normally pass into Toggl
 export const entry = (
-  start: Moment.Moment,
-  stop: Option.Option<Moment.Moment>,
+  start: Time.Date,
+  stop: Option.Option<Time.Date>,
   newEntry: Toggl.Entry.NewEntry
 ): Toggl.Entry.Entry => ({
   id: ++state.nextNewEntryID - 1,
@@ -151,11 +152,7 @@ export const setState = (statePreset: StatePreset) =>
 MockToggl.Entry.GET.mockResolvedValue(async () => Either.right(state.entries));
 
 MockToggl.Entry.POST.mockImplementation(
-  async (
-    start: Moment.Moment,
-    stop: Moment.Moment,
-    newEntry: Toggl.Entry.NewEntry
-  ) => {
+  async (start: Time.Date, stop: Time.Date, newEntry: Toggl.Entry.NewEntry) => {
     const entries = sortEntries([
       entry(start, Option.some(stop), newEntry),
       ...state.entries
@@ -168,18 +165,14 @@ MockToggl.Entry.POST.mockImplementation(
 
 MockToggl.Entry.PUT.mockImplementation(async (entry: Toggl.Entry.Entry) => {
   // If the entry is the current entry, update it
-  const currentEntry = state.currentEntry.map(
-    currentEntry =>
-      currentEntry.id === entry.id
-        ? { ...currentEntry, ...entry }
-        : currentEntry
+  const currentEntry = state.currentEntry.map(currentEntry =>
+    currentEntry.id === entry.id ? { ...currentEntry, ...entry } : currentEntry
   );
 
   // Update the entry in the list of all entries
   const entries = sortEntries(
-    state.entries.map(
-      oldEntry =>
-        oldEntry.id === entry.id ? { ...oldEntry, ...entry } : oldEntry
+    state.entries.map(oldEntry =>
+      oldEntry.id === entry.id ? { ...oldEntry, ...entry } : oldEntry
     )
   );
 
@@ -189,9 +182,8 @@ MockToggl.Entry.PUT.mockImplementation(async (entry: Toggl.Entry.Entry) => {
 
 MockToggl.Entry.DELETE.mockImplementation(async (entry: Toggl.Entry.Entry) => {
   // If the entry is the current entry, unset it
-  const currentEntry = state.currentEntry.chain(
-    currentEntry =>
-      currentEntry.id !== entry.id ? Option.some(currentEntry) : Option.none
+  const currentEntry = state.currentEntry.chain(currentEntry =>
+    currentEntry.id !== entry.id ? Option.some(currentEntry) : Option.none
   );
 
   // Remove the entry from the list of entries
@@ -203,11 +195,8 @@ MockToggl.Entry.DELETE.mockImplementation(async (entry: Toggl.Entry.Entry) => {
 
 MockToggl.Entry.DELETE.mockImplementation(async (entry: Toggl.Entry.Entry) => {
   // If the entry is the current entry, update it
-  const currentEntry = state.currentEntry.map(
-    currentEntry =>
-      currentEntry.id === entry.id
-        ? { ...currentEntry, ...entry }
-        : currentEntry
+  const currentEntry = state.currentEntry.map(currentEntry =>
+    currentEntry.id === entry.id ? { ...currentEntry, ...entry } : currentEntry
   );
 
   // Update the entry in the list of all entries
@@ -245,8 +234,8 @@ MockToggl.Entry.stop.mockImplementation(async () =>
     };
 
     // Update the entry with its new timing information
-    const entries = state.entries.map(
-      entry => (entry.id === currentEntry.id ? stoppedCurrentEntry : entry)
+    const entries = state.entries.map(entry =>
+      entry.id === currentEntry.id ? stoppedCurrentEntry : entry
     );
 
     // Clear out the current entry
@@ -274,6 +263,6 @@ MockToggl.getTags.mockImplementation(async () =>
 );
 
 const sortEntries = (entries: Toggl.Entry.Entry[]): Toggl.Entry.Entry[] =>
-  entries.sort(
-    (a, b) => (Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1)
+  entries.sort((a, b) =>
+    Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
   );
