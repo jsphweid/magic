@@ -56,6 +56,8 @@ export const resolve = {
       tags: Option.some(tags.map(({ name }) => name))
     };
 
+    // (await Promise.all(newEntry.tags.map(_.curry(Tag.updateLastOccurrence)(context))))
+
     // Grab the entries we might affect
     const { value: entries } = (await Toggl.Entry.getInterval(
       Moment(newEntryStart).subtract(5, "hours"),
