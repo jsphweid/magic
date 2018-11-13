@@ -1,7 +1,7 @@
 import * as Tag from "./Tag";
 
 export interface Context {
-  tagLoader: ReturnType<typeof Tag.loader>;
+  tagLoader: Tag.Loader;
 }
 
 export const context = (): Context => ({

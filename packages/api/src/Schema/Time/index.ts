@@ -12,7 +12,7 @@ export const schema = gql`
 
   type Interval {
     start: FormattedDate!
-    duration: FormattedDuration!
+    duration: FormattedDuration
     stop: FormattedDate
   }
 
@@ -50,8 +50,10 @@ export const resolvers = {
   Duration: Duration.resolve,
 
   Interval: {
-    duration: (interval: Interval): Duration => durationFromInterval(interval),
-    stop: (interval: Interval): Date | null => interval.stop.toNullable()
+    duration: ({ start, stop }: Interval): Duration | null =>
+      stop.map(stop => durationFromDates(start, stop)).toNullable(),
+
+    stop: ({ stop }: Interval): Date | null => stop.toNullable()
   },
 
   FormattedDate: {
@@ -60,7 +62,7 @@ export const resolvers = {
     unixMilliseconds: (date: Date): number => date.valueOf(),
 
     humanized: (date: Date): string =>
-      durationFromDates(date, Moment()).humanize(true),
+      durationFromDates(Moment(), date).humanize(true),
 
     formatted: (date: Date, args: { template: string }): string =>
       date.format(args.template)
@@ -83,4 +85,4 @@ export const durationFromInterval = ({ start, stop }: Interval): Duration =>
   durationFromDates(start, stop.getOrElseL(Moment));
 
 export const durationFromDates = (start: Date, stop: Date): Duration =>
-  Moment.duration(start.diff(stop));
+  Moment.duration(stop.diff(start));

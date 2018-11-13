@@ -4,6 +4,7 @@ import Moment from "moment";
 
 import * as Toggl from "../../Toggl";
 import * as Utility from "../../Utility";
+import * as Context from "../Context";
 import * as History from "../History";
 import * as Tag from "../Tag";
 import * as Time from "../Time";
@@ -22,20 +23,20 @@ export const resolve = {
       stop: Time.Date | null;
       narrative: string | null;
       tags: string[] | null;
-    }
+    },
+    context: Context.Context
   ): Promise<History.History> => {
-    // const tagsFromNarrative = await Option.fromNullable(args.narrative).fold(
-    //   [],
-    //   Tag.search
-    // );
+    const tagsToFind = [
+      ...Option.fromNullable(args.tags).getOrElse([]),
+      ...Option.fromNullable(args.narrative)
+        .map(narrative => [narrative])
+        .getOrElse([])
+    ];
 
-    // const tagsFromTagNames = await Option.fromNullable(args.tags).fold(
-    //   [],
-    //   tags => Tag.search(tags.join(" "))
-    // );
-
-    // const tags = [...tagsFromNarrative, ...tagsFromTagNames];
-    const tags: Tag.Tag[] = [];
+    const tags = (await Tag.findMatches(
+      context.tagLoader,
+      tagsToFind.join(" ")
+    )).getOrElseL(Utility.throwError);
 
     const project = (await projectFromTags(tags)).getOrElseL(
       Utility.throwError
@@ -147,7 +148,8 @@ export const resolve = {
       }
     }
 
-    return History.fromDates(
+    return History.getFromDates(
+      context,
       Option.fromNullable(args.start),
       Option.fromNullable(args.stop)
     );
