@@ -8,6 +8,8 @@ import * as Tag from "./Tag";
 import * as TagOccurrence from "./TagOccurrence";
 import * as Time from "./Time";
 
+export * from "./Context";
+
 export const source = gql`
   ${Query.schema}
   ${Mutation.schema}
@@ -34,6 +36,8 @@ export const resolvers: any = {
   Mutation: Mutation.resolve,
 
   ...Time.resolvers,
+
+  Tag: Tag.resolve,
 
   Node: { __resolveType: () => "Node" },
   HasInterval: { __resolveType: () => "HasInterval" }

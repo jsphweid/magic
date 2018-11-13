@@ -29,7 +29,7 @@ const schema = GraphQLTools.makeExecutableSchema({
   resolvers: Schema.resolvers
 });
 
-const server = new GraphQLServer({ schema });
+const server = new GraphQLServer({ schema, context: Schema.context });
 
 server.express
   .options("*", CORS())

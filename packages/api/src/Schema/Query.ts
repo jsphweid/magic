@@ -1,7 +1,9 @@
 import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
+import _ from "lodash/fp";
 import Moment from "moment";
 
+import * as Context from "./Context";
 import * as History from "./History";
 import * as Time from "./Time";
 
@@ -18,47 +20,39 @@ export const resolve = {
       start: Time.Date | null;
       duration: Time.Duration | null;
       stop: Time.Date | null;
-    }
+    },
+    context: Context.Context
   ): Promise<History.History> => {
     const start = Option.fromNullable(args.start);
     const duration = Option.fromNullable(args.duration);
     const stop = Option.fromNullable(args.stop);
 
-    console.log({ start, duration, stop });
+    const getHistory = _.curry(History.getFromDates)(context);
 
     // If we have a `start` and `stop`, ignore the duration
-    if (start.isSome() && stop.isSome()) {
-      return History.fromDates(start, stop);
-    }
+    if (start.isSome() && stop.isSome()) return getHistory(start, stop);
 
     // If only `stop` is missing, it becomes `start` plus the `duration`
     if (start.isSome() && duration.isSome()) {
-      return History.fromDates(
+      return getHistory(
         start,
-        Option.some(
-          Moment(start.value).add(duration.value.asMilliseconds(), "ms")
-        )
+        Option.some(Moment(start.value).add(duration.value))
       );
     }
 
     // If only `start` is missing, it becomes `stop` minus the `duration`
     if (stop.isSome() && duration.isSome()) {
-      return History.fromDates(
-        Option.some(
-          Moment(stop.value).subtract(duration.value.asMilliseconds(), "ms")
-        ),
+      return getHistory(
+        Option.some(Moment(stop.value).subtract(duration.value)),
         stop
       );
     }
 
     // If `start` is missing, it becomes now minus the `duration`
     if (start.isNone() && duration.isSome()) {
-      return History.fromDates(
-        Option.some(Moment().subtract(duration.value)),
-        stop
-      );
+      return getHistory(Option.some(Moment().subtract(duration.value)), stop);
     }
 
-    return History.fromDates(start, stop);
+    return getHistory(start, stop);
   }
 };
