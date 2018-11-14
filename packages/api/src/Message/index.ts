@@ -3,6 +3,7 @@ import { either as Either, option as Option } from "fp-ts";
 import * as GraphQL from "graphql";
 import { twiml as Twiml } from "twilio";
 
+import * as Schema from "../Schema";
 import * as GraphQLOperation from "./GraphQLOperation";
 import * as Reply from "./Reply";
 
@@ -59,6 +60,7 @@ export const handler = (
 
   const result = await GraphQL.graphql<any>({
     source: operationSource,
+    contextValue: Schema.context(),
     schema
   });
 
@@ -88,11 +90,10 @@ const validateSender = (
 ): Either.Either<Response, string> =>
   Either.fromNullable(responses.errors.senderIsMissing)(
     request.body.From
-  ).chain(
-    from =>
-      from !== "+16185205959"
-        ? Either.left(responses.errors.senderIsNotOwner)
-        : Either.right(from)
+  ).chain(from =>
+    from !== "+16185205959"
+      ? Either.left(responses.errors.senderIsNotOwner)
+      : Either.right(from)
   );
 
 const validateMessage = (

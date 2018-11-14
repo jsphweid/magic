@@ -112,8 +112,3 @@ const nameFromString = (string: string): string =>
     .trim()
     .toLowerCase()
     .replace(/ /g, "-");
-
-(async () => {
-  // tslint:disable-next-line
-  console.log(await findMatches(Loader.loader(), "Working on magic with Todd"));
-})();

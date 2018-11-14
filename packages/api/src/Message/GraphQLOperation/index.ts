@@ -29,13 +29,13 @@ export const documentFromMessage = (
   */
   const outputType = GraphQL.getNamedType(rootField.type);
   const selection =
-    GraphQL.isObjectType(outputType) && outputType.name === "Time"
+    GraphQL.isObjectType(outputType) && outputType.name === "History"
       ? `{ ${Selection.history} }`
       : "{}";
 
   /*
     Print the operation as GraphQL source code and if needed include the
-    fragments for the default `Time` selection
+    fragments for the default `History` selection
   */
   return gql`
     ${operation} {
@@ -89,7 +89,7 @@ const messageToRootField = (
     ? rootField
     : {
         parentType: mutationType,
-        rootField: mutationType.getFields().setTime
+        rootField: mutationType.getFields().track
       };
 };
 
@@ -198,10 +198,10 @@ const messageToArgValue = (
 
 /*
   Convert GraphQL names like...
-  `setTime`, `startTags`, and `thisIsLongerThanThose`
+  `track`, `startTags`, and `thisIsLongerThanThose`
 
   ...into what a human would provide...
-  "start time", "start tags", "this is longer than those"
+  "track", "start tags", "this is longer than those"
 */
 const nameToWords = (name: string): string =>
   name

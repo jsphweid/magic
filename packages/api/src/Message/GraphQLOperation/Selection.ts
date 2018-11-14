@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-export const history = "...history";
+export const history = "...History";
 
 export const fragments = gql`
   fragment History on History {
@@ -8,7 +8,7 @@ export const fragments = gql`
     narratives {
       description
     }
-    tags: tagOccurrences {
+    tagOccurrences {
       tag {
         name
       }
@@ -27,6 +27,6 @@ export const fragments = gql`
   }
 
   fragment FormattedDate on FormattedDate {
-    formatted(format: "h:mm A ddd")
+    formatted(template: "h:mm A ddd")
   }
 `;
