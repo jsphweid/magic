@@ -20,7 +20,7 @@ export const schema = gql`
 export interface History {
   interval: Time.Interval;
   narratives: Narrative.Narrative[];
-  tagOccurrences: TagOccurrence.TagOccurence[];
+  tagOccurrences: TagOccurrence.TagOccurrence[];
 }
 
 export const getFromDates = async (
@@ -46,15 +46,16 @@ export const getFromDates = async (
     stop.getOrElseL(() => Moment())
   )).getOrElseL(Utility.throwError);
 
-  const history: {
-    narratives: Narrative.Narrative[];
-    tagOccurrences: TagOccurrence.TagOccurence[];
-  } = {
-    narratives: [],
-    tagOccurrences: []
-  };
+  const entriesToInclude =
+    start.isNone() && recentEntries.length > 0
+      ? [recentEntries[0]]
+      : recentEntries;
 
-  for (const entry of recentEntries) {
+  const narratives: Narrative.Narrative[] = [];
+  const tagOccurrences: TagOccurrence.TagOccurrence[] = [];
+
+  // If there is only on
+  for (const entry of entriesToInclude) {
     const interval = {
       start: Moment(entry.start),
       stop: Option.fromNullable(entry.stop).map(stop => Moment(stop))
@@ -70,14 +71,14 @@ export const getFromDates = async (
     Option.fromNullable(entry.description).map(
       description =>
         description.replace(/ /g, "") !== "" &&
-        history.narratives.push({ ID, interval, description })
+        narratives.push({ ID, interval, description })
     );
 
     // Add any tag occurrences to the history
     (await context.tagLoader.loadMany(
       Option.fromNullable(entry.tags).getOrElse([])
     )).forEach(tag =>
-      history.tagOccurrences.push({
+      tagOccurrences.push({
         ID,
         interval,
         tag: tag.getOrElseL(Utility.throwError)
@@ -89,12 +90,14 @@ export const getFromDates = async (
     interval: {
       start: start.getOrElse(
         // Use the `start` of the first time entry when none was provided
-        Option.fromNullable(history.tagOccurrences[0])
+        Option.fromNullable(tagOccurrences[0])
           .map(firstTagOccurrence => firstTagOccurrence.interval.start)
           .getOrElseL(() => Moment())
       ),
       stop
     },
-    ...history
+
+    narratives,
+    tagOccurrences
   };
 };

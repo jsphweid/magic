@@ -10,8 +10,6 @@ import * as Utility from "./Utility";
 const DATA_DIR = Path.join(__dirname, "../data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;
 
-const db = Firebase.firestore();
-
 const saveJson = (filePath: string, contents: object): void => {
   const backupPath = `${BACKUP_DIR}/${filePath}`;
   FS.writeFileSync(backupPath, JSON.stringify(contents, null, 2));
@@ -21,12 +19,14 @@ const saveJson = (filePath: string, contents: object): void => {
 };
 
 (async () => {
+  const DB = Firebase.firestore();
+
   if (__dirname.includes("functions")) return;
 
   // Save the Toggl and Magic versions of every tag
 
   const magicTags: { [id: string]: any } = {};
-  (await db.collection("tags").get()).forEach(document => {
+  (await DB.collection("tags").get()).forEach(document => {
     const data = document.data();
     if (data.connections) {
       data.connections = data.connections.map(
@@ -34,7 +34,10 @@ const saveJson = (filePath: string, contents: object): void => {
       );
     }
 
-    magicTags[document.id] = data;
+    magicTags[document.id] = {
+      ID: document.id,
+      ...data
+    };
   });
 
   saveJson(`magic/tags.json`, magicTags);

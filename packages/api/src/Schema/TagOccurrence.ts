@@ -11,7 +11,7 @@ export const schema = gql`
   }
 `;
 
-export interface TagOccurence {
+export interface TagOccurrence {
   ID: string;
   interval: Time.Interval;
   tag: Tag.Tag;

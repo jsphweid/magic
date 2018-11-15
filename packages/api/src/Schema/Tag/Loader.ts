@@ -1,10 +1,11 @@
 import DataLoader from "dataloader";
-import Firebase, { firestore as Firestore } from "firebase";
+import { firestore as Firestore } from "firebase";
 import { either as Either, option as Option } from "fp-ts";
 import _ from "lodash/fp";
 import Moment from "moment";
 
 import * as Utility from "../../Utility";
+import * as Context from "../Context";
 import * as Tag from "./index";
 
 interface Data {
@@ -18,9 +19,7 @@ interface Data {
 export type Loader = ReturnType<typeof loader>;
 export type Result = Either.Either<Error, Tag.Tag>;
 
-const db = Firebase.firestore();
-
-export const loader = (): DataLoader<string, Result> =>
+export const loader = (DB: Firestore.Firestore): DataLoader<string, Result> =>
   new DataLoader(async keys => {
     const tags = new Map<string, Result>();
 
@@ -32,7 +31,7 @@ export const loader = (): DataLoader<string, Result> =>
             Since Toggl stores tag names, not IDs, we need to search for both
             First, search for the tag assuming `key` is the `name`
           */
-          const tagByName = await getByName(key);
+          const tagByName = await getByName(DB, key);
           if (tagByName.isRight()) {
             // If we found it, set both the `ID` and `name` keys to the tag
             tags.set(key, tagByName);
@@ -41,7 +40,7 @@ export const loader = (): DataLoader<string, Result> =>
           }
 
           // Search for the tag assuming `key` was an `ID`
-          const tagByID = await getByID(key);
+          const tagByID = await getByID(DB, key);
 
           // Set the key for `name` if we found the tag
           if (tagByID.isRight()) tags.set(tagByID.value.name, tagByID);
@@ -58,10 +57,12 @@ export const loader = (): DataLoader<string, Result> =>
     return keys.map(key => tags.get(key) as Result);
   });
 
-const getByName = async (name: string): Promise<Result> =>
+const getByName = async (
+  DB: Firestore.Firestore,
+  name: string
+): Promise<Result> =>
   Option.fromNullable(
-    await db
-      .collection("tags")
+    await DB.collection("tags")
       .where("name", "==", name)
       .limit(1)
       .get()
@@ -72,10 +73,9 @@ const getByName = async (name: string): Promise<Result> =>
       Either.left(new Error(`There is no tag with the \`name\` "${name}"`))
     );
 
-const getByID = async (ID: string): Promise<Result> =>
+const getByID = async (DB: Firestore.Firestore, ID: string): Promise<Result> =>
   Option.fromNullable(
-    await db
-      .collection("tags")
+    await DB.collection("tags")
       .doc(ID)
       .get()
   )
@@ -85,22 +85,23 @@ const getByID = async (ID: string): Promise<Result> =>
     );
 
 export const getAll = async (
-  loader: Loader
+  context: Context.Context
 ): Promise<Either.Either<Error, Tag.Tag[]>> => {
   try {
     return Either.right(
-      Option.fromNullable(await db.collection("tags").get())
+      Option.fromNullable(await context.DB.collection("tags").get())
         .map(({ docs }) => docs)
         .getOrElse([])
         .map(document => {
           const result = fromDocument(document);
-          loader.prime(document.id, result);
+          context.tagLoader.prime(document.id, result);
 
           if (result.isLeft()) Utility.throwError(result.value);
 
           // We throw errors before getting here, so it will always be a `Tag`
           const tag = result.value as Tag.Tag;
-          loader.prime(tag.name, Either.right(tag));
+          context.tagLoader.prime(tag.name, Either.right(tag));
+
           return tag;
         })
     );

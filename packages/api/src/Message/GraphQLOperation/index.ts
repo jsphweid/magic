@@ -15,6 +15,7 @@ export const documentFromMessage = (
     Match the start of the message start with a root field on either `Query` or
     `Mutation`
   */
+
   const { parentType, rootField } = messageToRootField(schema, message);
   const operation = parentType.name === "Query" ? "query" : "mutation";
 
@@ -118,8 +119,13 @@ const messageToArgs = (
         - "narrative bathroom"
         - "narrative cutting the grass"
         - "narrative cooking dinner tags cooking, not dinner"
+
+        ...but not if we aren't using the short-hand version, i.e. "track ..."
+        is unchanged
       */
-      arg.name === "narrative" && !message.toLowerCase().includes("narrative")
+      arg.name === "narrative" &&
+        !message.toLowerCase().includes("narrative") &&
+        !message.toLowerCase().includes("track")
         ? `narrative ${message}`
         : message
     )

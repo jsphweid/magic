@@ -43,10 +43,10 @@ export const resolve = {
 // export const updateLastOccurrence = async (loader: Loader.Loader, lastOccurrence: Moment.Moment)
 
 export const findMatches = async (
-  loader: Loader.Loader,
+  context: Context.Context,
   search: string
 ): Promise<Either.Either<Error, Tag[]>> =>
-  (await Loader.getAll(loader)).map(tags => {
+  (await Loader.getAll(context)).map(tags => {
     const matches = new Map<string, Tag>();
 
     for (const tag of tags) {

@@ -35,14 +35,12 @@ if (process.env.NODE_ENV === "production") {
 
     TWILIO_NUMBERS_OWNER: config.twilio.numbers.owner
   };
-} else {
+} else if (!__dirname.includes("functions")) {
   process.env = {
     ...process.env,
     ...JSON.parse(FS.readFileSync(ENVIRONMENT_JSON_PATH).toString())
   };
-}
 
-if (!__dirname.includes("functions")) {
   REQUIRED_ENVIRONMENT_VARIABLES.forEach(variableName =>
     Option.fromNullable(process.env[variableName]).getOrElseL(() =>
       Utility.throwError(

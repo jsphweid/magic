@@ -8,6 +8,7 @@
     "backup": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Backup.ts"
   },
   "dependencies": {
+    "@types/graphql": "^14.0.3",
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",

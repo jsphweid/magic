@@ -34,7 +34,7 @@ export const resolve = {
     ];
 
     const tags = (await Tag.findMatches(
-      context.tagLoader,
+      context,
       tagsToFind.join(" ")
     )).getOrElseL(Utility.throwError);
 
