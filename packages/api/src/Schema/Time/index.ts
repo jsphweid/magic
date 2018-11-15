@@ -1,6 +1,6 @@
 import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
-import Moment from "moment";
+import Moment from "moment-timezone";
 
 import * as Date from "./Date";
 import * as Duration from "./Duration";
@@ -65,7 +65,7 @@ export const resolvers = {
       durationFromDates(Moment(), date).humanize(true),
 
     formatted: (date: Date, args: { template: string }): string =>
-      date.format(args.template)
+      date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
   },
 
   FormattedDuration: {

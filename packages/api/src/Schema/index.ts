@@ -30,8 +30,6 @@ export const source = gql`
   ${Time.schema}
 `;
 
-console.log({ source });
-
 // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22789
 export const resolvers: any = {
   Query: Query.resolve,

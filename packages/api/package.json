@@ -35,7 +35,7 @@
     "@types/lodash": "^4.14.116",
     "@types/moment-timezone": "^0.5.8",
     "@types/stringify-object": "^3.2.0",
-    "parcel-bundler": "^1.9.7",
+    "parcel-bundler": "^1.9.4",
     "parcel-plugin-typescript": "^1.0.0",
     "typescript": "^3.0.3"
   }
