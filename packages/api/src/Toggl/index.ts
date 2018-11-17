@@ -25,9 +25,9 @@ export interface Project {
 }
 
 export const getProject = async (
-  id: string
+  ID: string
 ): Promise<Request.Result<Project>> =>
-  Request.workspace<Project>(`/projects/${id}`);
+  Request.workspace<Project>(`/projects/${ID}`);
 
 export const getProjects = async (): Promise<Request.Result<Project[]>> =>
   Request.workspace<Project[]>("/projects");

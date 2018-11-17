@@ -8,6 +8,12 @@ export const fragments = gql`
       ...Interval
       description
     }
+
+    tags: tagOccurrences {
+      tag {
+        name
+      }
+    }
   }
 
   fragment Interval on HasInterval {

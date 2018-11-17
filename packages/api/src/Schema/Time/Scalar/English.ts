@@ -1,7 +1,7 @@
 import { either as Either, option as Option } from "fp-ts";
 import Moment from "moment";
 
-import * as Time from "./index";
+import * as Time from "../index";
 
 /*
   Parse english date expressions...
@@ -34,7 +34,7 @@ export const toDuration = (
   english: string
 ): Either.Either<Error, Time.Duration> =>
   toDate(`${english} ahead`).map(date =>
-    Time.durationFromDates(date, Moment())
+    Time.durationFromDates(Moment(), date)
   );
 
 const englishToWords = (

@@ -2,30 +2,38 @@ import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Toggl from "../../Toggl";
-import * as Utility from "../../Utility";
-import * as Context from "../Context";
-import * as History from "../History";
-import * as Tag from "../Tag";
-import * as Time from "../Time";
+import * as Toggl from "../Toggl";
+import * as Utility from "../Utility";
+import * as Context from "./Context";
+import * as History from "./History";
+import * as Tag from "./Tag";
+import * as Time from "./Time";
 
 export const schema = gql`
   type Mutation {
-    track(start: Date, stop: Date, narrative: String, tags: [String!]): History!
+    track(
+      start: Date
+      duration: Duration
+      stop: Date
+      narrative: String
+      tags: [String!]
+    ): History!
   }
 `;
 
 export const resolve = {
   track: async (
     _source: undefined,
-    args: {
-      start: Time.Date | null;
-      stop: Time.Date | null;
+    args: Time.SelectionGraphQLArgs & {
       narrative: string | null;
       tags: string[] | null;
     },
     context: Context.Context
   ): Promise<History.History> => {
+    const selection = Time.selectionFromGraphQLArgs(args).getOrElseL(
+      Utility.throwError
+    );
+
     const tagsToFind = [
       ...Option.fromNullable(args.tags).getOrElse([]),
       ...Option.fromNullable(args.narrative)
@@ -44,8 +52,8 @@ export const resolve = {
 
     const now = Moment();
 
-    const newEntryStart = Option.fromNullable(args.start).getOrElse(now);
-    const newEntryStop = Option.fromNullable(args.stop).getOrElse(now);
+    const newEntryStart = selection.start.getOrElse(now);
+    const newEntryStop = selection.stop.getOrElse(now);
 
     const newEntryStartMS = newEntryStart.valueOf();
     const newEntryStopMS = newEntryStop.valueOf();
@@ -53,7 +61,7 @@ export const resolve = {
     const newEntry = {
       pid: project.map(({ id }) => id),
       description: Option.fromNullable(args.narrative),
-      tags: Option.some(tags.map(({ name }) => name))
+      tags: tags.map(({ name }) => name)
     };
 
     // (await Promise.all(newEntry.tags.map(_.curry(Tag.updateLastOccurrence)(context))))
@@ -64,8 +72,10 @@ export const resolve = {
       newEntryStop
     )).mapLeft(Utility.throwError);
 
+    console.log(selection);
+
     // Create or start a new entry depending on if a stop time was provided
-    (args.stop
+    (selection.stop
       ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
       : await startCurrentEntry(now, newEntryStart, newEntry)
     ).mapLeft(Utility.throwError);
@@ -84,7 +94,7 @@ export const resolve = {
           New:      |=================|
           Old:            |------|
 
-          Delete the old entry
+          Action: Delete the old entry
 
           Result:   |=================|
         */
@@ -97,7 +107,7 @@ export const resolve = {
           New:            |=====|
           Old:      |-----------------|
           
-          Split the old entry
+          Action: Split the old entry
 
           Result:   |----||=====||----|
         */
@@ -108,7 +118,7 @@ export const resolve = {
           Toggl.Entry.POST(oldEntryStart, newEntryStart, {
             pid: Option.fromNullable(oldEntry.pid),
             description: Option.fromNullable(oldEntry.description),
-            tags: Option.fromNullable(oldEntry.tags)
+            tags: Option.fromNullable(oldEntry.tags).getOrElse([])
           }),
           Toggl.Entry.PUT({
             ...oldEntry,
@@ -120,7 +130,7 @@ export const resolve = {
           New:            |===============|
           Old:      |-----------------|
           
-          Trim the end of the old entry
+          Action: Trim the end of the old entry
 
           Result:   |----||===============|
         */
@@ -136,7 +146,7 @@ export const resolve = {
           New:      |===============|
           Old:            |-----------------|
           
-          Trim the start of the old entry
+          Action: Trim the start of the old entry
 
           Result:   |===============||------|
         */
@@ -150,11 +160,7 @@ export const resolve = {
       }
     }
 
-    return History.getFromDates(
-      context,
-      Option.fromNullable(args.start),
-      Option.fromNullable(args.stop)
-    );
+    return History.getFromTimeSelection(context, selection);
   }
 };
 

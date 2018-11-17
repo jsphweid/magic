@@ -35,7 +35,7 @@ export interface Entry {
 export interface NewEntry {
   pid: Option.Option<number>;
   description: Option.Option<string>;
-  tags: Option.Option<string[]>;
+  tags: string[];
 }
 
 const newEntryToTogglData = (
@@ -49,7 +49,7 @@ const newEntryToTogglData = (
   created_with: "HireMeForMoney",
   pid: newEntry.pid.toUndefined(),
   description: newEntry.description.toUndefined(),
-  tags: newEntry.tags.toUndefined()
+  tags: newEntry.tags
 });
 
 /*
@@ -67,10 +67,10 @@ const extractData = async <Data>(
 
 // Standard HTTP verbs
 
-export const GET = async (id: number): Promise<Request.Result<Entry>> =>
+export const GET = async (ID: number): Promise<Request.Result<Entry>> =>
   Request.execute<Entry>({
     method: "GET",
-    resource: `/time_entries/${id}`,
+    resource: `/time_entries/${ID}`,
     params: Option.none,
     data: Option.none
   });

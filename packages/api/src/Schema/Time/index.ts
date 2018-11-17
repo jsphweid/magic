@@ -2,8 +2,14 @@ import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment-timezone";
 
-import * as Date from "./Date";
-import * as Duration from "./Duration";
+import * as Date from "./Scalar/Date";
+import * as Duration from "./Scalar/Duration";
+
+export {
+  Selection,
+  GraphQLArgs as SelectionGraphQLArgs,
+  fromGraphQLArgs as selectionFromGraphQLArgs
+} from "./Selection";
 
 export const schema = gql`
   scalar Date
@@ -45,6 +51,12 @@ export interface Interval {
 export type Date = Moment.Moment;
 export type Duration = Moment.Duration;
 
+export const durationFromInterval = ({ start, stop }: Interval): Duration =>
+  durationFromDates(start, stop.getOrElseL(Moment));
+
+export const durationFromDates = (start: Date, stop: Date): Duration =>
+  Moment.duration(stop.diff(start));
+
 export const resolvers = {
   Date: Date.resolve,
   Duration: Duration.resolve,
@@ -80,9 +92,3 @@ export const resolvers = {
     years: (duration: Duration): number => duration.asYears()
   }
 };
-
-export const durationFromInterval = ({ start, stop }: Interval): Duration =>
-  durationFromDates(start, stop.getOrElseL(Moment));
-
-export const durationFromDates = (start: Date, stop: Date): Duration =>
-  Moment.duration(stop.diff(start));

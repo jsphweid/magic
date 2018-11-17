@@ -23,19 +23,10 @@ export interface History {
   tagOccurrences: TagOccurrence.TagOccurrence[];
 }
 
-export const getFromDates = async (
+export const getFromTimeSelection = async (
   context: Context.Context,
-  start: Option.Option<Time.Date>,
-  stop: Option.Option<Time.Date>
+  { start, stop }: Time.Selection
 ): Promise<History> => {
-  start.map(start =>
-    stop.map(
-      stop =>
-        start.valueOf() > stop.valueOf() &&
-        Utility.throwError(new Error("`stop` can't be larger than `start`"))
-    )
-  );
-
   /*
     The default `start` is actually the start of the latest time entry when
     no `start` was provided, but we need to grab a small list of time entries
