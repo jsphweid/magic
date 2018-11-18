@@ -45,7 +45,6 @@ export const getFromTimeSelection = async (
   const narratives: Narrative.Narrative[] = [];
   const tagOccurrences: TagOccurrence.TagOccurrence[] = [];
 
-  // If there is only on
   for (const entry of entriesToInclude) {
     const interval = {
       start: Moment(entry.start),

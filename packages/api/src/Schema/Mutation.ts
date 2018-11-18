@@ -72,10 +72,8 @@ export const resolve = {
       newEntryStop
     )).mapLeft(Utility.throwError);
 
-    console.log(selection);
-
     // Create or start a new entry depending on if a stop time was provided
-    (selection.stop
+    (selection.stop.isSome()
       ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
       : await startCurrentEntry(now, newEntryStart, newEntry)
     ).mapLeft(Utility.throwError);
