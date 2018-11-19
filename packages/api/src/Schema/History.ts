@@ -1,31 +1,33 @@
 import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
+import _ from "lodash/fp";
 import Moment from "moment";
 
 import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
 import * as Context from "./Context";
 import * as Narrative from "./Narrative";
-import * as TagOccurrence from "./TagOccurrence";
+import * as Tag from "./Tag";
 import * as Time from "./Time";
 
 export const schema = gql`
-  type History implements HasTiming {
-    timing: Timing!
+  type History implements Time_Timed {
+    timing: Time_Timing!
     narratives: [Narrative!]!
-    tagOccurrences: [TagOccurrence!]!
   }
 `;
 
 export interface History {
   interval: Time.Interval;
   narratives: Narrative.Narrative[];
-  tagOccurrences: TagOccurrence.TagOccurrence[];
 }
 
-export const getFromTimeSelection = async (
+export const getFromSelection = async (
   context: Context.Context,
-  selection: Time.Selection
+  selection: {
+    tags: Tag.Selection;
+    time: Time.Selection;
+  }
 ): Promise<History> => {
   /*
     The default `start` is actually the start of the latest time entry when
@@ -33,64 +35,56 @@ export const getFromTimeSelection = async (
     to know about the latest time entry
   */
   const recentEntries = (await Toggl.Entry.getInterval(
-    selection.start.getOrElseL(() => Moment().subtract(2, "days")),
-    selection.stop.getOrElseL(() => Moment())
+    selection.time.start.getOrElseL(() => Moment().subtract(1, "days")),
+    selection.time.stop.getOrElseL(() => Moment())
   )).getOrElseL(Utility.throwError);
 
   const entriesToInclude =
-    selection.start.isNone() && recentEntries.length > 0
+    selection.time.start.isNone() && recentEntries.length > 0
       ? [recentEntries[0]]
       : recentEntries;
 
   const narratives: Narrative.Narrative[] = [];
-  const tagOccurrences: TagOccurrence.TagOccurrence[] = [];
-
   for (const entry of entriesToInclude) {
-    const start = Moment(entry.start);
-    const interval: Time.Interval = Option.fromNullable(entry.stop).fold(
-      Time.ongoingInterval(start),
-      stop => Time.stoppedInterval(start, Moment(stop))
-    );
-
-    /*
-      Use the time entry's `id` for tag occurrences and narratives while we're
-      still using Toggl
-    */
-    const ID = `${entry.id}`;
-
-    // If the narrative isn't empty, add it the history
-    Option.fromNullable(entry.description).map(
-      description =>
-        description.replace(/ /g, "") !== "" &&
-        narratives.push({ ID, timing: interval, description })
-    );
-
-    // Add any tag occurrences to the history
-    (await context.tagLoader.loadMany(
+    const tags = (await context.tagLoader.loadMany(
       Option.fromNullable(entry.tags).getOrElse([])
-    )).forEach(tag =>
-      tagOccurrences.push({
-        ID,
-        timing: interval,
-        tag: tag.getOrElseL(Utility.throwError)
-      })
-    );
+    )).map(result => result.getOrElseL(Utility.throwError));
+
+    const start = Moment(entry.start);
+
+    // if (
+    //   _.intersection(selection.tags.include.names, tags.map(({ name }) => name))
+    //     .length === 0 &&
+    //   _.intersection(selection.tags.exclude.ids, tags.map(({ ID }) => ID))
+    //     .length === 0
+    // ) {
+    //   continue;
+    // }
+
+    narratives.push({
+      ID: `${entry.id}`,
+      timing: Option.fromNullable(entry.stop).fold(
+        Time.ongoingInterval(start),
+        stop => Time.stoppedInterval(start, Moment(stop))
+      ),
+      description: Option.fromNullable<string>(null).getOrElseL(() =>
+        Narrative.descriptionFromTags(tags)
+      ),
+      tags
+    });
   }
 
   // Use the `start` of the first time entry when none was provided
-  const start = selection.start.getOrElse(
-    Option.fromNullable(tagOccurrences[0])
-      .map(firstTagOccurrence => firstTagOccurrence.timing.start)
+  const start = selection.time.start.getOrElse(
+    Option.fromNullable(narratives[0])
+      .map(firstNarrative => firstNarrative.timing.start)
       .getOrElseL(Moment)
   );
 
-  return {
-    interval: selection.stop.foldL(
-      () => Time.ongoingInterval(start),
-      stop => Time.stoppedInterval(start, stop)
-    ),
+  const interval = selection.time.stop.foldL(
+    () => Time.ongoingInterval(start),
+    stop => Time.stoppedInterval(start, stop)
+  );
 
-    narratives,
-    tagOccurrences
-  };
+  return { interval, narratives };
 };

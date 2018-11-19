@@ -8,7 +8,7 @@ import * as Time from "../index";
 import * as English from "./English";
 
 export const resolve = new GraphQL.GraphQLScalarType({
-  name: "Date",
+  name: "Time_Date",
   serialize: (value: Time.Date): number => value.valueOf(),
   parseValue: (value: string): Time.Date => parse(value),
   parseLiteral: (valueNode: GraphQL.ValueNode): Time.Date =>

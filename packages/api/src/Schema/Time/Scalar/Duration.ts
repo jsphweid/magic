@@ -6,7 +6,7 @@ import * as Time from "../index";
 import * as English from "./English";
 
 export const resolve = new GraphQL.GraphQLScalarType({
-  name: "Duration",
+  name: "Time_Duration",
   serialize: (value: Time.Duration): number => value.asMilliseconds(),
   parseValue: (value: string): Time.Duration => parse(value),
   parseLiteral: (valueNode: GraphQL.ValueNode): Time.Duration =>

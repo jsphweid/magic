@@ -3,23 +3,30 @@ import gql from "graphql-tag";
 import * as Utility from "../Utility";
 import * as Context from "./Context";
 import * as History from "./History";
+import * as Tag from "./Tag";
 import * as Time from "./Time";
 
 export const schema = gql`
   type Query {
-    ID: ID!
-    history(start: Date, duration: Duration, stop: Date): History!
+    history(time: Time_Selection!, tags: Tag_Selection): History!
   }
 `;
 
 export const resolve = {
   history: async (
     _source: undefined,
-    args: Time.SelectionGraphQLArgs,
+    args: {
+      time: Time.SelectionGraphQLArgs;
+      tags: Tag.SelectionGraphQLArgs | null;
+    },
     context: Context.Context
   ): Promise<History.History> =>
-    History.getFromTimeSelection(
-      context,
-      Time.selectionFromGraphQLArgs(args).getOrElseL(Utility.throwError)
-    )
+    History.getFromSelection(context, {
+      time: Time.selectionFromGraphQLArgs(args.time).getOrElseL(
+        Utility.throwError
+      ),
+      tags: Tag.selectionFromGraphQLArgs(args.tags).getOrElseL(
+        Utility.throwError
+      )
+    })
 };

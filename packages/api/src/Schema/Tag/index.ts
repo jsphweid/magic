@@ -1,7 +1,9 @@
 import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
+import _ from "lodash/fp";
 import Moment from "moment";
 
+import * as Result from "../../Result";
 import * as Utility from "../../Utility";
 import * as Context from "../Context";
 import * as Time from "../Time";
@@ -10,15 +12,33 @@ import * as Loader from "./Loader";
 export * from "./Loader";
 
 export const schema = gql`
+  interface Tag_Tagged {
+    tags: [Tag!]!
+  }
+
   type Tag implements Node {
     ID: ID!
     name: String!
     aliases: [String!]!
     score: Int!
-    lastOccurrence: FormattedDate
+    lastOccurrence: Time_FormattedDate
     connections: [Tag!]!
   }
+
+  input Tag_Selection {
+    include: Tag_Filter
+    exclude: Tag_Filter
+  }
+
+  input Tag_Filter {
+    ids: [ID!]
+    names: [String!]
+  }
 `;
+
+export interface Tagged {
+  tags: Tag[];
+}
 
 export interface Tag {
   ID: string;
@@ -29,15 +49,65 @@ export interface Tag {
   connections: string[];
 }
 
-export const resolve = {
-  connections: async (
-    tag: Tag,
-    _args: undefined,
-    context: Context.Context
-  ): Promise<Tag[]> =>
-    (await context.tagLoader.loadMany(tag.connections)).map(tag =>
-      tag.getOrElseL(Utility.throwError)
-    )
+export interface Selection {
+  include: Filter;
+  exclude: Filter;
+}
+
+interface Filter {
+  names: string[];
+  ids: string[];
+}
+
+export interface SelectionGraphQLArgs {
+  tags?: {
+    include?: Partial<Filter> | null;
+    exclude?: Partial<Filter> | null;
+  };
+}
+
+export const selectionFromGraphQLArgs = (
+  args?: SelectionGraphQLArgs | null
+): Result.Result<Selection> => {
+  const selection: Selection = _.defaultsDeep(
+    Option.fromNullable(args).getOrElse({})
+  )({
+    include: { names: [], ids: [] },
+    exclude: { names: [], ids: [] }
+  });
+
+  const conflicts = [
+    ..._.intersection(selection.include.names, selection.exclude.names),
+    ..._.intersection(selection.include.ids, selection.exclude.ids)
+  ];
+
+  return conflicts.length === 0
+    ? Result.success(selection)
+    : Result.error(
+        conflicts
+          .map(
+            conflict =>
+              `"${conflict}" was included and excluded in the same selection`
+          )
+          .join(" ")
+      );
+};
+
+export const resolvers = {
+  Tag_Tagged: {
+    __resolveType: () => "Tag_Tagged"
+  },
+
+  Tag: {
+    connections: async (
+      tag: Tag,
+      _args: undefined,
+      context: Context.Context
+    ): Promise<Tag[]> =>
+      (await context.tagLoader.loadMany(tag.connections)).map(tag =>
+        tag.getOrElseL(Utility.throwError)
+      )
+  }
 };
 
 // export const updateLastOccurrence = async (loader: Loader.Loader, lastOccurrence: Moment.Moment)

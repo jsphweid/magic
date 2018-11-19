@@ -16,13 +16,13 @@ export const schema = gql`
     outputs: [Output!]!
   }
 
-  type Usages implements HasTiming {
+  type Usages implements Time_Timed {
     interval: Interval!
     usages: [Usage!]!
   }
 
-  type Usage implements Node, HasTiming {
-    timing: Timing!
+  type Usage implements Node, Time_Timed {
+    timing: Time_Timing!
     device: Device!
     interaction: Interaction!
   }

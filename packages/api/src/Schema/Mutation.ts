@@ -12,11 +12,9 @@ import * as Time from "./Time";
 export const schema = gql`
   type Mutation {
     track(
-      start: Date
-      duration: Duration
-      stop: Date
+      time: Time_Selection!
+      tags: Tag_Selection
       narrative: String
-      tags: [String!]
     ): History!
   }
 `;
@@ -24,18 +22,28 @@ export const schema = gql`
 export const resolve = {
   track: async (
     _source: undefined,
-    args: Time.SelectionGraphQLArgs & {
+    args: {
+      time: Time.SelectionGraphQLArgs;
+      tags: Tag.SelectionGraphQLArgs | null;
       narrative: string | null;
-      tags: string[] | null;
     },
     context: Context.Context
   ): Promise<History.History> => {
-    const selection = Time.selectionFromGraphQLArgs(args).getOrElseL(
+    const selection = {
+      time: Time.selectionFromGraphQLArgs(args.time).getOrElseL(
+        Utility.throwError
+      ),
+      tags: Tag.selectionFromGraphQLArgs(args.tags).getOrElseL(
+        Utility.throwError
+      )
+    };
+
+    const time = Time.selectionFromGraphQLArgs(args.time).getOrElseL(
       Utility.throwError
     );
 
     const tagsToFind = [
-      ...Option.fromNullable(args.tags).getOrElse([]),
+      ...selection.tags.include.names,
       ...Option.fromNullable(args.narrative)
         .map(narrative => [narrative])
         .getOrElse([])
@@ -52,8 +60,8 @@ export const resolve = {
 
     const now = Moment();
 
-    const newEntryStart = selection.start.getOrElse(now);
-    const newEntryStop = selection.stop.getOrElse(now);
+    const newEntryStart = time.start.getOrElse(now);
+    const newEntryStop = time.stop.getOrElse(now);
 
     const newEntryStartMS = newEntryStart.valueOf();
     const newEntryStopMS = newEntryStop.valueOf();
@@ -64,8 +72,6 @@ export const resolve = {
       tags: tags.map(({ name }) => name)
     };
 
-    // (await Promise.all(newEntry.tags.map(_.curry(Tag.updateLastOccurrence)(context))))
-
     // Grab the entries we might affect
     const entries = (await Toggl.Entry.getInterval(
       Moment(newEntryStart).subtract(5, "hours"),
@@ -73,7 +79,7 @@ export const resolve = {
     )).getOrElseL(Utility.throwError);
 
     // Create or start a new entry depending on if a stop time was provided
-    (selection.stop.isSome()
+    (time.stop.isSome()
       ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
       : await startCurrentEntry(now, newEntryStart, newEntry)
     ).mapLeft(Utility.throwError);
@@ -158,7 +164,7 @@ export const resolve = {
       }
     }
 
-    return History.getFromTimeSelection(context, selection);
+    return History.getFromSelection(context, selection);
   }
 };
 

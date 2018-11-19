@@ -22,40 +22,48 @@ export const fromGraphQLArgs = (
   const duration = Option.fromNullable(args.duration);
   const stop = Option.fromNullable(args.stop);
 
+  if (start.isNone() && duration.isNone() && stop.isNone()) {
+    return Result.error(
+      "You need a start, duration, or stop to make a time selection"
+    );
+  }
+
   // If we have a `start` and `stop`, ignore the duration
-  if (start.isSome() && stop.isSome()) return fromDates(start, stop);
+  if (start.isSome() && stop.isSome()) {
+    return Result.success(fromDates(start, stop));
+  }
 
   // If only `stop` is missing, it becomes `start` plus the `duration`
   if (start.isSome() && duration.isSome()) {
-    return fromDates(
-      start,
-      Option.some(Moment(start.value).add(duration.value))
+    return Result.success(
+      fromDates(start, Option.some(Moment(start.value).add(duration.value)))
     );
   }
 
   // If only `start` is missing, it becomes `stop` minus the `duration`
   if (stop.isSome() && duration.isSome()) {
-    return fromDates(
-      Option.some(Moment(stop.value).subtract(duration.value)),
-      stop
+    return Result.success(
+      fromDates(Option.some(Moment(stop.value).subtract(duration.value)), stop)
     );
   }
 
   // If `start` is missing, it becomes _now_ minus the `duration`
   if (start.isNone() && duration.isSome()) {
-    return fromDates(Option.some(Moment().subtract(duration.value)), stop);
+    return Result.success(
+      fromDates(Option.some(Moment().subtract(duration.value)), stop)
+    );
   }
 
-  return fromDates(start, stop);
+  return Result.success(fromDates(start, stop));
 };
 
 // `start` should never be after `stop`
 const fromDates = (
   start: Option.Option<Time.Date>,
   stop: Option.Option<Time.Date>
-): Result.Result<Selection> =>
+): Selection =>
   start.isSome() &&
   stop.isSome() &&
   start.value.valueOf() > stop.value.valueOf()
-    ? Result.error("`start` has to come before `stop`")
-    : Result.success({ start, stop });
+    ? { start: stop, stop: start }
+    : { start, stop };

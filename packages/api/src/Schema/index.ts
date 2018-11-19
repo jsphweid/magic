@@ -5,7 +5,6 @@ import * as Mutation from "./Mutation";
 import * as Narrative from "./Narrative";
 import * as Query from "./Query";
 import * as Tag from "./Tag";
-import * as TagOccurrence from "./TagOccurrence";
 import * as Time from "./Time";
 
 export * from "./Context";
@@ -19,9 +18,8 @@ export const source = gql`
   }
 
   ${History.schema}
-  ${Narrative.schema}
   ${Tag.schema}
-  ${TagOccurrence.schema}
+  ${Narrative.schema}
 
   ${Time.schema}
 `;
@@ -32,9 +30,7 @@ export const resolvers: any = {
   Mutation: Mutation.resolve,
 
   ...Time.resolvers,
+  ...Tag.resolvers,
 
-  Tag: Tag.resolve,
-
-  Node: { __resolveType: () => "Node" },
-  HasTiming: { __resolveType: () => "HasTiming" }
+  Node: { __resolveType: () => "Node" }
 };
