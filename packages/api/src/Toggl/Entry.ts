@@ -90,7 +90,11 @@ export const POST = async (
         time_entry: {
           ...newEntryToTogglData(newEntry),
           start: start.toISOString(),
-          duration: Math.abs(Time.durationFromDates(start, stop).asSeconds())
+          duration: Math.abs(
+            Time.stoppedInterval(start, stop)
+              .duration()
+              .asSeconds()
+          )
         }
       })
     })
@@ -107,10 +111,9 @@ export const PUT = async (entry: Entry): Promise<Request.Result<Entry>> => {
           ...entry,
           duration: Option.fromNullable(entry.stop).fold(entry.duration, stop =>
             Math.abs(
-              Time.durationFromDates(
-                Moment(entry.start),
-                Moment(stop)
-              ).asSeconds()
+              Time.stoppedInterval(Moment(entry.start), Moment(stop))
+                .duration()
+                .asSeconds()
             )
           )
         }
@@ -134,10 +137,10 @@ export const getInterval = async (
 ): Promise<Request.Result<Entry[]>> => {
   // We're limited to 1000 time entries per request
   let entries: Entry[] = [];
-  for (const batch of Time.batchesFromInterval(Moment.duration(7, "days"), {
-    start,
-    stop
-  })) {
+  for (const batch of Time.batchesFromInterval(
+    Moment.duration(7, "days"),
+    Time.stoppedInterval(start, stop)
+  )) {
     const result = (await Request.execute<Entry[]>({
       method: "GET",
       resource: "/time_entries",

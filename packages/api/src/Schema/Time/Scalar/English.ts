@@ -33,8 +33,10 @@ export const toDate = (english: string): Either.Either<Error, Time.Date> =>
 export const toDuration = (
   english: string
 ): Either.Either<Error, Time.Duration> =>
-  toDate(`${english} ahead`).map(date =>
-    Time.durationFromDates(Moment(), date)
+  toDate(`${english} ago`).map(date =>
+    Time.ongoingInterval(date)
+      .toStopped()
+      .duration()
   );
 
 const englishToWords = (

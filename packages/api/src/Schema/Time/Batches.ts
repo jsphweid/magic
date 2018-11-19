@@ -8,7 +8,7 @@ export type Batches = Time.StoppedInterval[];
 export const fromInterval = (
   batchDuration: Time.Duration,
   interval: Time.StoppedInterval
-): Batches => {
+): Time.StoppedInterval[] => {
   const startMS = interval.start.valueOf();
   const stopMS = interval.stop.valueOf();
 

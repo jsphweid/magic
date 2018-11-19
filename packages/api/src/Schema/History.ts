@@ -23,8 +23,6 @@ export interface History {
   tagOccurrences: TagOccurrence.TagOccurrence[];
 }
 
-export type Test = ReturnType<typeof getFromTimeSelection>;
-
 export const getFromTimeSelection = async (
   context: Context.Context,
   selection: Time.Selection
@@ -79,8 +77,8 @@ export const getFromTimeSelection = async (
     );
   }
 
+  // Use the `start` of the first time entry when none was provided
   const start = selection.start.getOrElse(
-    // Use the `start` of the first time entry when none was provided
     Option.fromNullable(tagOccurrences[0])
       .map(firstTagOccurrence => firstTagOccurrence.timing.start)
       .getOrElseL(Moment)

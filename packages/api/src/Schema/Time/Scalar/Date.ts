@@ -83,7 +83,11 @@ const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
 };
 
 const differenceMS = (start: Time.Date, stop: Time.Date): number =>
-  Math.abs(Time.durationFromDates(start, stop).asMilliseconds());
+  Math.abs(
+    Time.stoppedInterval(start, stop)
+      .duration()
+      .asMilliseconds()
+  );
 
 const dateFormats = [
   "MM-DD-YYYY",
