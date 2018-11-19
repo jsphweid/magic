@@ -7,9 +7,12 @@ import "./Config";
 import * as Toggl from "./Toggl";
 import * as Utility from "./Utility";
 
+// const MAGIC_START = Moment("2018-06-22T13:10:55+00:00");
+
 const DATA_DIR = Path.join(__dirname, "../data");
 const BACKUP_DIR = `${DATA_DIR}/backup`;
 
+// Write a JSON backup file
 const saveJson = (filePath: string, contents: object): void => {
   const backupPath = `${BACKUP_DIR}/${filePath}`;
   FS.writeFileSync(backupPath, JSON.stringify(contents, null, 2));
@@ -25,7 +28,6 @@ const saveJson = (filePath: string, contents: object): void => {
   if (__dirname.includes("functions")) return;
 
   // Save the Toggl and Magic versions of every tag
-
   const magicTags: { [ID: string]: any } = {};
   (await DB.collection("tags").get()).forEach(async document => {
     const data = document.data();
@@ -41,21 +43,27 @@ const saveJson = (filePath: string, contents: object): void => {
   });
 
   saveJson(`magic/tags.json`, magicTags);
-
-  const { value: togglTags } = (await Toggl.getTags()).mapLeft(
-    Utility.throwError
+  saveJson(
+    `toggl/tags.json`,
+    (await Toggl.getTags()).getOrElseL(Utility.throwError)
   );
 
-  saveJson(`toggl/tags.json`, togglTags);
-
   // Save every entry since tracking began
+  // saveJson(
+  //   `toggl/time-entries.json`,
+  //   (await Toggl.Entry.getInterval(MAGIC_START, Moment())).getOrElseL(
+  //     Utility.throwError
+  //   )
+  // );
 
-  const { value: entries } = (await Toggl.Entry.getInterval(
-    Moment("2018-06-22T13:10:55+00:00"),
-    Moment()
-  )).mapLeft(Utility.throwError);
-
-  saveJson(`toggl/time-entries.json`, entries);
+  // Save every timeline record since tracking began
+  saveJson(
+    `toggl/timeline-records.json`,
+    (await Toggl.Timeline.getInterval({
+      start: Moment().subtract(2, "months"),
+      stop: Moment()
+    })).getOrElseL(Utility.throwError)
+  );
 
   process.exit(0);
 })();

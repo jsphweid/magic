@@ -4,15 +4,15 @@ import * as Tag from "./Tag";
 import * as Time from "./Time";
 
 export const schema = gql`
-  type TagOccurrence implements Node & HasInterval {
+  type TagOccurrence implements Node & HasTiming {
     ID: ID!
-    interval: Interval!
+    timing: Timing!
     tag: Tag!
   }
 `;
 
 export interface TagOccurrence {
   ID: string;
-  interval: Time.Interval;
+  timing: Time.Timing;
   tag: Tag.Tag;
 }

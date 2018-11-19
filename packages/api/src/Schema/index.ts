@@ -14,10 +14,6 @@ export const source = gql`
   ${Query.schema}
   ${Mutation.schema}
 
-  interface HasInterval {
-    interval: Interval!
-  }
-
   interface Node {
     ID: ID!
   }
@@ -40,5 +36,5 @@ export const resolvers: any = {
   Tag: Tag.resolve,
 
   Node: { __resolveType: () => "Node" },
-  HasInterval: { __resolveType: () => "HasInterval" }
+  HasTiming: { __resolveType: () => "HasTiming" }
 };

@@ -10,8 +10,8 @@ import * as TagOccurrence from "./TagOccurrence";
 import * as Time from "./Time";
 
 export const schema = gql`
-  type History implements HasInterval {
-    interval: Interval!
+  type History implements HasTiming {
+    timing: Timing!
     narratives: [Narrative!]!
     tagOccurrences: [TagOccurrence!]!
   }
@@ -23,9 +23,11 @@ export interface History {
   tagOccurrences: TagOccurrence.TagOccurrence[];
 }
 
+export type Test = ReturnType<typeof getFromTimeSelection>;
+
 export const getFromTimeSelection = async (
   context: Context.Context,
-  { start, stop }: Time.Selection
+  selection: Time.Selection
 ): Promise<History> => {
   /*
     The default `start` is actually the start of the latest time entry when
@@ -33,12 +35,12 @@ export const getFromTimeSelection = async (
     to know about the latest time entry
   */
   const recentEntries = (await Toggl.Entry.getInterval(
-    start.getOrElseL(() => Moment().subtract(2, "days")),
-    stop.getOrElseL(() => Moment())
+    selection.start.getOrElseL(() => Moment().subtract(2, "days")),
+    selection.stop.getOrElseL(() => Moment())
   )).getOrElseL(Utility.throwError);
 
   const entriesToInclude =
-    start.isNone() && recentEntries.length > 0
+    selection.start.isNone() && recentEntries.length > 0
       ? [recentEntries[0]]
       : recentEntries;
 
@@ -46,10 +48,11 @@ export const getFromTimeSelection = async (
   const tagOccurrences: TagOccurrence.TagOccurrence[] = [];
 
   for (const entry of entriesToInclude) {
-    const interval = {
-      start: Moment(entry.start),
-      stop: Option.fromNullable(entry.stop).map(stop => Moment(stop))
-    };
+    const start = Moment(entry.start);
+    const interval: Time.Interval = Option.fromNullable(entry.stop).fold(
+      Time.ongoingInterval(start),
+      stop => Time.stoppedInterval(start, Moment(stop))
+    );
 
     /*
       Use the time entry's `id` for tag occurrences and narratives while we're
@@ -61,7 +64,7 @@ export const getFromTimeSelection = async (
     Option.fromNullable(entry.description).map(
       description =>
         description.replace(/ /g, "") !== "" &&
-        narratives.push({ ID, interval, description })
+        narratives.push({ ID, timing: interval, description })
     );
 
     // Add any tag occurrences to the history
@@ -70,22 +73,24 @@ export const getFromTimeSelection = async (
     )).forEach(tag =>
       tagOccurrences.push({
         ID,
-        interval,
+        timing: interval,
         tag: tag.getOrElseL(Utility.throwError)
       })
     );
   }
 
+  const start = selection.start.getOrElse(
+    // Use the `start` of the first time entry when none was provided
+    Option.fromNullable(tagOccurrences[0])
+      .map(firstTagOccurrence => firstTagOccurrence.timing.start)
+      .getOrElseL(Moment)
+  );
+
   return {
-    interval: {
-      start: start.getOrElse(
-        // Use the `start` of the first time entry when none was provided
-        Option.fromNullable(tagOccurrences[0])
-          .map(firstTagOccurrence => firstTagOccurrence.interval.start)
-          .getOrElseL(() => Moment())
-      ),
-      stop
-    },
+    interval: selection.stop.foldL(
+      () => Time.ongoingInterval(start),
+      stop => Time.stoppedInterval(start, stop)
+    ),
 
     narratives,
     tagOccurrences

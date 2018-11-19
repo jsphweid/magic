@@ -77,11 +77,9 @@ const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
   }
 
   // Try parsing the date from english-like values i.e. "in five minutes"
-  const { value: date } = English.toDate(source).mapLeft(error =>
+  return English.toDate(source).getOrElseL(error =>
     Utility.throwError(new GraphQL.GraphQLError(error.message, valueNode))
   );
-
-  return date;
 };
 
 const differenceMS = (start: Time.Date, stop: Time.Date): number =>

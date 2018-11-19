@@ -7,6 +7,7 @@ import * as Time from "./Time";
 
 export const schema = gql`
   type Query {
+    ID: ID!
     history(start: Date, duration: Duration, stop: Date): History!
   }
 `;

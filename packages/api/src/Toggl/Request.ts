@@ -21,13 +21,16 @@ export const execute = async <Data>(config: {
 }): Promise<Result<Data>> => {
   try {
     const { data } = await Axios.request({
-      url: `https://www.toggl.com/api/v8${config.resource}`,
+      url: config.resource.includes(".com")
+        ? config.resource
+        : `https://www.toggl.com/api/v8${config.resource}`,
 
       // https://github.com/toggl/toggl_api_docs/blob/master/chapters/users.md#get-current-user-data
       auth: {
         username: `${process.env.TOGGL_TOKEN}`,
         password: "api_token"
       },
+
       method: config.method,
       params: config.params.toUndefined(),
       data: config.data.toUndefined()

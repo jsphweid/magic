@@ -1,7 +1,8 @@
-import { either as Either, option as Option } from "fp-ts";
+import { option as Option } from "fp-ts";
 import _ from "lodash";
 import Moment from "moment";
 
+import * as Result from "../Result";
 import * as Time from "../Schema/Time";
 import * as Request from "./Request";
 
@@ -30,7 +31,7 @@ export interface Entry {
   at: string;
 }
 
-// Make it easy to create entries from a friendly interface
+// Make it easy to create new entries from a friendly interface
 
 export interface NewEntry {
   pid: Option.Option<number>;
@@ -131,38 +132,26 @@ export const getInterval = async (
   start: Time.Date,
   stop: Time.Date
 ): Promise<Request.Result<Entry[]>> => {
-  const batchSizeMS = 7 * 24 * 60 * 60 * 1000; // Seven days
-
-  /*
-      We're limited to 1000 time entries per request. To get around this we need
-      to grab the results in batches of `batchSizeMS` duration
-    */
+  // We're limited to 1000 time entries per request
   let entries: Entry[] = [];
-  for (const batchStart of _.range(
-    start.valueOf(),
-    stop.valueOf(),
-    batchSizeMS
-  )) {
-    const { value: batch } = await Request.execute<Entry[]>({
+  for (const batch of Time.batchesFromInterval(Moment.duration(7, "days"), {
+    start,
+    stop
+  })) {
+    const result = (await Request.execute<Entry[]>({
       method: "GET",
       resource: "/time_entries",
       params: Option.some({
-        start_date: Moment(batchStart).toISOString(),
-        end_date: Moment(batchStart)
-          .add(batchSizeMS, "ms")
-          .toISOString()
+        start_date: batch.start.toISOString(),
+        end_date: batch.stop.toISOString()
       }),
       data: Option.none
-    });
-
-    if (batch instanceof Error) {
-      return Either.left(batch);
-    }
-    entries = entries.concat(batch);
+    })).map(entriesBatch => (entries = entries.concat(entriesBatch)));
+    if (result.isLeft()) return result;
   }
 
   // Make sure time entries are returned in the order they were started in
-  return Either.right(
+  return Result.success(
     entries.sort((a, b) =>
       Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
     )

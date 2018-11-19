@@ -67,10 +67,10 @@ export const resolve = {
     // (await Promise.all(newEntry.tags.map(_.curry(Tag.updateLastOccurrence)(context))))
 
     // Grab the entries we might affect
-    const { value: entries } = (await Toggl.Entry.getInterval(
+    const entries = (await Toggl.Entry.getInterval(
       Moment(newEntryStart).subtract(5, "hours"),
       newEntryStop
-    )).mapLeft(Utility.throwError);
+    )).getOrElseL(Utility.throwError);
 
     // Create or start a new entry depending on if a stop time was provided
     (selection.stop.isSome()
