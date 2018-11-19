@@ -17,17 +17,9 @@ export const resolve = {
     _source: undefined,
     args: Time.SelectionGraphQLArgs,
     context: Context.Context
-  ): Promise<History.History> => {
-    console.log(
-      await History.getFromTimeSelection(
-        context,
-        Time.selectionFromGraphQLArgs(args).getOrElseL(Utility.throwError)
-      )
-    );
-
-    return History.getFromTimeSelection(
+  ): Promise<History.History> =>
+    History.getFromTimeSelection(
       context,
       Time.selectionFromGraphQLArgs(args).getOrElseL(Utility.throwError)
-    );
-  }
+    )
 };
