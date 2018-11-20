@@ -111,9 +111,9 @@ export const getAll = async (
 };
 
 const fromDocument = (document: Firestore.DocumentSnapshot): Result =>
-  Either.fromNullable(new Error(`No data available`))(document.data() as
-    | Data
-    | undefined).map(data => ({
+  Either.fromNullable(new Error(`No data available for tag "${document.id}"`))(
+    document.data() as Data | undefined
+  ).map(data => ({
     ID: document.id,
     name: data.name,
     aliases: Option.fromNullable(data.aliases).getOrElse([]),

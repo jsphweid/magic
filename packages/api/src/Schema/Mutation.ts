@@ -12,8 +12,8 @@ import * as Time from "./Time";
 export const schema = gql`
   type Mutation {
     track(
-      time: Time_Selection!
-      tags: Tag_Selection
+      time: Time__Selection!
+      tags: Tag__Selection
       narrative: String
     ): History!
   }

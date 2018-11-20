@@ -1,20 +1,26 @@
 import gql from "graphql-tag";
 
+import * as Node from "./Node";
 import * as Tag from "./Tag";
 import * as Time from "./Time";
 
 export const schema = gql`
-  type Narrative implements Node & Time_Timed & Tag_Tagged {
+  type Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
     ID: ID!
-    timing: Time_Timing!
+    metadata: Node__PersistenceMetadata!
+    time: Time__Time!
     description: String!
     tags: [Tag!]!
   }
 `;
 
-export interface Narrative extends Time.Timed, Tag.Tagged {
+export interface Narrative
+  extends Node.Identifiable,
+    Node.Persisted,
+    Time.Timed,
+    Tag.Tagged {
   ID: string;
-  timing: Time.Timing;
+  time: Time.Time;
   description: string;
 }
 

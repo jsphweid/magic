@@ -54,12 +54,12 @@ export const handler = (
     value: { sender, message }
   } = validatedRequest;
 
-  const operationSource = GraphQL.print(
-    GraphQLOperation.documentFromMessage(schema, message)
-  );
+  const { document, variables } = GraphQLOperation.fromMessage(message);
 
+  console.log(variables);
   const result = await GraphQL.graphql<any>({
-    source: operationSource,
+    source: GraphQL.print(document),
+    variableValues: variables,
     contextValue: Schema.context(),
     schema
   });

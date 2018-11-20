@@ -11,8 +11,8 @@ import * as Tag from "./Tag";
 import * as Time from "./Time";
 
 export const schema = gql`
-  type History implements Time_Timed {
-    timing: Time_Timing!
+  type History implements Time__Timed {
+    time: Time__Time!
     narratives: [Narrative!]!
   }
 `;
@@ -63,11 +63,15 @@ export const getFromSelection = async (
 
     narratives.push({
       ID: `${entry.id}`,
-      timing: Option.fromNullable(entry.stop).fold(
+      metadata: {
+        created: start,
+        updated: Moment(entry.at)
+      },
+      time: Option.fromNullable(entry.stop).fold(
         Time.ongoingInterval(start),
         stop => Time.stoppedInterval(start, Moment(stop))
       ),
-      description: Option.fromNullable<string>(null).getOrElseL(() =>
+      description: Option.fromNullable(entry.stop).getOrElseL(() =>
         Narrative.descriptionFromTags(tags)
       ),
       tags
@@ -77,7 +81,7 @@ export const getFromSelection = async (
   // Use the `start` of the first time entry when none was provided
   const start = selection.time.start.getOrElse(
     Option.fromNullable(narratives[0])
-      .map(firstNarrative => firstNarrative.timing.start)
+      .map(firstNarrative => firstNarrative.time.start)
       .getOrElseL(Moment)
   );
 

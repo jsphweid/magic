@@ -15,56 +15,58 @@ export {
 } from "./Selection";
 
 export const schema = gql`
-  scalar Time_Date
-  scalar Time_Duration
-  scalar Time_Milliseconds
+  scalar Time__Date
+  scalar Time__Duration
+  scalar Time__Milliseconds
 
-  interface Time_Timed {
-    timing: Time_Timing!
+  input Time__Selection {
+    start: Time__Date
+    duration: Time__Duration
+    stop: Time__Date
   }
 
-  input Time_Selection {
-    start: Time_Date
-    duration: Time_Duration
-    stop: Time_Date
+  union Time__Time =
+      Time__Instant
+    | Time__OngoingInterval
+    | Time__StoppedInterval
+
+  interface Time__Timed {
+    time: Time__Time!
   }
 
-  union Time_Timing = Time_Instant | Time_OngoingInterval | Time_StoppedInterval
-
-  interface Time_Occurrence {
-    start: Time_FormattedDate!
+  interface Time__Occurrence {
+    start: Time__FormattedDate!
   }
 
-  type Time_Instant implements Time_Occurrence {
-    start: Time_FormattedDate!
+  type Time__Instant implements Time__Occurrence {
+    start: Time__FormattedDate!
   }
 
-  interface Time_Interval {
-    duration: Time_FormattedDuration!
+  interface Time__Interval {
+    duration: Time__FormattedDuration!
   }
 
-  type Time_OngoingInterval implements Time_Occurrence & Time_Interval {
-    start: Time_FormattedDate!
-    duration: Time_FormattedDuration!
+  type Time__OngoingInterval implements Time__Occurrence & Time__Interval {
+    start: Time__FormattedDate!
+    duration: Time__FormattedDuration!
   }
 
-  type Time_StoppedInterval implements Time_Occurrence & Time_Interval {
-    start: Time_FormattedDate!
-    duration: Time_FormattedDuration!
-    stop: Time_FormattedDate!
+  type Time__StoppedInterval implements Time__Occurrence & Time__Interval {
+    start: Time__FormattedDate!
+    duration: Time__FormattedDuration!
+    stop: Time__FormattedDate!
   }
 
-  type Time_FormattedDate {
+  type Time__FormattedDate {
     iso: String!
-    unix: Int!
-    unixMilliseconds: Time_Milliseconds!
+    unix: Time__FormattedDuration!
     humanized: String!
     formatted(template: String = "h:mm A, dddd, MMMM Do, YYYY"): String!
   }
 
-  type Time_FormattedDuration {
+  type Time__FormattedDuration {
     humanized: String!
-    milliseconds: Time_Milliseconds!
+    milliseconds: Time__Milliseconds!
     seconds: Float!
     minutes: Float!
     hours: Float!
@@ -76,10 +78,10 @@ export const schema = gql`
 `;
 
 export interface Timed {
-  timing: Timing;
+  time: Time;
 }
 
-export type Timing = Instant | Interval;
+export type Time = Instant | Interval;
 
 interface Instant {
   start: Date;
@@ -117,26 +119,25 @@ export const stoppedInterval = (start: Date, stop: Date): StoppedInterval => {
 };
 
 export const resolvers = {
-  Time_Date: Date.resolve,
-  Time_Duration: Duration.resolve,
+  Time__Date: Date.resolve,
+  Time__Duration: Duration.resolve,
 
-  Time_Timed: { __resolveType: () => "Time_Timed" },
-  Time_Timing: { __resolveType: () => "Time_OngoingInterval" },
-  Time_Occurrence: { __resolveType: () => "Time_OngoingInterval" },
-  Time_Interval: { __resolveType: () => "Time_OngoingInterval" },
+  Time__Timed: { __resolveType: () => "Time__Timed" },
+  Time__Time: { __resolveType: () => "Time__OngoingInterval" },
+  Time__Occurrence: { __resolveType: () => "Time__OngoingInterval" },
+  Time__Interval: { __resolveType: () => "Time__OngoingInterval" },
 
-  Time_OngoingInterval: {
+  Time__OngoingInterval: {
     duration: (interval: OngoingInterval) => interval.toStopped().duration()
   },
 
-  Time_StoppedInterval: {
+  Time__StoppedInterval: {
     duration: (interval: StoppedInterval) => interval.duration()
   },
 
-  Time_FormattedDate: {
+  Time__FormattedDate: {
     iso: (date: Date): string => date.toISOString(),
-    unix: (date: Date): number => date.unix(),
-    unixMilliseconds: (date: Date): number => date.valueOf(),
+    unix: (date: Date): Duration => Moment.duration(date.unix(), "seconds"),
     humanized: (date: Date): string =>
       stoppedInterval(Moment(), date)
         .duration()
@@ -145,7 +146,7 @@ export const resolvers = {
       date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
   },
 
-  Time_FormattedDuration: {
+  Time__FormattedDuration: {
     humanized: (duration: Duration): string => duration.humanize(),
     milliseconds: (duration: Duration): number => duration.asMilliseconds(),
     seconds: (duration: Duration): number => duration.asSeconds(),

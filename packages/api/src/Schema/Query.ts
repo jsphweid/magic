@@ -8,7 +8,7 @@ import * as Time from "./Time";
 
 export const schema = gql`
   type Query {
-    history(time: Time_Selection!, tags: Tag_Selection): History!
+    history(time: Time__Selection!, tags: Tag__Selection): History!
   }
 `;
 

@@ -12,25 +12,26 @@ import * as Loader from "./Loader";
 export * from "./Loader";
 
 export const schema = gql`
-  interface Tag_Tagged {
+  interface Tag__Tagged {
     tags: [Tag!]!
   }
 
-  type Tag implements Node {
+  type Tag implements Node__Identifiable & Node__Persisted {
     ID: ID!
+    metadata: Node__PersistenceMetadata!
     name: String!
     aliases: [String!]!
     score: Int!
-    lastOccurrence: Time_FormattedDate
+    lastOccurrence: Time__FormattedDate
     connections: [Tag!]!
   }
 
-  input Tag_Selection {
-    include: Tag_Filter
-    exclude: Tag_Filter
+  input Tag__Selection {
+    include: Tag__Filter
+    exclude: Tag__Filter
   }
 
-  input Tag_Filter {
+  input Tag__Filter {
     ids: [ID!]
     names: [String!]
   }
@@ -94,8 +95,8 @@ export const selectionFromGraphQLArgs = (
 };
 
 export const resolvers = {
-  Tag_Tagged: {
-    __resolveType: () => "Tag_Tagged"
+  Tag__Tagged: {
+    __resolveType: () => "Tag__Tagged"
   },
 
   Tag: {
