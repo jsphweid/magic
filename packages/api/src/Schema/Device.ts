@@ -4,10 +4,7 @@ export const schema = gql`
   type Device implements Node {
     ID: ID!
     name: String!
-    capabilities: {
-      inputs: [Input!]!
-      outputs: [Output!]!
-    }
+    capabilities: Capabilities!
     usages(selection: TimeSelection): DeviceUsageHistory!
   }
 
@@ -28,18 +25,18 @@ export const schema = gql`
   }
 
   enum Input {
-    MOUSE,
-    DESKTOP,
-    VOICE,
-    TEXT,
+    MOUSE
+    DESKTOP
+    VOICE
+    TEXT
     TOUCH
   }
 
   enum Output {
-    AUDIO,
-    SPEECH,
-    SCREEN,
-    TEXT,
+    AUDIO
+    SPEECH
+    SCREEN
+    TEXT
     LIGHT
   }
 `;

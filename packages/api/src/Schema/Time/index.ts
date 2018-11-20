@@ -157,5 +157,3 @@ export const resolvers = {
     years: (duration: Duration): number => duration.asYears()
   }
 };
-
-ongoingInterval(Moment()).toStopped();
