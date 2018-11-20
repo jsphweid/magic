@@ -71,7 +71,7 @@ export const getFromSelection = async (
         Time.ongoingInterval(start),
         stop => Time.stoppedInterval(start, Moment(stop))
       ),
-      description: Option.fromNullable(entry.stop).getOrElseL(() =>
+      description: Option.fromNullable(entry.description).getOrElseL(() =>
         Narrative.descriptionFromTags(tags)
       ),
       tags

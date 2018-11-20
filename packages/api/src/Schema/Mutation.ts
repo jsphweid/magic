@@ -2,6 +2,7 @@ import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import Moment from "moment";
 
+import { GraphQLError } from "graphql";
 import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
 import * as Context from "./Context";
@@ -38,10 +39,6 @@ export const resolve = {
       )
     };
 
-    const time = Time.selectionFromGraphQLArgs(args.time).getOrElseL(
-      Utility.throwError
-    );
-
     const tagsToFind = [
       ...selection.tags.include.names,
       ...Option.fromNullable(args.narrative)
@@ -60,8 +57,17 @@ export const resolve = {
 
     const now = Moment();
 
-    const newEntryStart = time.start.getOrElse(now);
-    const newEntryStop = time.stop.getOrElse(now);
+    const newEntryStart = selection.time.start.getOrElse(now);
+    const newEntryStop = selection.time.stop.getOrElse(now);
+
+    // Protect against mass data-deletion
+    if (
+      Time.stoppedInterval(newEntryStart, newEntryStop)
+        .duration()
+        .asHours() > 3
+    ) {
+      throw new GraphQLError("More than three hours selected");
+    }
 
     const newEntryStartMS = newEntryStart.valueOf();
     const newEntryStopMS = newEntryStop.valueOf();
@@ -79,7 +85,7 @@ export const resolve = {
     )).getOrElseL(Utility.throwError);
 
     // Create or start a new entry depending on if a stop time was provided
-    (time.stop.isSome()
+    (selection.time.stop.isSome()
       ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
       : await startCurrentEntry(now, newEntryStart, newEntry)
     ).mapLeft(Utility.throwError);

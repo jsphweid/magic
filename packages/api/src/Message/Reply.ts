@@ -1,24 +1,26 @@
+import { option as Option } from "fp-ts";
 import wrap from "word-wrap";
 
 // This is approximately how wide SMS messages can be on an iPhone 7
 const MAX_WIDTH = 23;
 
-export type JSONValue = JSONObject | JSONArray | JSONPrimitive;
+export type Json = JsonObject | JsonArray;
+type JsonValue = JsonObject | JsonArray | JsonPrimitive;
 
-export interface JSONObject {
-  [key: string]: JSONValue;
+interface JsonObject {
+  [key: string]: JsonValue;
 }
 
-export interface JSONArray extends Array<JSONValue> {}
-export type JSONPrimitive = string | number | boolean | null;
+interface JsonArray extends Array<JsonValue> {}
+type JsonPrimitive = string | number | boolean | null;
 
 /*
   Raw GraphQL results or other large JSON objects sent over SMS would be
   unreadable and too large. This pretty-prints JSON using an aggressively-
   compacting set of rules...
 */
-export const fromJSONValue = (value: JSONValue): string =>
-  toString("", value)
+export const fromJson = (json: Json): string =>
+  toString("", json)
     .replace("\n", "")
     .split("\n")
 
@@ -53,19 +55,21 @@ export const fromJSONValue = (value: JSONValue): string =>
     })
     .join("\n");
 
-export const toString = (indent: string, value: JSONValue): string =>
+export const toString = (indent: string, value: JsonValue): string =>
   Array.isArray(value)
     ? arrayToString(indent, value)
     : isObject(value)
-      ? objectToString(indent, value)
-      : primitiveToString(indent, value);
+    ? objectToString(indent, value)
+    : primitiveToString(indent, value);
 
-const isObject = (value: JSONValue): value is JSONObject =>
+const isObject = (value: JsonValue): value is JsonObject =>
   value !== null && typeof value === "object";
 
-const objectToString = (indent: string, object: JSONObject): string => {
+const objectToString = (indent: string, object: JsonObject): string => {
   // Null fields are dropped from the output
-  const nonNulls = Object.entries(object).filter(([, value]) => value !== null);
+  const nonNulls = Object.entries(object).filter(([, value]) =>
+    Option.fromNullable(value).isSome()
+  );
 
   /*
     If we have an object with one field, replace the object with its value...
@@ -95,7 +99,7 @@ const objectToString = (indent: string, object: JSONObject): string => {
       );
 };
 
-const arrayToString = (indent: string, array: JSONArray): string =>
+const arrayToString = (indent: string, array: JsonArray): string =>
   formatLines(
     indent,
     array
@@ -128,5 +132,5 @@ const formatLines = (indent: string, asMultipleLines: string): string => {
     : asMultipleLines;
 };
 
-const primitiveToString = (indent: string, primitive: JSONPrimitive): string =>
+const primitiveToString = (indent: string, primitive: JsonPrimitive): string =>
   `\n${indent}${primitive}`;

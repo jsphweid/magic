@@ -37,6 +37,10 @@ const source = gql`
 
   fragment history on History {
     narratives {
+      description
+      tags {
+        name
+      }
       time {
         ... on Time__Occurrence {
           start {
@@ -53,10 +57,6 @@ const source = gql`
             formatted(template: "h:mm A ddd")
           }
         }
-      }
-      description
-      tags {
-        name
       }
     }
   }
@@ -77,48 +77,18 @@ interface Variables {
 export const fromMessage = (
   message: string
 ): { document: GraphQL.DocumentNode; variables: Variables } => {
-  const document = messageToDocument(message);
+  const document = documentFromMessage(message);
   const variables = variablesFromDocument(document);
-
-  console.log(variables.map(variable => variable.defaultValue));
-
   return {
     document,
-    variables: messageToVariables(variables, message)
+    variables: variablesFromMessage(variables, message)
   };
 };
 
-// export interface OperationDefinitionNode {
-//   readonly kind: "OperationDefinition";
-//   readonly loc?: Location;
-//   readonly operation: OperationTypeNode;
-//   readonly name?: NameNode;
-//   readonly variableDefinitions?: ReadonlyArray<VariableDefinitionNode>;
-//   readonly directives?: ReadonlyArray<DirectiveNode>;
-//   readonly selectionSet: SelectionSetNode;
-// }
-
-// export type OperationTypeNode = "query" | "mutation" | "subscription";
-
-// export interface VariableDefinitionNode {
-//   readonly kind: "VariableDefinition";
-//   readonly loc?: Location;
-//   readonly variable: VariableNode;
-//   readonly type: TypeNode;
-//   readonly defaultValue?: ValueNode;
-//   readonly directives?: ReadonlyArray<DirectiveNode>;
-// }
-
-// export interface VariableNode {
-//   readonly kind: "Variable";
-//   readonly loc?: Location;
-//   readonly name: NameNode;
-// }
-
-const messageToDocument = (message: string): GraphQL.DocumentNode =>
+const documentFromMessage = (message: string): GraphQL.DocumentNode =>
   Option.fromNullable(
     Object.entries(operations).find(
-      ([name]) => message.toLowerCase().indexOf(nameToWords(name)) === 0
+      ([name]) => message.toLowerCase().indexOf(wordsFromName(name)) === 0
     )
   )
     .map(([, document]) => document)
@@ -136,11 +106,7 @@ const variablesFromDocument = (
   ).getOrElse([]);
 };
 
-/*
-  For all of the args we have in the root field, return their names and parsed
-  values from the message
-*/
-export const messageToVariables = (
+export const variablesFromMessage = (
   variables: GraphQL.VariableDefinitionNode[],
   message: string
 ): Variables =>
@@ -148,25 +114,25 @@ export const messageToVariables = (
     (previous, variable) => ({
       ...previous,
       [variable.variable.name.value]: Option.fromNullable(
-        messageToVariableValue(
+        variableValueFromMessage(
           variables,
           variable,
 
           /*
-          Since the short-hand `Mutation.track` message looks like...
-          - "bathroom"
-          - "cutting the grass"
-          - "cooking dinner tags cooking, not dinner"
+            Since the short-hand `Track` message looks like...
+            - "bathroom"
+            - "cutting the grass"
+            - "cooking dinner tags cooking, not dinner"
 
-          ...if we don't see the `narrative` argument in the message, we need to
-          prepend it...
-          - "narrative bathroom"
-          - "narrative cutting the grass"
-          - "narrative cooking dinner tags cooking, not dinner"
+            ...if we don't see the `narrative` argument in the message, we need to
+            prepend it...
+            - "narrative bathroom"
+            - "narrative cutting the grass"
+            - "narrative cooking dinner tags cooking, not dinner"
 
-          ...but not if we aren't using the short-hand version, i.e. "track ..."
-          is unchanged
-        */
+            ...but not if we aren't using the short-hand version, i.e. "track ..."
+            is unchanged
+          */
           variable.variable.name.value === "narrative" &&
             !message.toLowerCase().includes("narrative") &&
             !message.toLowerCase().includes("track")
@@ -182,41 +148,28 @@ export const messageToVariables = (
     {}
   );
 
-/*
-  Parse the message into the value of an argument on the root field. If the
-  message is "walking the dog start five minutes ago" and we're trying to get
-  the value of start, the result should be "five minutes ago".
-*/
-const messageToVariableValue = (
+const variableValueFromMessage = (
   variables: GraphQL.VariableDefinitionNode[],
   variable: GraphQL.VariableDefinitionNode,
   message: string
 ): string | null => {
-  /*
-    What is the starting location of the argument name? If it wasn't provided
-    the argument is "null"
-  */
-  const argNameAsInputFormat = nameToWords(variable.variable.name.value);
-  const argNameStartIndex = message.toLowerCase().indexOf(argNameAsInputFormat);
+  const variableNameAsWords = wordsFromName(variable.variable.name.value);
+  const variableNameStartIndex = message
+    .toLowerCase()
+    .indexOf(variableNameAsWords);
 
-  if (argNameStartIndex < 0) return null;
+  if (variableNameStartIndex < 0) return null;
 
-  /*
-    What is the starting location (index) of the next argument?
-    
-    If we are trying to get the narrative tag, the result should be the starting
-    index of "browsing"
-  */
-  const argValueStartIndex = argNameStartIndex + argNameAsInputFormat.length;
-  const nextArgNameStartIndex = variables
+  const valueStartIndex = variableNameStartIndex + variableNameAsWords.length;
+  const nextVariableStartIndex = variables
     .map(variableFromOperation =>
       variableFromOperation !== variable
         ? message.indexOf(
-            nameToWords(variableFromOperation.variable.name.value)
+            wordsFromName(variableFromOperation.variable.name.value)
           )
         : -1
     )
-    .filter(index => index >= argValueStartIndex)
+    .filter(index => index >= valueStartIndex)
     .sort((a, b) => (a > b ? 1 : -1))[0];
 
   /*
@@ -226,8 +179,8 @@ const messageToVariableValue = (
   */
   const value = message
     .slice(
-      argValueStartIndex,
-      nextArgNameStartIndex >= 0 ? nextArgNameStartIndex : undefined
+      valueStartIndex,
+      nextVariableStartIndex >= 0 ? nextVariableStartIndex : undefined
     )
     .trim();
 
@@ -264,7 +217,7 @@ const messageToVariableValue = (
   ...into what a human would provide...
   "track", "start tags", "this is longer than those"
 */
-const nameToWords = (name: string): string =>
+const wordsFromName = (name: string): string =>
   name
     .replace(/([A-Z])/g, " $1")
     .trim()

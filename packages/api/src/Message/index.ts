@@ -56,16 +56,15 @@ export const handler = (
 
   const { document, variables } = GraphQLOperation.fromMessage(message);
 
-  console.log(variables);
-  const result = await GraphQL.graphql<any>({
+  const result = await GraphQL.graphql({
     source: GraphQL.print(document),
     variableValues: variables,
     contextValue: Schema.context(),
     schema
   });
 
-  const reply = Reply.fromJSONValue({
-    ...result,
+  const reply = Reply.fromJson({
+    data: Option.fromNullable<Reply.Json | null>(result.data).getOrElse(null),
     errors: Option.fromNullable(result.errors).fold(null, errors =>
       errors.map(({ message }) => message)
     )
