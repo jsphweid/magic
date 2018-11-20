@@ -4,6 +4,7 @@ import Moment from "moment";
 import * as Path from "path";
 
 import "./Config";
+import * as Time from "./Schema/Time";
 import * as Toggl from "./Toggl";
 import * as Utility from "./Utility";
 
@@ -59,10 +60,9 @@ const saveJson = (filePath: string, contents: object): void => {
   // Save every timeline record since tracking began
   saveJson(
     `toggl/timeline-records.json`,
-    (await Toggl.Timeline.getInterval({
-      start: Moment().subtract(2, "months"),
-      stop: Moment()
-    })).getOrElseL(Utility.throwError)
+    (await Toggl.Timeline.getFromInterval(
+      Time.stoppedInterval(Moment().subtract(2, "months"), Moment())
+    )).getOrElseL(Utility.throwError)
   );
 
   process.exit(0);
