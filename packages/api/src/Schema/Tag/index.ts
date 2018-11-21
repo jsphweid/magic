@@ -171,6 +171,10 @@ export const isMatch = (search: string, tag: Tag): Option.Option<string> => {
   ).map(matches => matches[0].slice(1, -1)); // Remove the hyphens
 };
 
+export const isMatchForNames = (names: string[], tags: Tag[]): boolean =>
+  names.filter(name => tags.find(tag => isMatch(name, tag).isSome())).length ===
+  names.length;
+
 const mostRecentlyUsed = (a: Tag, b: Tag): Tag =>
   a.lastOccurrence.getOrElseL(() => Moment(0)).valueOf() >
   b.lastOccurrence.getOrElseL(() => Moment(0)).valueOf()

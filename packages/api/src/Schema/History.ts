@@ -35,7 +35,7 @@ export const getFromSelection = async (
     to know about the latest time entry
   */
   const recentEntries = (await Toggl.Entry.getInterval(
-    selection.time.start.getOrElseL(() => Moment().subtract(1, "days")),
+    selection.time.start.getOrElseL(() => Moment().subtract(2, "days")),
     selection.time.stop.getOrElseL(() => Moment())
   )).getOrElseL(Utility.throwError);
 
@@ -50,16 +50,16 @@ export const getFromSelection = async (
       Option.fromNullable(entry.tags).getOrElse([])
     )).map(result => result.getOrElseL(Utility.throwError));
 
-    const start = Moment(entry.start);
+    if (
+      (selection.tags.include.names.length > 0 &&
+        !Tag.isMatchForNames(selection.tags.include.names, tags)) ||
+      (selection.tags.exclude.names.length > 0 &&
+        Tag.isMatchForNames(selection.tags.exclude.names, tags))
+    ) {
+      continue;
+    }
 
-    // if (
-    //   _.intersection(selection.tags.include.names, tags.map(({ name }) => name))
-    //     .length === 0 &&
-    //   _.intersection(selection.tags.exclude.ids, tags.map(({ ID }) => ID))
-    //     .length === 0
-    // ) {
-    //   continue;
-    // }
+    const start = Moment(entry.start);
 
     narratives.push({
       ID: `${entry.id}`,
