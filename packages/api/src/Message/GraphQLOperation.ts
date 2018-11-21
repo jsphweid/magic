@@ -21,7 +21,7 @@ const source = gql`
   }
 
   query History(
-    $start: Time__Date
+    $start: Time__Date = "now"
     $duration: Time__Duration
     $stop: Time__Date
     $include: [String!]

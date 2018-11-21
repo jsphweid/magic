@@ -123,9 +123,17 @@ export const resolvers = {
   Time__Duration: Duration.resolve,
 
   Time__Timed: { __resolveType: () => "Time__Timed" },
-  Time__Time: { __resolveType: () => "Time__OngoingInterval" },
-  Time__Occurrence: { __resolveType: () => "Time__OngoingInterval" },
-  Time__Interval: { __resolveType: () => "Time__OngoingInterval" },
+  Time__Time: {
+    __resolveType: (time: Time): string =>
+      (time as StoppedInterval).stop
+        ? "Time__StoppedInterval"
+        : (time as OngoingInterval).toStopped
+        ? "Time__OngoingInterval"
+        : "Time__Instant"
+  },
+
+  Time__Occurrence: { __resolveType: () => "Time__Occurrence" },
+  Time__Interval: { __resolveType: () => "Time__Interval" },
 
   Time__OngoingInterval: {
     duration: (interval: OngoingInterval) => interval.toStopped().duration()
