@@ -12,10 +12,6 @@ import * as Loader from "./Loader";
 export * from "./Loader";
 
 export const schema = gql`
-  interface Tag__Tagged {
-    tags: [Tag!]!
-  }
-
   type Tag implements Node__Identifiable & Node__Persisted {
     ID: ID!
     metadata: Node__PersistenceMetadata!
@@ -24,6 +20,21 @@ export const schema = gql`
     score: Int!
     lastOccurrence: Time__FormattedDate
     connections: [Tag!]!
+  }
+
+  type Tag__Query {
+    tags(include: Tag__Filter, exclude: Tag__Filter): [Tag!]!
+  }
+
+  type Tag__Mutation {
+    create(tag: NewTag!): Tag!
+  }
+
+  input NewTag {
+    name: String!
+    aliases: [String!] = []
+    score: Int = 0
+    connections: Tag__Filter
   }
 
   input Tag__Selection {
@@ -35,11 +46,11 @@ export const schema = gql`
     ids: [ID!]
     names: [String!]
   }
-`;
 
-export interface Tagged {
-  tags: Tag[];
-}
+  interface Tag__Tagged {
+    tags: [Tag!]!
+  }
+`;
 
 export interface Tag {
   ID: string;
@@ -55,9 +66,13 @@ export interface Selection {
   exclude: Filter;
 }
 
-interface Filter {
+export interface Filter {
   names: string[];
   ids: string[];
+}
+
+export interface Tagged {
+  tags: Tag[];
 }
 
 export interface SelectionGraphQLArgs {
@@ -66,6 +81,44 @@ export interface SelectionGraphQLArgs {
     exclude?: Partial<Filter> | null;
   };
 }
+
+export const resolvers = {
+  Tag__Tagged: {
+    __resolveType: () => "Tag__Tagged"
+  },
+
+  Tag: {
+    metadata: () => ({
+      created: Moment(),
+      updated: Moment()
+    }),
+
+    connections: async (
+      tag: Tag,
+      _args: undefined,
+      context: Context.Context
+    ): Promise<Tag[]> =>
+      (await context.tagLoader.loadMany(tag.connections)).map(tag =>
+        tag.getOrElseL(Utility.throwError)
+      )
+  },
+
+  Tag__Query: {
+    tags: async (
+      _: undefined,
+      args: SelectionGraphQLArgs,
+      context: Context.Context
+    ): Promise<Tag[]> => {
+      const selection = selectionFromGraphQLArgs(args).getOrElseL(
+        Utility.throwError
+      );
+
+      console.log(selection);
+
+      return (await Loader.getAll(context)).getOrElseL(Utility.throwError);
+    }
+  }
+};
 
 export const selectionFromGraphQLArgs = (
   args?: SelectionGraphQLArgs | null
@@ -90,28 +143,9 @@ export const selectionFromGraphQLArgs = (
             conflict =>
               `"${conflict}" was included and excluded in the same selection`
           )
-          .join(" ")
+          .join("\n")
       );
 };
-
-export const resolvers = {
-  Tag__Tagged: {
-    __resolveType: () => "Tag__Tagged"
-  },
-
-  Tag: {
-    connections: async (
-      tag: Tag,
-      _args: undefined,
-      context: Context.Context
-    ): Promise<Tag[]> =>
-      (await context.tagLoader.loadMany(tag.connections)).map(tag =>
-        tag.getOrElseL(Utility.throwError)
-      )
-  }
-};
-
-// export const updateLastOccurrence = async (loader: Loader.Loader, lastOccurrence: Moment.Moment)
 
 export const findMatches = async (
   context: Context.Context,

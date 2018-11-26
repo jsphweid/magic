@@ -25,13 +25,10 @@ export const schema = gql`
     stop: Time__Date
   }
 
-  union Time__Time =
-      Time__Instant
-    | Time__OngoingInterval
-    | Time__StoppedInterval
+  union Time = Time__Instant | Time__OngoingInterval | Time__StoppedInterval
 
   interface Time__Timed {
-    time: Time__Time!
+    time: Time!
   }
 
   interface Time__Occurrence {
@@ -123,7 +120,7 @@ export const resolvers = {
   Time__Duration: Duration.resolve,
 
   Time__Timed: { __resolveType: () => "Time__Timed" },
-  Time__Time: {
+  Time: {
     __resolveType: (time: Time): string =>
       (time as StoppedInterval).stop
         ? "Time__StoppedInterval"

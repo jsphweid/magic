@@ -12,8 +12,12 @@ import * as Time from "./Time";
 
 export const schema = gql`
   type History implements Time__Timed {
-    time: Time__Time!
+    time: Time!
     narratives: [Narrative!]!
+  }
+
+  type History__Query {
+    history(time: Time__Selection!, tags: Tag__Selection): History!
   }
 `;
 
@@ -21,6 +25,27 @@ export interface History {
   interval: Time.Interval;
   narratives: Narrative.Narrative[];
 }
+
+export const resolvers = {
+  History__Query: {
+    history: async (
+      _source: undefined,
+      args: {
+        time: Time.SelectionGraphQLArgs;
+        tags: Tag.SelectionGraphQLArgs | null;
+      },
+      context: Context.Context
+    ): Promise<History> =>
+      getFromSelection(context, {
+        time: Time.selectionFromGraphQLArgs(args.time).getOrElseL(
+          Utility.throwError
+        ),
+        tags: Tag.selectionFromGraphQLArgs(args.tags).getOrElseL(
+          Utility.throwError
+        )
+      })
+  }
+};
 
 export const getFromSelection = async (
   context: Context.Context,
