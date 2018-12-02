@@ -77,8 +77,8 @@ export const GET = async (ID: number): Promise<Request.Result<Entry>> =>
   });
 
 export const POST = async (
-  start: Time.Date,
-  stop: Time.Date,
+  start: Time.DateTime,
+  stop: Time.DateTime,
   newEntry: NewEntry
 ): Promise<Request.Result<Entry>> =>
   extractData(
@@ -132,8 +132,8 @@ export const DELETE = async (entry: Entry): Promise<Request.Result<void>> =>
 // Non standard API actions
 
 export const getInterval = async (
-  start: Time.Date,
-  stop: Time.Date
+  start: Time.DateTime,
+  stop: Time.DateTime
 ): Promise<Request.Result<Entry[]>> => {
   // We're limited to 1000 time entries per request
   let entries: Entry[] = [];

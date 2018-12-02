@@ -55,7 +55,6 @@ export const handler = (
   } = validatedRequest;
 
   const { document, variables } = GraphQLOperation.fromMessage(message);
-
   const result = await GraphQL.graphql({
     source: GraphQL.print(document),
     variableValues: variables,

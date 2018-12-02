@@ -1,5 +1,6 @@
 import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
+import * as Runtime from "io-ts";
 import _ from "lodash/fp";
 import Moment from "moment";
 
@@ -12,9 +13,9 @@ import * as Loader from "./Loader";
 export * from "./Loader";
 
 export const schema = gql`
-  type Tag implements Node__Identifiable & Node__Persisted {
+  type Tag implements Node {
     ID: ID!
-    metadata: Node__PersistenceMetadata!
+    metadata: Node__Metadata!
     name: String!
     aliases: [String!]!
     score: Int!
@@ -23,26 +24,24 @@ export const schema = gql`
   }
 
   type Tag__Query {
-    tags(include: Tag__Filter, exclude: Tag__Filter): [Tag!]!
+    tags(include: Tag__Selection, exclude: Tag__Selection): [Tag!]!
   }
 
   type Tag__Mutation {
-    create(tag: NewTag!): Tag!
-  }
-
-  input NewTag {
-    name: String!
-    aliases: [String!] = []
-    score: Int = 0
-    connections: Tag__Filter
-  }
-
-  input Tag__Selection {
-    include: Tag__Filter
-    exclude: Tag__Filter
+    new(
+      name: String!
+      aliases: [String!]
+      score: Int
+      connections: Tag__Selection
+    ): Tag!
   }
 
   input Tag__Filter {
+    include: Tag__Selection
+    exclude: Tag__Selection
+  }
+
+  input Tag__Selection {
     ids: [ID!]
     names: [String!]
   }
@@ -52,21 +51,28 @@ export const schema = gql`
   }
 `;
 
-export interface Tag {
-  ID: string;
-  name: string;
-  aliases: string[];
-  score: number;
-  lastOccurrence: Option.Option<Time.Date>;
-  connections: string[];
+export type Tag = Runtime.TypeOf<typeof tag>;
+
+const tag = Runtime.exact(
+  Runtime.interface({
+    name: Runtime.string,
+    aliases: Runtime.array(Runtime.string),
+    score: Runtime.number,
+    lastOccurrence: Runtime.union([
+      Time.dateTime,
+      Runtime.null,
+      Runtime.undefined
+    ]),
+    connections: Runtime.array(Runtime.string)
+  })
+);
+
+export interface Filter {
+  include: Selection;
+  exclude: Selection;
 }
 
 export interface Selection {
-  include: Filter;
-  exclude: Filter;
-}
-
-export interface Filter {
   names: string[];
   ids: string[];
 }
@@ -75,10 +81,10 @@ export interface Tagged {
   tags: Tag[];
 }
 
-export interface SelectionGraphQLArgs {
+export interface FilterArgs {
   tags?: {
-    include?: Partial<Filter> | null;
-    exclude?: Partial<Filter> | null;
+    include?: Partial<Selection> | null;
+    exclude?: Partial<Selection> | null;
   };
 }
 
@@ -106,24 +112,77 @@ export const resolvers = {
   Tag__Query: {
     tags: async (
       _: undefined,
-      args: SelectionGraphQLArgs,
+      _args: FilterArgs,
       context: Context.Context
     ): Promise<Tag[]> => {
-      const selection = selectionFromGraphQLArgs(args).getOrElseL(
-        Utility.throwError
-      );
-
-      console.log(selection);
+      // const selection = selectionFromGraphQLArgs(args).getOrElseL(
+      //   Utility.throwError
+      // );
 
       return (await Loader.getAll(context)).getOrElseL(Utility.throwError);
+    }
+  },
+
+  // name: String!
+  // aliases: [String!]
+  // score: Int
+  // connections: Tag__Selection
+
+  Tag__Mutation: {
+    new: async (
+      _: undefined,
+      args: {
+        name: string;
+        aliases: string[] | null;
+        score: number | null;
+        connections: Selection | null;
+      },
+      context: Context.Context
+    ): Promise<Tag> => {
+      const connections = await Option.fromNullable(args.connections)
+        .map(async ({ names, ids }) => {
+          return (await context.tagLoader.loadMany([
+            ...Option.fromNullable(names).getOrElse([]),
+            ...Option.fromNullable(ids).getOrElse([])
+          ])).map(result =>
+            context.DB.collection("tags").doc(
+              result.getOrElseL(Utility.throwError).ID
+            )
+          );
+        })
+        .getOrElse(Promise.resolve([]));
+
+      const tag = {
+        name: args.name,
+        aliases: Option.fromNullable(args.aliases).getOrElse([]),
+        score: Option.fromNullable(args.score).getOrElse(0),
+        lastOccurrence: Option.none,
+        connections: connections.map(({ id: ID }) => ID)
+      };
+
+      const document: Loader.Document = {
+        name: tag.name,
+        connections
+      };
+
+      Option.fromNullable(args.aliases).map(
+        aliases => (document.aliases = aliases)
+      );
+
+      Option.fromNullable(args.score).map(score => (document.score = score));
+
+      document.metadata = {};
+
+      const { id: ID } = await context.DB.collection("tags").add(document);
+      return { ID, metadata: document.metadata, ...tag };
     }
   }
 };
 
-export const selectionFromGraphQLArgs = (
-  args?: SelectionGraphQLArgs | null
-): Result.Result<Selection> => {
-  const selection: Selection = _.defaultsDeep(
+export const filterFromArgs = (
+  args?: FilterArgs | null
+): Result.Result<Filter> => {
+  const selection: Filter = _.defaultsDeep(
     Option.fromNullable(args).getOrElse({})
   )({
     include: { names: [], ids: [] },
@@ -210,8 +269,8 @@ export const isMatchForNames = (names: string[], tags: Tag[]): boolean =>
   names.length;
 
 const mostRecentlyUsed = (a: Tag, b: Tag): Tag =>
-  a.lastOccurrence.getOrElseL(() => Moment(0)).valueOf() >
-  b.lastOccurrence.getOrElseL(() => Moment(0)).valueOf()
+  (a.lastOccurrence || Moment(0)).valueOf() >
+  (b.lastOccurrence || Moment(0)).valueOf()
     ? a
     : b;
 

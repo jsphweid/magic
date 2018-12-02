@@ -36,8 +36,7 @@ export const resolvers: any = {
   },
 
   Mutation: {
-    // Tag: () => Tag.resolvers.Tag__Mutation,
-    // History: () => History.resolvers.History__Mutation,
+    Tag: () => Tag.resolvers.Tag__Mutation,
     Narrative: () => Narrative.resolvers.Narrative__Mutation
   },
 

@@ -3,17 +3,17 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Toggl from "../Toggl";
-import * as Utility from "../Utility";
-import * as Context from "./Context";
-import * as Node from "./Node";
-import * as Tag from "./Tag";
-import * as Time from "./Time";
+import * as Toggl from "../../Toggl";
+import * as Utility from "../../Utility";
+import * as Context from "../Context";
+import * as Node from "../Node";
+import * as Tag from "../Tag";
+import * as Time from "../Time";
 
 export const schema = gql`
-  type Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
+  type Narrative implements Node & Time__Timed & Tag__Tagged {
     ID: ID!
-    metadata: Node__PersistenceMetadata!
+    metadata: Node__Metadata!
     time: Time!
     description: String!
     tags: [Tag!]!
@@ -21,28 +21,38 @@ export const schema = gql`
 
   type Narrative__Query {
     narratives(
-      search: String
+      orgin: Narrative__Origin
       time: Time__Selection
-      tags: Tag__Selection
+      tags: Tag__Filter
+      search: String
     ): [Narrative!]!
   }
 
   type Narrative__Mutation {
-    new(narrative: Narrative__New!): Narrative!
+    new(
+      orgin: Narrative__Origin
+      time: Time__Selection!
+      tags: Tag__Filter
+      description: String
+    ): Narrative!
+
+    updateTags(
+      orgin: Narrative__Origin
+      time: Time__Selection
+      add: Tag__Filter
+      remove: Tag__Filter
+    ): [Narrative!]!
   }
 
-  input Narrative__New {
-    time: Time__Selection!
-    description: String
-    tags: Tag__Selection
+  enum Narrative__Origin {
+    NOW
+    LATEST
+    THIS_MORNING
+    END_OF_YESTERDAY
   }
 `;
 
-export interface Narrative
-  extends Node.Identifiable,
-    Node.Persisted,
-    Time.Timed,
-    Tag.Tagged {
+export interface Narrative extends Node.Node, Time.Timed, Tag.Tagged {
   ID: string;
   time: Time.Time;
   description: string;
@@ -63,7 +73,7 @@ export const resolvers = {
       _: undefined,
       _args: {
         time: Time.SelectionGraphQLArgs | null;
-        tags: Tag.SelectionGraphQLArgs | null;
+        tags: Tag.FilterArgs | null;
       }
     ) => []
   },
@@ -72,26 +82,22 @@ export const resolvers = {
     new: async (
       _: undefined,
       args: {
-        narrative: {
-          time: Time.SelectionGraphQLArgs;
-          tags: Tag.SelectionGraphQLArgs | null;
-          description: string | null;
-        };
+        time: Time.SelectionGraphQLArgs;
+        tags: Tag.FilterArgs | null;
+        description: string | null;
       },
       context: Context.Context
     ): Promise<Narrative> => {
       const selection = {
-        time: Time.selectionFromGraphQLArgs(args.narrative.time).getOrElseL(
+        time: Time.selectionFromGraphQLArgs(args.time).getOrElseL(
           Utility.throwError
         ),
-        tags: Tag.selectionFromGraphQLArgs(args.narrative.tags).getOrElseL(
-          Utility.throwError
-        )
+        tags: Tag.filterFromArgs(args.tags).getOrElseL(Utility.throwError)
       };
 
       const tagsToFind = [
         ...selection.tags.include.names,
-        ...Option.fromNullable(args.narrative.description)
+        ...Option.fromNullable(args.description)
           .map(narrative => [narrative])
           .getOrElse([])
       ];
@@ -126,7 +132,7 @@ export const resolvers = {
 
       const newEntry = {
         pid: project.map(({ id }) => id),
-        description: Option.fromNullable(args.narrative.description),
+        description: Option.fromNullable(args.description),
         tags: tags.map(({ name }) => name)
       };
 
@@ -223,9 +229,20 @@ export const resolvers = {
       }
 
       return {
-        ID,
-        time,
-        description,
+        ID: `${ID}`,
+        metadata: {
+          created: newEntryStart,
+          updated: newEntryStart
+        },
+
+        time: selection.time.stop.isSome()
+          ? await Time.stoppedInterval(newEntryStart, newEntryStop)
+          : await Time.ongoingInterval(newEntryStart),
+
+        description: newEntry.description.getOrElseL(() =>
+          descriptionFromTags(tags)
+        ),
+
         tags
       };
     }
@@ -233,8 +250,8 @@ export const resolvers = {
 };
 
 const startCurrentEntry = async (
-  now: Time.Date,
-  start: Time.Date,
+  now: Time.DateTime,
+  start: Time.DateTime,
   newEntry: Toggl.Entry.NewEntry
 ): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
   (await Toggl.Entry.getCurrentEntry()).fold(

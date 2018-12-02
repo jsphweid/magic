@@ -7,7 +7,7 @@ import Moment from "moment";
 import * as Firebase from "../../Firebase";
 import * as Utility from "../../Utility";
 import * as Context from "../Context";
-import * as Tag from "./index";
+import * as Narrative from "./index";
 
 export interface Document extends Firebase.Document {
   name: string;
@@ -18,7 +18,7 @@ export interface Document extends Firebase.Document {
 }
 
 export type Loader = ReturnType<typeof loader>;
-export type Result = Either.Either<Error, Tag.Tag>;
+export type Result = Either.Either<Error, Narrative.Narrative>;
 
 export const loader = (DB: Firestore.Firestore): DataLoader<string, Result> =>
   new DataLoader(async keys => {

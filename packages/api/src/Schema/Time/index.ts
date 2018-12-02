@@ -3,8 +3,11 @@ import gql from "graphql-tag";
 import _ from "lodash/fp";
 import Moment from "moment-timezone";
 
-import * as Date from "./Scalar/Date";
+import * as DateTime from "./Scalar/DateTime";
 import * as Duration from "./Scalar/Duration";
+
+export { DateTime, dateTime } from "./Scalar/DateTime";
+export { Duration, duration } from "./Scalar/Duration";
 
 export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 
@@ -15,14 +18,14 @@ export {
 } from "./Selection";
 
 export const schema = gql`
-  scalar Time__Date
+  scalar Time__DateTime
   scalar Time__Duration
   scalar Time__Milliseconds
 
   input Time__Selection {
-    start: Time__Date
+    start: Time__DateTime
     duration: Time__Duration
-    stop: Time__Date
+    stop: Time__DateTime
   }
 
   union Time = Time__Instant | Time__OngoingInterval | Time__StoppedInterval
@@ -81,32 +84,32 @@ export interface Timed {
 export type Time = Instant | Interval;
 
 interface Instant {
-  start: Date;
+  start: DateTime.DateTime;
 }
 
 export type Interval = OngoingInterval | StoppedInterval;
 
 export interface OngoingInterval extends Instant {
-  toStopped: (stop?: Date | null) => StoppedInterval;
+  toStopped: (stop?: DateTime.DateTime | null) => StoppedInterval;
 }
 
 export interface StoppedInterval extends OngoingInterval {
-  stop: Date;
-  duration(): Duration;
+  stop: DateTime.DateTime;
+  duration(): Duration.Duration;
 }
 
-export type Date = Moment.Moment;
-export type Duration = Moment.Duration;
+export const instant = (start: DateTime.DateTime): Instant => ({ start });
 
-export const instant = (start: Date): Instant => ({ start });
-
-export const ongoingInterval = (start: Date): OngoingInterval => ({
+export const ongoingInterval = (start: DateTime.DateTime): OngoingInterval => ({
   ...instant(start),
   toStopped: stop =>
     stoppedInterval(start, Option.fromNullable(stop).getOrElseL(Moment))
 });
 
-export const stoppedInterval = (start: Date, stop: Date): StoppedInterval => {
+export const stoppedInterval = (
+  start: DateTime.DateTime,
+  stop: DateTime.DateTime
+): StoppedInterval => {
   const stopOrNow = Option.fromNullable(stop).getOrElseL(Moment);
   return {
     ...ongoingInterval(start),
@@ -116,7 +119,7 @@ export const stoppedInterval = (start: Date, stop: Date): StoppedInterval => {
 };
 
 export const resolvers = {
-  Time__Date: Date.resolve,
+  Time__DateTime: DateTime.resolve,
   Time__Duration: Duration.resolve,
 
   Time__Timed: { __resolveType: () => "Time__Timed" },
@@ -141,25 +144,34 @@ export const resolvers = {
   },
 
   Time__FormattedDate: {
-    iso: (date: Date): string => date.toISOString(),
-    unix: (date: Date): Duration => Moment.duration(date.unix(), "seconds"),
-    humanized: (date: Date): string =>
-      stoppedInterval(Moment(), date)
+    iso: (dateTime: DateTime.DateTime): string => dateTime.toISOString(),
+    unix: (dateTime: DateTime.DateTime): Duration.Duration =>
+      Moment.duration(dateTime.unix(), "seconds"),
+
+    humanized: (dateTime: DateTime.DateTime): string =>
+      stoppedInterval(Moment(), dateTime)
         .duration()
         .humanize(true),
-    formatted: (date: Date, args: { template: string }): string =>
-      date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
+
+    formatted: (
+      dateTime: DateTime.DateTime,
+      args: { template: string }
+    ): string =>
+      dateTime.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
   },
 
   Time__FormattedDuration: {
-    humanized: (duration: Duration): string => duration.humanize(),
-    milliseconds: (duration: Duration): number => duration.asMilliseconds(),
-    seconds: (duration: Duration): number => duration.asSeconds(),
-    minutes: (duration: Duration): number => duration.asMinutes(),
-    hours: (duration: Duration): number => duration.asHours(),
-    days: (duration: Duration): number => duration.asDays(),
-    weeks: (duration: Duration): number => duration.asWeeks(),
-    months: (duration: Duration): number => duration.asMonths(),
-    years: (duration: Duration): number => duration.asYears()
+    humanized: (duration: Duration.Duration): string => duration.humanize(),
+
+    milliseconds: (duration: Duration.Duration): number =>
+      duration.asMilliseconds(),
+
+    seconds: (duration: Duration.Duration): number => duration.asSeconds(),
+    minutes: (duration: Duration.Duration): number => duration.asMinutes(),
+    hours: (duration: Duration.Duration): number => duration.asHours(),
+    days: (duration: Duration.Duration): number => duration.asDays(),
+    weeks: (duration: Duration.Duration): number => duration.asWeeks(),
+    months: (duration: Duration.Duration): number => duration.asMonths(),
+    years: (duration: Duration.Duration): number => duration.asYears()
   }
 };

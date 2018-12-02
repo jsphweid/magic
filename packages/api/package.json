@@ -24,6 +24,7 @@
     "graphql-tag": "^2.9.2",
     "graphql-tools": "^3.1.1",
     "graphql-yoga": "^1.16.1",
+    "io-ts": "^1.4.2",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.21",

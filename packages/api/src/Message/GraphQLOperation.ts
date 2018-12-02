@@ -3,59 +3,106 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
 const source = gql`
+  mutation NewTag(
+    $name: String!
+    $aliases: [String!]
+    $score: Int
+    $connections: [String!]
+  ) {
+    Tag {
+      new(
+        name: $name
+        aliases: $aliases
+        score: $score
+        connections: { names: $connections }
+      ) {
+        name
+        aliases
+        score
+        connections {
+          name
+        }
+      }
+    }
+  }
+
+  # mutation UpdateTags(
+  #   $start: Time__DateTime
+  #   $duration: Time__Duration
+  #   $stop: Time__DateTime
+  #   $origin: Narrative__Origin
+  #   $add: [String!]
+  #   $remove: [String!]
+  # ) {
+  #   Narrative {
+  #     updateTags(
+  #       origin: $origin
+  #       time: { start: $start, duration: $duration, stop: $stop }
+  #       tags: { names: $tags }
+  #       description: $description
+  #     ) {
+  #       ...narrative
+  #     }
+  #   }
+  # }
+
   mutation Track(
-    $start: Time__Date = "now"
+    $start: Time__DateTime
     $duration: Time__Duration
-    $stop: Time__Date
+    $stop: Time__DateTime
     $include: [String!]
     $exclude: [String!]
-    $narrative: String
+    $description: String
   ) {
-    track(
-      time: { start: $start, duration: $duration, stop: $stop }
-      tags: { include: { names: $include }, exclude: { names: $exclude } }
-      narrative: $narrative
-    ) {
-      ...history
+    Narrative {
+      new(
+        time: { start: $start, duration: $duration, stop: $stop }
+        tags: { include: { names: $include }, exclude: { names: $exclude } }
+        description: $description
+      ) {
+        ...narrative
+      }
     }
   }
 
   query History(
-    $start: Time__Date = "now"
+    $start: Time__DateTime
     $duration: Time__Duration
-    $stop: Time__Date
+    $stop: Time__DateTime
     $include: [String!]
     $exclude: [String!]
   ) {
-    history(
-      time: { start: $start, duration: $duration, stop: $stop }
-      tags: { include: { names: $include }, exclude: { names: $exclude } }
-    ) {
-      ...history
+    History {
+      history(
+        time: { start: $start, duration: $duration, stop: $stop }
+        tags: { include: { names: $include }, exclude: { names: $exclude } }
+      ) {
+        narratives {
+          ...narrative
+        }
+      }
     }
   }
 
-  fragment history on History {
-    narratives {
-      description
-      tags {
-        name
+  fragment narrative on Narrative {
+    description
+    tags {
+      name
+    }
+    time {
+      ... on Time__Occurrence {
+        start {
+          formatted(template: "h:mm A ddd")
+        }
       }
-      time {
-        ... on Time__Occurrence {
-          start {
-            formatted(template: "h:mm A ddd")
-          }
+      ... on Time__Interval {
+        duration {
+          humanized
         }
-        ... on Time__Interval {
-          duration {
-            humanized
-          }
-        }
-        ... on Time__StoppedInterval {
-          stop {
-            formatted(template: "h:mm A ddd")
-          }
+      }
+      ... on Time__StoppedInterval {
+        stop {
+          formatted(template: "h:mm A ddd")
         }
       }
     }
@@ -133,12 +180,12 @@ export const variablesFromMessage = (
             ...but not if we aren't using the short-hand version, i.e. "track ..."
             is unchanged
           */
-          variable.variable.name.value === "narrative" &&
-            !message.toLowerCase().includes("narrative") &&
+          variable.variable.name.value === "description" &&
+            !message.toLowerCase().includes("description") &&
             !message.toLowerCase().includes("track")
-            ? `narrative ${message}`
+            ? `description ${message}`
             : message
-        )
+        ).toNullable()
       ).getOrElse(
         Option.fromNullable(variable.defaultValue)
           .map(GraphQL.valueFromASTUntyped)
@@ -152,13 +199,13 @@ const variableValueFromMessage = (
   variables: GraphQL.VariableDefinitionNode[],
   variable: GraphQL.VariableDefinitionNode,
   message: string
-): string | null => {
+): Option.Option<string> => {
   const variableNameAsWords = wordsFromName(variable.variable.name.value);
   const variableNameStartIndex = message
     .toLowerCase()
     .indexOf(variableNameAsWords);
 
-  if (variableNameStartIndex < 0) return null;
+  if (variableNameStartIndex < 0) return Option.none;
 
   const valueStartIndex = variableNameStartIndex + variableNameAsWords.length;
   const nextVariableStartIndex = variables
@@ -197,17 +244,19 @@ const variableValueFromMessage = (
     "Getting ready for the day and eating breakfast tags chore breakfast"
       == ["chore", "breakfast"]
   */
-  return !GraphQL.isListType(variable.type)
-    ? value
-    : `[${value
-        .split(
-          Option.fromNullable(
-            [", ", "and "].find(separator => value.includes(separator))
-          ).getOrElse(" ")
-        )
-        .map(item => JSON.stringify(item.trim()))
-        .filter(item => item !== "")
-        .join(", ")}]`;
+  return Option.some(
+    !GraphQL.isListType(variable.type)
+      ? value
+      : `[${value
+          .split(
+            Option.fromNullable(
+              [", ", "and "].find(separator => value.includes(separator))
+            ).getOrElse(" ")
+          )
+          .map(item => JSON.stringify(item.trim()))
+          .filter(item => item !== "")
+          .join(", ")}]`
+  );
 };
 
 /*
@@ -222,5 +271,3 @@ const wordsFromName = (name: string): string =>
     .replace(/([A-Z])/g, " $1")
     .trim()
     .toLowerCase();
-
-fromMessage("track");

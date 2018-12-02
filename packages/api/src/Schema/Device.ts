@@ -5,45 +5,23 @@ export const schema = gql`
     ID: ID!
     name: String!
     capabilities: Capabilities!
-    usages(selection: TimeSelection): DeviceUsageHistory!
+    usages(selection: TimeSelection): [Device__Usage!]!
   }
 
-  type Capabilities {
-    inputs: [Input!]!
-    outputs: [Output!]!
-  }
+  interface, 
 
-  type Usages implements Time__Timed {
-    interval: Interval!
-    usages: [Usage!]!
-  }
-
-  type Usage implements Node, Time__Timed {
+  type Device__Usage implements Node, Time__Timed {
     time: Time__Timing!
     device: Device!
     interaction: Interaction!
   }
 
-  enum Input {
-    MOUSE
-    DESKTOP
-    VOICE
-    TEXT
-    TOUCH
-  }
-
-  enum Output {
-    AUDIO
-    SPEECH
-    SCREEN
-    TEXT
-    LIGHT
-  }
+  type Device__App
 `;
 
-// start_time: number;
-// end_time: number;
-// desktop_id: "a39122b6-e310-4620-9cae-53fb9738c0b8";
-// filename: string;
-// title: string;
-// idle: boolean;
+// "start_time": 1542492066,
+// "end_time": 1542492111,
+// "desktop_id": "7f93c63e-e228-45dc-8414-58e4e630a4b6",
+// "filename": "LockApp.exe",
+// "title": "Windows Default Lock Screen",
+// "idle": false

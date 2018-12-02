@@ -17,7 +17,7 @@ export const schema = gql`
   }
 
   type History__Query {
-    history(time: Time__Selection!, tags: Tag__Selection): History!
+    history(time: Time__Selection!, tags: Tag__Filter): History!
   }
 `;
 
@@ -32,7 +32,7 @@ export const resolvers = {
       _source: undefined,
       args: {
         time: Time.SelectionGraphQLArgs;
-        tags: Tag.SelectionGraphQLArgs | null;
+        tags: Tag.FilterArgs | null;
       },
       context: Context.Context
     ): Promise<History> =>
@@ -40,9 +40,7 @@ export const resolvers = {
         time: Time.selectionFromGraphQLArgs(args.time).getOrElseL(
           Utility.throwError
         ),
-        tags: Tag.selectionFromGraphQLArgs(args.tags).getOrElseL(
-          Utility.throwError
-        )
+        tags: Tag.filterFromArgs(args.tags).getOrElseL(Utility.throwError)
       })
   }
 };
@@ -50,7 +48,7 @@ export const resolvers = {
 export const getFromSelection = async (
   context: Context.Context,
   selection: {
-    tags: Tag.Selection;
+    tags: Tag.Filter;
     time: Time.Selection;
   }
 ): Promise<History> => {

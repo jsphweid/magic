@@ -7,7 +7,7 @@ import * as Time from "../index";
   Parse english date expressions...
   "now", "5 days ago", "1 hour from now", "twelve days later", etc.
 */
-export const toDate = (english: string): Either.Either<Error, Time.Date> =>
+export const toDate = (english: string): Either.Either<Error, Time.DateTime> =>
   "right now immediately instantly at once".includes(english.toLowerCase())
     ? Either.right(Moment())
     : /*

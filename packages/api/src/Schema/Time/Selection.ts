@@ -5,14 +5,14 @@ import * as Result from "../../Result";
 import * as Time from "./index";
 
 export interface Selection {
-  start: Option.Option<Time.Date>;
-  stop: Option.Option<Time.Date>;
+  start: Option.Option<Time.DateTime>;
+  stop: Option.Option<Time.DateTime>;
 }
 
 export interface GraphQLArgs {
-  start: Time.Date | null;
+  start: Time.DateTime | null;
   duration: Time.Duration | null;
-  stop: Time.Date | null;
+  stop: Time.DateTime | null;
 }
 
 export const fromGraphQLArgs = (
@@ -59,8 +59,8 @@ export const fromGraphQLArgs = (
 
 // `start` should never be after `stop`
 const fromDates = (
-  start: Option.Option<Time.Date>,
-  stop: Option.Option<Time.Date>
+  start: Option.Option<Time.DateTime>,
+  stop: Option.Option<Time.DateTime>
 ): Selection =>
   start.isSome() &&
   stop.isSome() &&
