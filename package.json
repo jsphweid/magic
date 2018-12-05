@@ -9,10 +9,10 @@
     "api:test:watch": "tst test api --watch",
     "api:dev": "tst dev api",
     "api:build": "tst build api",
-    "reporting:test": "tst test reporting",
-    "reporting:test:watch": "tst test reporting --watch",
-    "reporting:dev": "lerna run dev --stream --scope reporting",
-    "reporting:build": "lerna run build --stream --scope reporting",
+    "ui:test": "tst test ui",
+    "ui:test:watch": "tst test ui --watch",
+    "ui:dev": "lerna run dev --stream --scope ui",
+    "ui:build": "tst build ui",
     "api:backup": "lerna run backup --stream --scope api"
   },
   "devDependencies": {
