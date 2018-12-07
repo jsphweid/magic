@@ -1,34 +1,21 @@
-import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
-import _ from "lodash/fp";
-import Moment from "moment-timezone";
+import Moment from "moment";
 
 import * as Date from "./Scalar/Date";
 import * as Duration from "./Scalar/Duration";
 
-export { Batches, fromInterval as batchesFromInterval } from "./Batches";
-
-export {
-  Selection,
-  GraphQLArgs as SelectionGraphQLArgs,
-  fromGraphQLArgs as selectionFromGraphQLArgs
-} from "./Selection";
-
 export const schema = gql`
   scalar Time__Date
   scalar Time__Duration
-  scalar Time__Milliseconds
+  scalar Time__MS
 
-  input Time__Selection {
-    start: Time__Date
-    duration: Time__Duration
-    stop: Time__Date
-  }
-
-  union Time = Time__Instant | Time__OngoingInterval | Time__StoppedInterval
+  union Time__Time =
+      Time__Instant
+    | Time__OngoingInterval
+    | Time__StoppedInterval
 
   interface Time__Timed {
-    time: Time!
+    time: Time__Time!
   }
 
   interface Time__Occurrence {
@@ -54,16 +41,22 @@ export const schema = gql`
     stop: Time__FormattedDate!
   }
 
+  input Time__Selection {
+    start: Time__Date
+    duration: Time__Duration
+    date: Time__Date
+  }
+
   type Time__FormattedDate {
-    iso: String!
     unix: Time__FormattedDuration!
+    iso: String!
     humanized: String!
     formatted(template: String = "h:mm A, dddd, MMMM Do, YYYY"): String!
   }
 
   type Time__FormattedDuration {
     humanized: String!
-    milliseconds: Time__Milliseconds!
+    milliseconds: Time__MS!
     seconds: Float!
     minutes: Float!
     hours: Float!
@@ -74,81 +67,109 @@ export const schema = gql`
   }
 `;
 
+export type Date = Moment.Moment;
+export type Duration = Moment.Duration;
+export type Time = Instant | OngoingInterval | StoppedInterval;
+
 export interface Timed {
   time: Time;
 }
 
-export type Time = Instant | Interval;
+export interface Selection {
+  start?: Date;
+  duration?: Duration;
+  stop?: Date;
+}
 
-interface Instant {
+interface Occurrence<Kind extends OccurrenceKind> {
+  kind: Kind;
   start: Date;
 }
 
-export type Interval = OngoingInterval | StoppedInterval;
-
-export interface OngoingInterval extends Instant {
-  toStopped: (stop?: Date | null) => StoppedInterval;
+const enum OccurrenceKind {
+  Instant = "Instant",
+  OngoingInterval = "OngoingInterval",
+  StoppedInterval = "StoppedInterval"
 }
 
-export interface StoppedInterval extends OngoingInterval {
+export type Instant = Occurrence<OccurrenceKind.Instant>;
+export type OngoingInterval = Occurrence<OccurrenceKind.OngoingInterval>;
+export type StoppedInterval = Occurrence<OccurrenceKind.StoppedInterval> & {
   stop: Date;
-  duration(): Duration;
-}
-
-export type Date = Moment.Moment;
-export type Duration = Moment.Duration;
-
-export const instant = (start: Date): Instant => ({ start });
-
-export const ongoingInterval = (start: Date): OngoingInterval => ({
-  ...instant(start),
-  toStopped: stop =>
-    stoppedInterval(start, Option.fromNullable(stop).getOrElseL(Moment))
-});
-
-export const stoppedInterval = (start: Date, stop: Date): StoppedInterval => {
-  const stopOrNow = Option.fromNullable(stop).getOrElseL(Moment);
-  return {
-    ...ongoingInterval(start),
-    stop: stopOrNow,
-    duration: () => Moment.duration(stopOrNow.diff(start))
-  };
 };
 
+export const isInstant = (time: Time): time is Instant =>
+  time.kind === "Instant";
+
+export const isOngoingInterval = (time: Time): time is OngoingInterval =>
+  time.kind === "OngoingInterval";
+
+export const isStoppedInterval = (time: Time): time is StoppedInterval =>
+  time.kind === "StoppedInterval";
+
+export const instant = (start?: Date | null): Instant => ({
+  kind: OccurrenceKind.Instant,
+  start: start || Moment()
+});
+
+export const ongoingInterval = (start?: Date | null): OngoingInterval => ({
+  ...instant(start),
+  kind: OccurrenceKind.OngoingInterval
+});
+
+export const stoppedInterval = (
+  start?: Date | null,
+  stop?: Date | null
+): StoppedInterval => toStoppedInterval(ongoingInterval(start), stop);
+
+export const toStoppedInterval = (
+  time: Time,
+  stop?: Date | null
+): StoppedInterval => ({
+  ...time,
+  kind: OccurrenceKind.StoppedInterval,
+  stop: stop || (isStoppedInterval(time) ? time.stop : Moment())
+});
+
+export const duration = (time: Time): Duration =>
+  Moment.duration(
+    (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
+  );
+
+export const fromSelection = (selection: Selection): Time =>
+  selection.start && selection.stop
+    ? stoppedInterval(selection.start, selection.stop)
+    : selection.start && selection.duration
+    ? stoppedInterval(
+        selection.start,
+        Moment(selection.start).add(selection.duration)
+      )
+    : selection.stop && selection.duration
+    ? stoppedInterval(
+        Moment(selection.stop).subtract(selection.duration),
+        selection.stop
+      )
+    : selection.start
+    ? ongoingInterval(selection.start)
+    : instant();
+
 export const resolvers = {
-  Time__Date: Date.resolve,
-  Time__Duration: Duration.resolve,
+  ...Date.resolvers,
+  ...Duration.resolvers,
 
+  Time__Time: { __resolveType: (time: Time): string => `Time__${time.kind}` },
   Time__Timed: { __resolveType: () => "Time__Timed" },
-  Time: {
-    __resolveType: (time: Time): string =>
-      (time as StoppedInterval).stop
-        ? "Time__StoppedInterval"
-        : (time as OngoingInterval).toStopped
-        ? "Time__OngoingInterval"
-        : "Time__Instant"
-  },
-
   Time__Occurrence: { __resolveType: () => "Time__Occurrence" },
   Time__Interval: { __resolveType: () => "Time__Interval" },
-
-  Time__OngoingInterval: {
-    duration: (interval: OngoingInterval) => interval.toStopped().duration()
-  },
-
-  Time__StoppedInterval: {
-    duration: (interval: StoppedInterval) => interval.duration()
-  },
+  Time__OngoingInterval: { duration },
+  Time__StoppedInterval: { duration },
 
   Time__FormattedDate: {
+    unix: (date: Date): Duration => Moment.duration(date.valueOf(), "ms"),
     iso: (date: Date): string => date.toISOString(),
-    unix: (date: Date): Duration => Moment.duration(date.unix(), "seconds"),
-    humanized: (date: Date): string =>
-      stoppedInterval(Moment(), date)
-        .duration()
-        .humanize(true),
+    humanized: (date: Date): string => duration(instant(date)).humanize(true),
     formatted: (date: Date, args: { template: string }): string =>
-      date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
+      date.format(args.template)
   },
 
   Time__FormattedDuration: {

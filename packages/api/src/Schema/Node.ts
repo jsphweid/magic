@@ -8,10 +8,10 @@ export const schema = gql`
   }
 
   interface Node__Persisted {
-    metadata: Node__PersistenceMetadata!
+    metadata: Node__Metadata!
   }
 
-  type Node__PersistenceMetadata {
+  type Node__Metadata {
     created: Time__FormattedDate!
     updated: Time__FormattedDate!
   }

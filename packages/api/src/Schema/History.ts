@@ -22,7 +22,7 @@ export const schema = gql`
 `;
 
 export interface History {
-  interval: Time.Interval;
+  time: Time.Time;
   narratives: Narrative.Narrative[];
 }
 
@@ -31,89 +31,80 @@ export const resolvers = {
     history: async (
       _source: undefined,
       args: {
-        time: Time.SelectionGraphQLArgs;
-        tags: Tag.SelectionGraphQLArgs | null;
+        time?: Time.Selection;
+        tags?: DeepPartial<Tag.Selection>;
       },
       context: Context.Context
-    ): Promise<History> =>
-      getFromSelection(context, {
-        time: Time.selectionFromGraphQLArgs(args.time).getOrElseL(
-          Utility.throwError
-        ),
-        tags: Tag.selectionFromGraphQLArgs(args.tags).getOrElseL(
-          Utility.throwError
-        )
-      })
-  }
-};
+    ): Promise<History> => {
+      /*
+        The default `start` is actually the start of the latest time entry when
+        no `start` was provided, but we need to grab a small list of time entries
+        to know about the latest time entry
+      */
+      const time = args.time
+        ? Time.fromSelection(args.time)
+        : Time.stoppedInterval(context.now.subtract(1, "day"));
 
-export const getFromSelection = async (
-  context: Context.Context,
-  selection: {
-    tags: Tag.Selection;
-    time: Time.Selection;
-  }
-): Promise<History> => {
-  /*
-    The default `start` is actually the start of the latest time entry when
-    no `start` was provided, but we need to grab a small list of time entries
-    to know about the latest time entry
-  */
-  const recentEntries = (await Toggl.Entry.getInterval(
-    selection.time.start.getOrElseL(() => Moment().subtract(2, "days")),
-    selection.time.stop.getOrElseL(() => Moment())
-  )).getOrElseL(Utility.throwError);
+      const recentEntries = (await Toggl.Entry.getInterval(
+        time.start,
+        Time.isStoppedInterval(time) ? time.stop : context.now
+      )).getOrElseL(Utility.throwError);
 
-  const entriesToInclude =
-    selection.time.start.isNone() && recentEntries.length > 0
-      ? [recentEntries[0]]
-      : recentEntries;
+      // If no time was selected, default to the most recent narrative's time
+      const entriesToInclude =
+        !args.time && recentEntries.length > 0
+          ? [recentEntries[0]]
+          : recentEntries;
 
-  const narratives: Narrative.Narrative[] = [];
-  for (const entry of entriesToInclude) {
-    const tags = (await context.tagLoader.loadMany(
-      Option.fromNullable(entry.tags).getOrElse([])
-    )).map(result => result.getOrElseL(Utility.throwError));
+      const selection = {
+        tags: Tag.defaultSelection(args.tags).getOrElseL(Utility.throwError)
+      };
 
-    if (
-      (selection.tags.include.names.length > 0 &&
-        !Tag.isMatchForNames(selection.tags.include.names, tags)) ||
-      (selection.tags.exclude.names.length > 0 &&
-        Tag.isMatchForNames(selection.tags.exclude.names, tags))
-    ) {
-      continue;
+      const narratives: Narrative.Narrative[] = [];
+      for (const entry of entriesToInclude) {
+        const isMissingIncludedTags =
+          selection.tags.include.names.length > 0 &&
+          !Tag.isMatchForNames(selection.tags.include.names, tags);
+
+        const containsExcludedTags =
+          selection.tags.exclude.names.length > 0 &&
+          Tag.isMatchForNames(selection.tags.exclude.names, tags);
+
+        if (isMissingIncludedTags || containsExcludedTags) {
+          continue;
+        }
+
+        const description =
+          entry.description || Narrative.descriptionFromTags(tags);
+
+        const start = Moment(entry.start);
+        const time = entry.stop
+          ? Time.stoppedInterval(start, Moment(entry.stop))
+          : Time.ongoingInterval(start);
+
+        const ID = `${entry.id}`;
+        const metadata = {
+          created: start,
+          updated: Moment(entry.at)
+        };
+
+        narratives.push({ ID, metadata, time, description, tags });
+      }
+
+      return {
+        time:
+          // Use the `start` of the first time entry when none was provided
+          args.time && (args.time.start || args.time.duration)
+            ? time
+            : {
+                ...time,
+                start: Option.fromNullable(narratives[0])
+                  .map(firstNarrative => firstNarrative.time.start)
+                  .getOrElse(context.now)
+              },
+
+        narratives
+      };
     }
-
-    const start = Moment(entry.start);
-
-    narratives.push({
-      ID: `${entry.id}`,
-      metadata: {
-        created: start,
-        updated: Moment(entry.at)
-      },
-      time: Option.fromNullable(entry.stop).fold(
-        Time.ongoingInterval(start),
-        stop => Time.stoppedInterval(start, Moment(stop))
-      ),
-      description: Option.fromNullable(entry.description).getOrElseL(() =>
-        Narrative.descriptionFromTags(tags)
-      ),
-      tags
-    });
   }
-
-  // Use the `start` of the first time entry when none was provided
-  const start = selection.time.start.getOrElse(
-    Option.fromNullable(narratives[0])
-      .map(firstNarrative => firstNarrative.time.start)
-      .getOrElseL(Moment)
-  );
-
-  const interval = selection.time.stop.foldL(
-    () => Time.ongoingInterval(start),
-    stop => Time.stoppedInterval(start, stop)
-  );
-
-  return { interval, narratives };
 };

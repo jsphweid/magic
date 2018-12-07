@@ -1,4 +1,3 @@
-import { option as Option } from "fp-ts";
 import * as GraphQL from "graphql";
 import _ from "lodash";
 import Moment from "moment-timezone";
@@ -7,87 +6,72 @@ import * as Utility from "../../../Utility";
 import * as Time from "../index";
 import * as English from "./English";
 
-export const resolve = new GraphQL.GraphQLScalarType({
-  name: "Time__Date",
-  serialize: (value: Time.Date): number => value.valueOf(),
-  parseValue: (value: string): Time.Date => parse(value),
-  parseLiteral: (valueNode: GraphQL.ValueNode): Time.Date =>
-    valueNode.kind === GraphQL.Kind.INT || valueNode.kind === GraphQL.Kind.FLOAT
-      ? Moment(parseFloat(valueNode.value))
-      : valueNode.kind === GraphQL.Kind.STRING
-      ? parse(valueNode.value, valueNode)
-      : Utility.throwError(
-          new GraphQL.GraphQLError(
-            `"${valueNode.kind}" must be an \`Int\`, \`Float\`, or \`String\``
+export const resolvers = {
+  Time__Date: new GraphQL.GraphQLScalarType({
+    name: "Time__Date",
+    serialize: (value: Time.Date): number => value.valueOf(),
+    parseValue: (value: string): Time.Date => parse(value),
+    parseLiteral: (valueNode: GraphQL.ValueNode): Time.Date =>
+      valueNode.kind === GraphQL.Kind.INT ||
+      valueNode.kind === GraphQL.Kind.FLOAT
+        ? Moment(parseFloat(valueNode.value))
+        : valueNode.kind === GraphQL.Kind.STRING
+        ? parse(valueNode.value, valueNode)
+        : Utility.throwError(
+            new GraphQL.GraphQLError(
+              `"${valueNode.kind}" must be an \`Int\`, \`Float\`, or \`String\``
+            )
           )
-        )
-});
+  })
+};
 
 const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
-  /*
-  Check if the source has the meridiem marker (A/AM/P/PM). If it doesn't we'll
-  use that information later to make a better guess about what time was meant.
-*/
-  const [, lastTimePart] = source.split(":");
-  const isSourceMissingMeridiem =
-    lastTimePart &&
-    !["A", "AM", "P", "PM"].includes(lastTimePart.toUpperCase());
+  const textAfterColon = source
+    .toLowerCase()
+    .split(":")
+    .slice(-1)[0];
+
+  const isMissingMeridiem =
+    textAfterColon && !["a", "am", "p", "pm"].includes(textAfterColon);
 
   const now = Moment();
+  const possibleFormats = [Moment.ISO_8601, Moment.RFC_2822, ...formats];
+  const timeZone = `${process.env.MAGIC_TIME_ZONE}`;
 
-  /*
-  Try a bunch of hard-coded `Moment` formats (at the end of this file)
-  https://momentjs.com/docs/#/parsing/string-format/
-*/
-  for (const format of [Moment.ISO_8601, Moment.RFC_2822, ...formats]) {
-    const date = Moment.tz(
-      source,
-      format,
-      true,
-      `${process.env.MAGIC_TIME_ZONE}`
-    );
+  console.log(source);
 
+  for (const format of possibleFormats) {
+    const date = Moment.tz(source, format, true, timeZone);
     if (!date.isValid()) {
       continue;
     }
 
-    // Parsing without a year can yield times way in the past
-    if (date.year() < 2018) {
-      date.year(2018);
+    if (date.year() < now.year()) {
+      date.year(now.year());
     }
 
-    if (isSourceMissingMeridiem) {
+    if (!isMissingMeridiem) {
       return date;
     }
-
-    /*
-    Sometimes the date Moment parses can be off when "AM" or "PM" is missing.
-    12:30 might become 12:30 AM even though 12:30 PM is closer. We need to
-    check for that situation and adjust the date if it occurs.
-  */
 
     const closerDate = [
       Moment(date).subtract(12, "hours"),
       Moment(date).add(12, "hours")
     ].find(
-      alteredDate => differenceMS(date, now) > differenceMS(now, alteredDate)
+      possiblyCloserDate =>
+        differenceMS(date, now) > differenceMS(now, possiblyCloserDate)
     );
 
-    return Option.fromNullable(closerDate).getOrElse(date);
+    return closerDate || date;
   }
 
-  // Try parsing the date from english-like values i.e. "in five minutes"
   return English.toDate(source).getOrElseL(error =>
     Utility.throwError(new GraphQL.GraphQLError(error.message, valueNode))
   );
 };
 
 const differenceMS = (start: Time.Date, stop: Time.Date): number =>
-  Math.abs(
-    Time.stoppedInterval(start, stop)
-      .duration()
-      .asMilliseconds()
-  );
+  Math.abs(Time.duration(Time.stoppedInterval(start, stop)).asMilliseconds());
 
 const dateFormats = [
   "MM-DD-YYYY",

@@ -14,7 +14,7 @@ export * from "./Loader";
 export const schema = gql`
   type Tag implements Node__Identifiable & Node__Persisted {
     ID: ID!
-    metadata: Node__PersistenceMetadata!
+    metadata: Node__Metadata!
     name: String!
     aliases: [String!]!
     score: Int!
@@ -22,33 +22,33 @@ export const schema = gql`
     connections: [Tag!]!
   }
 
+  interface Tag__Tagged {
+    tags: [Tag!]!
+  }
+
   type Tag__Query {
-    tags(include: Tag__Filter, exclude: Tag__Filter): [Tag!]!
+    tags(include: Tag__Selection, exclude: Tag__Selection): [Tag!]!
   }
 
   type Tag__Mutation {
     create(tag: NewTag!): Tag!
   }
 
-  input NewTag {
+  input Tag__New {
     name: String!
     aliases: [String!] = []
     score: Int = 0
-    connections: Tag__Filter
-  }
-
-  input Tag__Selection {
-    include: Tag__Filter
-    exclude: Tag__Filter
+    connections: Tag__Selection
   }
 
   input Tag__Filter {
-    ids: [ID!]
-    names: [String!]
+    include: Tag__Selection
+    exclude: Tag__Selection
   }
 
-  interface Tag__Tagged {
-    tags: [Tag!]!
+  input Tag__Selection {
+    ids: [ID!]
+    names: [String!]
   }
 `;
 
@@ -61,33 +61,53 @@ export interface Tag {
   connections: string[];
 }
 
-export interface Selection {
-  include: Filter;
-  exclude: Filter;
-}
-
-export interface Filter {
-  names: string[];
-  ids: string[];
-}
-
 export interface Tagged {
   tags: Tag[];
 }
 
-export interface SelectionGraphQLArgs {
-  tags?: {
-    include?: Partial<Filter> | null;
-    exclude?: Partial<Filter> | null;
-  };
+export interface Filter {
+  include: Selection;
+  exclude: Selection;
 }
 
-export const resolvers = {
-  Tag__Tagged: {
-    __resolveType: () => "Tag__Tagged"
-  },
+export interface Selection {
+  names: string[];
+  ids: string[];
+}
 
-  Tag: {
+export const defaultSelection = (overrides?: Partial<Selection>): Selection =>
+  _.merge({ names: [], ids: [] }, overrides);
+
+export const defaultFilter = (
+  overrides?: DeepPartial<Filter>
+): Result.Result<Filter> => {
+  const empty: Filter = {
+    include: defaultSelection(),
+    exclude: defaultSelection()
+  };
+
+  const filter = overrides ? _.merge(empty, overrides) : empty;
+
+  // Tags can't be both included and excluded
+  const conflicts = [
+    ..._.intersection(filter.include.names, filter.exclude.names),
+    ..._.intersection(filter.include.ids, filter.exclude.ids)
+  ];
+
+  return conflicts.length === 0
+    ? Result.success(filter)
+    : Result.error(
+        conflicts
+          .map(
+            conflict =>
+              `"${conflict}" was included and excluded in the same selection`
+          )
+          .join("\n")
+      );
+};
+
+export const resolvers = {
+  Tag__Tag: {
     metadata: () => ({
       created: Moment(),
       updated: Moment()
@@ -103,48 +123,32 @@ export const resolvers = {
       )
   },
 
+  Tag__Tagged: {
+    __resolveType: () => "Tag__Tagged"
+  },
+
   Tag__Query: {
     tags: async (
       _: undefined,
-      args: SelectionGraphQLArgs,
+      _args: DeepPartial<Selection>,
       context: Context.Context
     ): Promise<Tag[]> => {
-      const selection = selectionFromGraphQLArgs(args).getOrElseL(
-        Utility.throwError
-      );
-
-      console.log(selection);
-
       return (await Loader.getAll(context)).getOrElseL(Utility.throwError);
     }
   }
 };
 
-export const selectionFromGraphQLArgs = (
-  args?: SelectionGraphQLArgs | null
-): Result.Result<Selection> => {
-  const selection: Selection = _.defaultsDeep(
-    Option.fromNullable(args).getOrElse({})
-  )({
-    include: { names: [], ids: [] },
-    exclude: { names: [], ids: [] }
-  });
+export const getAllFromNames = async (
+  context: Context.Context,
+  names: string[]
+): Promise<Result.Result<Tag[]>> => {
+  const tags: Tag[] = [];
+  for (const result of await context.tagLoader.loadMany(names)) {
+    if (result.isLeft()) return Result.error(result.value.message);
+    tags.push(result.value);
+  }
 
-  const conflicts = [
-    ..._.intersection(selection.include.names, selection.exclude.names),
-    ..._.intersection(selection.include.ids, selection.exclude.ids)
-  ];
-
-  return conflicts.length === 0
-    ? Result.success(selection)
-    : Result.error(
-        conflicts
-          .map(
-            conflict =>
-              `"${conflict}" was included and excluded in the same selection`
-          )
-          .join("\n")
-      );
+  return Result.success(tags);
 };
 
 export const findMatches = async (

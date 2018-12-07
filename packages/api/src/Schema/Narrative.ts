@@ -3,6 +3,7 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 import Moment from "moment";
 
+import * as Result from "../Result";
 import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
 import * as Context from "./Context";
@@ -13,28 +14,26 @@ import * as Time from "./Time";
 export const schema = gql`
   type Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
     ID: ID!
-    metadata: Node__PersistenceMetadata!
+    metadata: Node__Metadata!
     time: Time!
-    description: String!
     tags: [Tag!]!
+    description: String!
   }
 
   type Narrative__Query {
     narratives(
       search: String
       time: Time__Selection
-      tags: Tag__Selection
+      tags: Tag__Filter
     ): [Narrative!]!
   }
 
   type Narrative__Mutation {
-    new(narrative: Narrative__New!): Narrative!
-  }
-
-  input Narrative__New {
-    time: Time__Selection!
-    description: String
-    tags: Tag__Selection
+    new(
+      description: String
+      time: Time__Selection
+      tags: Tag__Selection
+    ): Narrative!
   }
 `;
 
@@ -43,10 +42,28 @@ export interface Narrative
     Node.Persisted,
     Time.Timed,
     Tag.Tagged {
-  ID: string;
-  time: Time.Time;
   description: string;
 }
+
+export const fromTogglEntry = async (
+  context: Context.Context,
+  entry: Toggl.Entry.Entry
+): Promise<Result.Result<Narrative>> =>
+  (await Tag.getAllFromNames(context, entry.tags || [])).map(tags => {
+    const description = entry.description || descriptionFromTags(tags);
+    const start = Moment(entry.start);
+    const time = entry.stop
+      ? Time.stoppedInterval(start, Moment(entry.stop))
+      : Time.ongoingInterval(start);
+
+    const ID = `${entry.id}`;
+    const metadata = {
+      created: start,
+      updated: Moment(entry.at)
+    };
+
+    return { ID, metadata, time, description, tags };
+  });
 
 export const descriptionFromTags = (tags: Tag.Tag[]): string =>
   tags.reduce((previous, tag, i) => {
@@ -62,8 +79,8 @@ export const resolvers = {
     narratives: (
       _: undefined,
       _args: {
-        time: Time.SelectionGraphQLArgs | null;
-        tags: Tag.SelectionGraphQLArgs | null;
+        time?: Time.Selection;
+        tags?: Tag.Selection;
       }
     ) => []
   },
@@ -72,73 +89,59 @@ export const resolvers = {
     new: async (
       _: undefined,
       args: {
-        narrative: {
-          time: Time.SelectionGraphQLArgs;
-          tags: Tag.SelectionGraphQLArgs | null;
-          description: string | null;
-        };
+        description?: string;
+        time?: Time.Selection;
+        tags?: Tag.Filter;
       },
       context: Context.Context
     ): Promise<Narrative> => {
-      const selection = {
-        time: Time.selectionFromGraphQLArgs(args.narrative.time).getOrElseL(
-          Utility.throwError
-        ),
-        tags: Tag.selectionFromGraphQLArgs(args.narrative.tags).getOrElseL(
-          Utility.throwError
-        )
-      };
+      const tagsFilter = Tag.defaultFilter(args.tags).getOrElseL(
+        Utility.throwError
+      );
 
-      const tagsToFind = [
-        ...selection.tags.include.names,
-        ...Option.fromNullable(args.narrative.description)
-          .map(narrative => [narrative])
-          .getOrElse([])
+      const time = args.time
+        ? Time.fromSelection(args.time)
+        : Time.ongoingInterval();
+
+      const tagNamesToMatch = [
+        ...tagsFilter.include.names,
+        ...(args.description ? [args.description] : [])
       ];
 
       const tags = (await Tag.findMatches(
         context,
-        tagsToFind.join(" ")
+        tagNamesToMatch.join(" ")
       )).getOrElseL(Utility.throwError);
 
       const project = (await projectFromTags(tags)).getOrElseL(
         Utility.throwError
       );
 
-      const now = Moment();
-
-      const newEntryStart = selection.time.start.getOrElse(now);
-      const newEntryStop = selection.time.stop.getOrElse(now);
-
       // Protect against mass data-deletion
-      if (
-        Time.stoppedInterval(newEntryStart, newEntryStop)
-          .duration()
-          .asHours() > 3
-      ) {
+      if (Time.duration(Time.toStoppedInterval(time)).asHours() > 3) {
         throw new GraphQL.GraphQLError(
           "You cannot select more than three hours"
         );
       }
 
-      const newEntryStartMS = newEntryStart.valueOf();
-      const newEntryStopMS = newEntryStop.valueOf();
+      const newEntryStartMS = time.start.valueOf();
+      const newEntryStopMS = Time.toStoppedInterval(time).stop.valueOf();
 
       const newEntry = {
         pid: project.map(({ id }) => id),
-        description: Option.fromNullable(args.narrative.description),
+        description: Option.fromNullable(args.description),
         tags: tags.map(({ name }) => name)
       };
 
       // Grab the entries we might affect
       const entries = (await Toggl.Entry.getInterval(
-        Moment(newEntryStart).subtract(5, "hours"),
-        newEntryStop
+        Moment(time.start).subtract(5, "hours"),
+        Time.toStoppedInterval(time).stop
       )).getOrElseL(Utility.throwError);
 
       // Create or start a new entry depending on if a stop time was provided
-      const { id: ID } = (selection.time.stop.isSome()
-        ? await Toggl.Entry.POST(newEntryStart, newEntryStop, newEntry)
+      const { id: ID } = (Time.isStoppedInterval(time)
+        ? await Toggl.Entry.POST(time.start, time.stop, newEntry)
         : await startCurrentEntry(now, newEntryStart, newEntry)
       ).getOrElseL(Utility.throwError);
 
