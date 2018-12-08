@@ -17,7 +17,7 @@ interface Data {
 }
 
 export type Loader = ReturnType<typeof loader>;
-export type Result = Either.Either<Error, Tag.Tag>;
+type Result = Either.Either<Error, Tag.Tag>;
 
 export const loader = (DB: Firestore.Firestore): DataLoader<string, Result> =>
   new DataLoader(async keys => {

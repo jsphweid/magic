@@ -31,26 +31,22 @@ export interface Entry {
   at: string;
 }
 
-// Make it easy to create new entries from a friendly interface
-
-export interface NewEntry {
-  pid: Option.Option<number>;
-  description: Option.Option<string>;
-  tags: string[];
-}
-
-const newEntryToTogglData = (
-  newEntry: NewEntry
-): {
-  created_with: "HireMeForMoney";
+interface New {
   pid?: number;
   description?: string;
   tags?: string[];
-} => ({
-  created_with: "HireMeForMoney",
-  pid: newEntry.pid.toUndefined(),
-  description: newEntry.description.toUndefined(),
-  tags: newEntry.tags
+}
+
+// Required by Toggl
+interface CreatedWith {
+  created_with: "HireMeForMoney";
+}
+
+const entry = ({ pid, description, tags }: New): New & CreatedWith => ({
+  pid,
+  description,
+  tags: tags || [],
+  created_with: "HireMeForMoney"
 });
 
 /*
@@ -58,83 +54,67 @@ const newEntryToTogglData = (
   This function helps map the result of the response to the final shape.
 */
 
-interface DataResponse<Data> {
+interface ResponseWithDataField<Data> {
   data: Data;
 }
 
 const extractData = async <Data>(
-  response: Promise<Request.Result<DataResponse<Data>>>
-): Promise<Request.Result<Data>> => (await response).map(({ data }) => data);
+  response: Promise<Result.Result<ResponseWithDataField<Data>>>
+): Promise<Result.Result<Data>> => (await response).map(({ data }) => data);
 
-// Standard HTTP verbs
-
-export const GET = async (ID: number): Promise<Request.Result<Entry>> =>
+export const get = async (ID: number): Promise<Result.Result<Entry>> =>
   Request.execute<Entry>({
     method: "GET",
-    resource: `/time_entries/${ID}`,
-    params: Option.none,
-    data: Option.none
+    resource: `/time_entries/${ID}`
   });
 
-export const POST = async (
+export const post = async (
   start: Time.Date,
   stop: Time.Date,
-  newEntry: NewEntry
-): Promise<Request.Result<Entry>> =>
+  entry: New
+): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<DataResponse<Entry>>({
+    Request.execute<ResponseWithDataField<Entry>>({
       method: "POST",
       resource: `/time_entries`,
-      params: Option.none,
-      data: Option.some({
-        time_entry: {
-          ...newEntryToTogglData(newEntry),
-          start: start.toISOString(),
-          duration: Math.abs(
-            Time.stoppedInterval(start, stop)
-              .duration()
-              .asSeconds()
-          )
-        }
-      })
-    })
-  );
-
-export const PUT = async (entry: Entry): Promise<Request.Result<Entry>> => {
-  return extractData(
-    Request.execute<DataResponse<Entry>>({
-      method: "PUT",
-      resource: `/time_entries/${entry.id}`,
-      params: Option.none,
-      data: Option.some({
+      data: {
         time_entry: {
           ...entry,
-          duration: Option.fromNullable(entry.stop).fold(entry.duration, stop =>
-            Math.abs(
-              Time.stoppedInterval(Moment(entry.start), Moment(stop))
-                .duration()
-                .asSeconds()
-            )
-          )
+          start: start.toISOString(),
+          duration: Time.duration(Time.stoppedInterval(start, stop)).asSeconds()
         }
-      })
+      }
     })
   );
-};
-export const DELETE = async (entry: Entry): Promise<Request.Result<void>> =>
+
+export const put = async (entry: Entry): Promise<Result.Result<Entry>> =>
+  extractData(
+    Request.execute<ResponseWithDataField<Entry>>({
+      method: "PUT",
+      resource: `/time_entries/${entry.id}`,
+      data: {
+        time_entry: {
+          ...entry,
+          duration: !entry.stop
+            ? entry.duration
+            : Time.duration(
+                Time.stoppedInterval(Moment(entry.start), Moment(entry.stop))
+              )
+        }
+      }
+    })
+  );
+
+export const delete_ = async (entry: Entry): Promise<Result.Result<void>> =>
   Request.execute<void>({
     method: "DELETE",
-    resource: `/time_entries/${entry.id}`,
-    params: Option.none,
-    data: Option.none
+    resource: `/time_entries/${entry.id}`
   });
-
-// Non standard API actions
 
 export const getInterval = async (
   start: Time.Date,
   stop: Time.Date
-): Promise<Request.Result<Entry[]>> => {
+): Promise<Result.Result<Entry[]>> => {
   // We're limited to 1000 time entries per request
   let entries: Entry[] = [];
   for (const batch of Time.batchesFromInterval(
@@ -144,11 +124,10 @@ export const getInterval = async (
     const result = (await Request.execute<Entry[]>({
       method: "GET",
       resource: "/time_entries",
-      params: Option.some({
+      params: {
         start_date: batch.start.toISOString(),
         end_date: batch.stop.toISOString()
-      }),
-      data: Option.none
+      }
     })).map(entriesBatch => (entries = entries.concat(entriesBatch)));
     if (result.isLeft()) return result;
   }
@@ -162,37 +141,28 @@ export const getInterval = async (
 };
 
 export const getCurrentEntry = async (): Promise<
-  Request.Result<Option.Option<Entry>>
+  Result.Result<Option.Option<Entry>>
 > =>
   (await extractData(
-    Request.execute<DataResponse<Entry>>({
+    Request.execute<ResponseWithDataField<Entry>>({
       method: "GET",
-      resource: `/time_entries/current`,
-      params: Option.none,
-      data: Option.none
+      resource: `/time_entries/current`
     })
   )).map(entry => Option.fromNullable(entry));
 
-export const start = async (
-  newEntry: NewEntry
-): Promise<Request.Result<Entry>> =>
+export const start = async (entry: New): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<DataResponse<Entry>>({
+    Request.execute<ResponseWithDataField<Entry>>({
       method: "POST",
       resource: `/time_entries/start`,
-      params: Option.none,
-      data: Option.some({
-        time_entry: newEntryToTogglData(newEntry)
-      })
+      data: { time_entry: entry }
     })
   );
 
-export const stop = async (entry: Entry): Promise<Request.Result<Entry>> =>
+export const stop = async (entry: Entry): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<DataResponse<Entry>>({
+    Request.execute<ResponseWithDataField<Entry>>({
       method: "PUT",
-      resource: `/time_entries/${entry.id}/stop`,
-      params: Option.none,
-      data: Option.none
+      resource: `/time_entries/${entry.id}/stop`
     })
   );

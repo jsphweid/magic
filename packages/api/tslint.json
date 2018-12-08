@@ -7,6 +7,7 @@
       "firebase/firestore",
       "cross-fetch/polyfill",
       "lodash/fp"
-    ]
+    ],
+    "variable-name": [true, "allow-trailing-underscore"]
   }
 }

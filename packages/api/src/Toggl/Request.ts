@@ -1,26 +1,23 @@
 import { default as Axios } from "axios";
-import { either as Either, option as Option } from "fp-ts";
 
-export type Result<Data> = Either.Either<Error, Data>;
+import * as Result from "../Result";
 
 export const workspace = async <Data>(
   resource: string
-): Promise<Result<Data>> =>
+): Promise<Result.Result<Data>> =>
   execute<Data>({
     method: "GET",
-    resource: `/workspaces/${process.env.TOGGL_WORKSPACE_ID}${resource}`,
-    params: Option.none,
-    data: Option.none
+    resource: `/workspaces/${process.env.TOGGL_WORKSPACE_ID}${resource}`
   });
 
 export const execute = async <Data>(config: {
   method: "GET" | "POST" | "PUT" | "DELETE";
   resource: string;
-  params: Option.Option<any>;
-  data: Option.Option<any>;
-}): Promise<Result<Data>> => {
+  params?: { [name: string]: string | number };
+  data?: string;
+}): Promise<Result.Result<Data>> => {
   try {
-    const { data } = await Axios.request({
+    const { data }: { data: Data } = await Axios.request({
       url: config.resource.includes(".com")
         ? config.resource
         : `https://www.toggl.com/api/v8${config.resource}`,
@@ -32,16 +29,16 @@ export const execute = async <Data>(config: {
       },
 
       method: config.method,
-      params: config.params.toUndefined(),
-      data: config.data.toUndefined()
+      params: config.params,
+      data: config.data
     });
 
-    return Either.right(data as Data);
+    return Result.success(data);
   } catch (error) {
-    const formattedError = new Error(`${error.message} ${error.response.data}`);
+    const message = `${error.message} ${error.response.data}`;
 
     // tslint:disable-next-line:no-console
-    console.log(formattedError);
-    return Either.left(formattedError);
+    console.log(message);
+    return Result.error(message);
   }
 };

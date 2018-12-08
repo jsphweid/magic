@@ -141,7 +141,7 @@ export const resolvers = {
 
       // Create or start a new entry depending on if a stop time was provided
       const { id: ID } = (Time.isStoppedInterval(time)
-        ? await Toggl.Entry.POST(time.start, time.stop, newEntry)
+        ? await Toggl.Entry.post(time.start, time.stop, newEntry)
         : await startCurrentEntry(now, newEntryStart, newEntry)
       ).getOrElseL(Utility.throwError);
 
@@ -166,7 +166,7 @@ export const resolvers = {
           newEntryStartMS <= oldEntryStartMS &&
           oldEntryStopMS <= newEntryStopMS
         ) {
-          (await Toggl.Entry.DELETE(oldEntry)).mapLeft(Utility.throwError);
+          (await Toggl.Entry.delete(oldEntry)).mapLeft(Utility.throwError);
         } else if (
           /*
             New:            |=====|
@@ -180,12 +180,12 @@ export const resolvers = {
           newEntryStopMS < oldEntryStopMS
         ) {
           (await Promise.all([
-            Toggl.Entry.POST(oldEntryStart, newEntryStart, {
+            Toggl.Entry.post(oldEntryStart, newEntryStart, {
               pid: Option.fromNullable(oldEntry.pid),
               description: Option.fromNullable(oldEntry.description),
               tags: Option.fromNullable(oldEntry.tags).getOrElse([])
             }),
-            Toggl.Entry.PUT({
+            Toggl.Entry.put({
               ...oldEntry,
               start: newEntryStop.toISOString()
             })
@@ -202,7 +202,7 @@ export const resolvers = {
           oldEntryStartMS < newEntryStartMS &&
           newEntryStartMS < oldEntryStopMS
         ) {
-          (await Toggl.Entry.PUT({
+          (await Toggl.Entry.put({
             ...oldEntry,
             stop: newEntryStart.toISOString()
           })).mapLeft(Utility.throwError);
@@ -218,7 +218,7 @@ export const resolvers = {
           newEntryStartMS < oldEntryStartMS &&
           oldEntryStartMS < newEntryStopMS
         ) {
-          (await Toggl.Entry.PUT({
+          (await Toggl.Entry.put({
             ...oldEntry,
             start: newEntryStop.toISOString()
           })).mapLeft(Utility.throwError);
@@ -254,7 +254,7 @@ const startCurrentEntry = async (
           entry's stop needs to be set to the new entry's start
         */
         if (now.valueOf() < start.valueOf()) {
-          (await Toggl.Entry.PUT({
+          (await Toggl.Entry.put({
             ...oldCurrentEntry,
             stop: start.toISOString()
           })).getOrElseL(Utility.throwError);
@@ -267,7 +267,7 @@ const startCurrentEntry = async (
       // If the current entry starts now, we're done, otherwise update the start
       return start === now
         ? currentEntry
-        : Toggl.Entry.PUT({
+        : Toggl.Entry.put({
             ...currentEntry.getOrElseL(Utility.throwError),
             start: start.toISOString()
           });

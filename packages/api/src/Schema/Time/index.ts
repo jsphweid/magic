@@ -4,6 +4,8 @@ import Moment from "moment";
 import * as Date from "./Scalar/Date";
 import * as Duration from "./Scalar/Duration";
 
+export { Batches, fromInterval as batchesFromInterval } from "./Batches";
+
 export const schema = gql`
   scalar Time__Date
   scalar Time__Duration
@@ -131,11 +133,6 @@ export const toStoppedInterval = (
   stop: stop || (isStoppedInterval(time) ? time.stop : Moment())
 });
 
-export const duration = (time: Time): Duration =>
-  Moment.duration(
-    (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
-  );
-
 export const fromSelection = (selection: Selection): Time =>
   selection.start && selection.stop
     ? stoppedInterval(selection.start, selection.stop)
@@ -152,6 +149,11 @@ export const fromSelection = (selection: Selection): Time =>
     : selection.start
     ? ongoingInterval(selection.start)
     : instant();
+
+export const duration = (time: Time): Duration =>
+  Moment.duration(
+    (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
+  ).abs();
 
 export const resolvers = {
   ...Date.resolvers,

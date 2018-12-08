@@ -1,6 +1,7 @@
-import * as Entry from "./Entry";
+import * as Result from "../Result";
 import * as Request from "./Request";
-import * as Timeline from "./Timeline";
+
+export { Entry } from "./Entry";
 
 /*
   Projects are only really used for basic reporting and the timeline view in the
@@ -8,7 +9,6 @@ import * as Timeline from "./Timeline";
 */
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/projects.md
-
 export interface Project {
   id: number;
   wid: number;
@@ -25,23 +25,18 @@ export interface Project {
   at?: string;
 }
 
-export const getProject = async (
-  ID: string
-): Promise<Request.Result<Project>> =>
+export const getProject = async (ID: string): Promise<Result.Result<Project>> =>
   Request.workspace<Project>(`/projects/${ID}`);
 
-export const getProjects = async (): Promise<Request.Result<Project[]>> =>
+export const getProjects = async (): Promise<Result.Result<Project[]>> =>
   Request.workspace<Project[]>("/projects");
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/tags.md
-
 export interface Tag {
   id: number;
   wid: number;
   name: string;
 }
 
-export const getTags = async (): Promise<Request.Result<Tag[]>> =>
+export const getTags = async (): Promise<Result.Result<Tag[]>> =>
   Request.workspace<Tag[]>("/tags");
-
-export { Entry, Timeline };

@@ -1,7 +1,6 @@
 import { option as Option } from "fp-ts";
 import gql from "graphql-tag";
 import _ from "lodash/fp";
-import Moment from "moment";
 
 import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
@@ -32,7 +31,7 @@ export const resolvers = {
       _source: undefined,
       args: {
         time?: Time.Selection;
-        tags?: DeepPartial<Tag.Selection>;
+        tags?: DeepPartial<Tag.Filter>;
       },
       context: Context.Context
     ): Promise<History> => {
@@ -56,39 +55,13 @@ export const resolvers = {
           ? [recentEntries[0]]
           : recentEntries;
 
-      const selection = {
-        tags: Tag.defaultSelection(args.tags).getOrElseL(Utility.throwError)
-      };
-
       const narratives: Narrative.Narrative[] = [];
       for (const entry of entriesToInclude) {
-        const isMissingIncludedTags =
-          selection.tags.include.names.length > 0 &&
-          !Tag.isMatchForNames(selection.tags.include.names, tags);
-
-        const containsExcludedTags =
-          selection.tags.exclude.names.length > 0 &&
-          Tag.isMatchForNames(selection.tags.exclude.names, tags);
-
-        if (isMissingIncludedTags || containsExcludedTags) {
-          continue;
-        }
-
-        const description =
-          entry.description || Narrative.descriptionFromTags(tags);
-
-        const start = Moment(entry.start);
-        const time = entry.stop
-          ? Time.stoppedInterval(start, Moment(entry.stop))
-          : Time.ongoingInterval(start);
-
-        const ID = `${entry.id}`;
-        const metadata = {
-          created: start,
-          updated: Moment(entry.at)
-        };
-
-        narratives.push({ ID, metadata, time, description, tags });
+        narratives.push(
+          (await Narrative.fromTogglEntry(context, entry)).getOrElseL(
+            Utility.throwError
+          )
+        );
       }
 
       return {

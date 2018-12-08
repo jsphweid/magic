@@ -81,12 +81,13 @@ export const defaultSelection = (overrides?: Partial<Selection>): Selection =>
 export const defaultFilter = (
   overrides?: DeepPartial<Filter>
 ): Result.Result<Filter> => {
-  const empty: Filter = {
-    include: defaultSelection(),
-    exclude: defaultSelection()
-  };
-
-  const filter = overrides ? _.merge(empty, overrides) : empty;
+  const filter: Filter = _.merge(
+    {
+      include: defaultSelection(),
+      exclude: defaultSelection()
+    },
+    overrides
+  );
 
   // Tags can't be both included and excluded
   const conflicts = [
@@ -209,9 +210,18 @@ export const isMatch = (search: string, tag: Tag): Option.Option<string> => {
   ).map(matches => matches[0].slice(1, -1)); // Remove the hyphens
 };
 
-export const isMatchForNames = (names: string[], tags: Tag[]): boolean =>
-  names.filter(name => tags.find(tag => isMatch(name, tag).isSome())).length ===
-  names.length;
+export const isMatchForNames = async (
+  context: Context.Context,
+  names: string[]
+): Promise<Result.Result<boolean>> =>
+  (await Loader.getAll(context)).map(
+    tags =>
+      names.filter(name => tags.find(tag => isMatch(name, tag).isSome()))
+        .length === names.length
+  );
+
+// names.filter(name => tags.find(tag => isMatch(name, tag).isSome())).length ===
+// names.length;
 
 const mostRecentlyUsed = (a: Tag, b: Tag): Tag =>
   a.lastOccurrence.getOrElseL(() => Moment(0)).valueOf() >
