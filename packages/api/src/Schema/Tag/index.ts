@@ -12,33 +12,31 @@ import * as Loader from "./Loader";
 export * from "./Loader";
 
 export const schema = gql`
-  type Tag implements Node__Identifiable & Node__Persisted {
+  type Tag__Tag implements Node__Identifiable & Node__Persisted {
     ID: ID!
     metadata: Node__Metadata!
     name: String!
     aliases: [String!]!
     score: Int!
     lastOccurrence: Time__FormattedDate
-    connections: [Tag!]!
+    connections: [Tag__Tag!]!
   }
 
   interface Tag__Tagged {
-    tags: [Tag!]!
+    tags: [Tag__Tag!]!
   }
 
   type Tag__Query {
-    tags(include: Tag__Selection, exclude: Tag__Selection): [Tag!]!
+    tags(include: Tag__Selection, exclude: Tag__Selection): [Tag__Tag!]!
   }
 
   type Tag__Mutation {
-    create(tag: NewTag!): Tag!
-  }
-
-  input Tag__New {
-    name: String!
-    aliases: [String!] = []
-    score: Int = 0
-    connections: Tag__Selection
+    create(
+      name: String!
+      aliases: [String!] = []
+      score: Int = 0
+      connections: Tag__Selection
+    ): Tag__Tag!
   }
 
   input Tag__Filter {
@@ -75,19 +73,25 @@ export interface Selection {
   ids: string[];
 }
 
-export const defaultSelection = (overrides?: Partial<Selection>): Selection =>
-  _.merge({ names: [], ids: [] }, overrides);
+export const defaultSelection = (
+  overrides?: DeepPartial<Selection>
+): Selection =>
+  !overrides
+    ? { names: [], ids: [] }
+    : {
+        names: (overrides.names as string[]) || [],
+        ids: (overrides.ids as string[]) || []
+      };
 
 export const defaultFilter = (
   overrides?: DeepPartial<Filter>
 ): Result.Result<Filter> => {
-  const filter: Filter = _.merge(
-    {
-      include: defaultSelection(),
-      exclude: defaultSelection()
-    },
-    overrides
-  );
+  const filter: Filter = !overrides
+    ? { include: defaultSelection(), exclude: defaultSelection() }
+    : {
+        include: defaultSelection(overrides.include),
+        exclude: defaultSelection(overrides.exclude)
+      };
 
   // Tags can't be both included and excluded
   const conflicts = [

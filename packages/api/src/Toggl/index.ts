@@ -1,7 +1,18 @@
 import * as Result from "../Result";
 import * as Request from "./Request";
 
-export { Entry } from "./Entry";
+export {
+  Entry,
+  New as NewEntry,
+  get as getEntry,
+  post as postEntry,
+  put as putEntry,
+  delete_ as deleteEntry,
+  getFromTime as getEntriesFromTime,
+  getOngoing as getOngoingEntry,
+  start as startEntry,
+  stop as stopEntry
+} from "./Entry";
 
 /*
   Projects are only really used for basic reporting and the timeline view in the

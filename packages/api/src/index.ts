@@ -32,7 +32,7 @@ server.start(
   { endpoint: "/graphql" },
 
   // tslint:disable-next-line:no-console
-  () => console.log("Server running...")
+  () => console.log("Server running at http://localhost:4000")
 );
 
 exports.api = Functions.https.onRequest(server.express);

@@ -63,6 +63,8 @@ export const handler = (
     schema
   });
 
+  console.log(result);
+
   const reply = Reply.fromJson({
     data: Option.fromNullable<Reply.Json | null>(result.data).getOrElse(null),
     errors: Option.fromNullable(result.errors).fold(null, errors =>

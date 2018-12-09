@@ -1,4 +1,5 @@
 import { default as Axios } from "axios";
+import { either as Either } from "fp-ts";
 
 import * as Result from "../Result";
 
@@ -13,11 +14,11 @@ export const workspace = async <Data>(
 export const execute = async <Data>(config: {
   method: "GET" | "POST" | "PUT" | "DELETE";
   resource: string;
-  params?: { [name: string]: string | number };
-  data?: string;
+  params?: { [name: string]: string };
+  data?: any;
 }): Promise<Result.Result<Data>> => {
   try {
-    const { data }: { data: Data } = await Axios.request({
+    const { data } = await Axios.request<Data>({
       url: config.resource.includes(".com")
         ? config.resource
         : `https://www.toggl.com/api/v8${config.resource}`,
@@ -33,12 +34,12 @@ export const execute = async <Data>(config: {
       data: config.data
     });
 
-    return Result.success(data);
+    return Either.right(data);
   } catch (error) {
-    const message = `${error.message} ${error.response.data}`;
+    const formattedError = new Error(`${error.message} ${error.response.data}`);
 
     // tslint:disable-next-line:no-console
-    console.log(message);
-    return Result.error(message);
+    console.log(formattedError);
+    return Either.left(formattedError);
   }
 };

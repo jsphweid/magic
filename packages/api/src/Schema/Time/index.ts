@@ -46,7 +46,7 @@ export const schema = gql`
   input Time__Selection {
     start: Time__Date
     duration: Time__Duration
-    date: Time__Date
+    stop: Time__Date
   }
 
   type Time__FormattedDate {

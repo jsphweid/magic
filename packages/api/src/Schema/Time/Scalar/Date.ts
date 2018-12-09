@@ -38,8 +38,6 @@ const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
   const possibleFormats = [Moment.ISO_8601, Moment.RFC_2822, ...formats];
   const timeZone = `${process.env.MAGIC_TIME_ZONE}`;
 
-  console.log(source);
-
   for (const format of possibleFormats) {
     const date = Moment.tz(source, format, true, timeZone);
     if (!date.isValid()) {
@@ -71,7 +69,9 @@ const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
 };
 
 const differenceMS = (start: Time.Date, stop: Time.Date): number =>
-  Math.abs(Time.duration(Time.stoppedInterval(start, stop)).asMilliseconds());
+  Time.duration(Time.stoppedInterval(start, stop))
+    .abs()
+    .asMilliseconds();
 
 const dateFormats = [
   "MM-DD-YYYY",

@@ -1,4 +1,5 @@
 import { option as Option } from "fp-ts";
+import _ from "lodash";
 
 export const throwError = (error: Error) => {
   // tslint:disable-next-line:no-console

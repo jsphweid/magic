@@ -3,59 +3,63 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
 const source = gql`
-  mutation Track(
-    $start: Time__Date = "now"
-    $duration: Time__Duration
-    $stop: Time__Date
-    $include: [String!]
-    $exclude: [String!]
-    $narrative: String
-  ) {
-    track(
-      time: { start: $start, duration: $duration, stop: $stop }
-      tags: { include: { names: $include }, exclude: { names: $exclude } }
-      narrative: $narrative
-    ) {
-      ...history
-    }
-  }
-
-  query History(
-    $start: Time__Date = "now"
+  mutation track(
+    $description: String
+    $start: Time__Date
     $duration: Time__Duration
     $stop: Time__Date
     $include: [String!]
     $exclude: [String!]
   ) {
-    history(
-      time: { start: $start, duration: $duration, stop: $stop }
-      tags: { include: { names: $include }, exclude: { names: $exclude } }
-    ) {
-      ...history
-    }
-  }
-
-  fragment history on History {
-    narratives {
-      description
-      tags {
-        name
+    Narrative {
+      new(
+        description: $description
+        time: { start: $start, duration: $duration, stop: $stop }
+        tags: { include: { names: $include }, exclude: { names: $exclude } }
+      ) {
+        ...narrative
       }
-      time {
-        ... on Time__Occurrence {
-          start {
-            formatted(template: "h:mm A ddd")
-          }
+    }
+  }
+
+  query history(
+    $start: Time__Date
+    $duration: Time__Duration
+    $stop: Time__Date
+    $include: [String!]
+    $exclude: [String!]
+  ) {
+    History {
+      all(
+        time: { start: $start, duration: $duration, stop: $stop }
+        tags: { include: { names: $include }, exclude: { names: $exclude } }
+      ) {
+        narratives {
+          ...narrative
         }
-        ... on Time__Interval {
-          duration {
-            humanized
-          }
+      }
+    }
+  }
+
+  fragment narrative on Narrative {
+    description
+    tags {
+      name
+    }
+    time {
+      ... on Time__Occurrence {
+        start {
+          formatted(template: "h:mm A ddd")
         }
-        ... on Time__StoppedInterval {
-          stop {
-            formatted(template: "h:mm A ddd")
-          }
+      }
+      ... on Time__Interval {
+        duration {
+          humanized
+        }
+      }
+      ... on Time__StoppedInterval {
+        stop {
+          formatted(template: "h:mm A ddd")
         }
       }
     }
@@ -92,7 +96,7 @@ const documentFromMessage = (message: string): GraphQL.DocumentNode =>
     )
   )
     .map(([, document]) => document)
-    .getOrElse(operations.Track);
+    .getOrElse(operations.track);
 
 const variablesFromDocument = (
   document: GraphQL.DocumentNode
@@ -119,24 +123,24 @@ export const variablesFromMessage = (
           variable,
 
           /*
-            Since the short-hand `Track` message looks like...
+            Since the short-hand `track` message looks like...
             - "bathroom"
             - "cutting the grass"
             - "cooking dinner tags cooking, not dinner"
 
-            ...if we don't see the `narrative` argument in the message, we need to
-            prepend it...
-            - "narrative bathroom"
-            - "narrative cutting the grass"
-            - "narrative cooking dinner tags cooking, not dinner"
+            ...if we don't see the `description` argument in the message, we
+            need to prepend it...
+            - "description bathroom"
+            - "description cutting the grass"
+            - "description cooking dinner tags cooking, not dinner"
 
-            ...but not if we aren't using the short-hand version, i.e. "track ..."
-            is unchanged
+            ...but not if we aren't using the short-hand version, i.e.
+            "track ..." is unchanged
           */
-          variable.variable.name.value === "narrative" &&
-            !message.toLowerCase().includes("narrative") &&
+          variable.variable.name.value === "description" &&
+            !message.toLowerCase().includes("description") &&
             !message.toLowerCase().includes("track")
-            ? `narrative ${message}`
+            ? `description ${message}`
             : message
         )
       ).getOrElse(
@@ -192,7 +196,7 @@ const variableValueFromMessage = (
     "Hanging out with friends tags John Durd and Bob Chungus"
       == ["John Durd", "Bob Chungus"]
 
-    Or we assume the separators are a spaces " "...
+    Or we assume the separators are spaces...
 
     "Getting ready for the day and eating breakfast tags chore breakfast"
       == ["chore", "breakfast"]
@@ -222,5 +226,3 @@ const wordsFromName = (name: string): string =>
     .replace(/([A-Z])/g, " $1")
     .trim()
     .toLowerCase();
-
-fromMessage("track");

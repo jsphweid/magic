@@ -14,8 +14,8 @@ export const toDate = (english: string): Result.Result<Time.Date> =>
     : // prettier-ignore
       englishToWords(english).chain(words =>
         Apply.liftA3(Either.either)<number, Unit, Tense, Time.Date>(
-          tense => amount => unit =>
-            tense === Tense.PAST
+          amount => unit => tense => 
+             tense === Tense.PAST
               ? Moment().subtract(amount, unit)
               : Moment().add(amount, unit)
         )
@@ -53,7 +53,7 @@ const englishToWords = (
   return Result.success(
     firstWord === "in"
       ? // e.g. "in two minutes"
-        { amount: secondWord, unit: thirdWord, tense: "past" }
+        { amount: secondWord, unit: thirdWord, tense: "ahead" }
       : // e.g. "15 minutes later"
         { amount: firstWord, unit: secondWord, tense: thirdWord }
   );

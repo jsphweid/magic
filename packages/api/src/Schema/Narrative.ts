@@ -15,8 +15,8 @@ export const schema = gql`
   type Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
     ID: ID!
     metadata: Node__Metadata!
-    time: Time!
-    tags: [Tag!]!
+    time: Time__Time!
+    tags: [Tag__Tag!]!
     description: String!
   }
 
@@ -32,7 +32,7 @@ export const schema = gql`
     new(
       description: String
       time: Time__Selection
-      tags: Tag__Selection
+      tags: Tag__Filter
     ): Narrative!
   }
 `;
@@ -47,7 +47,7 @@ export interface Narrative
 
 export const fromTogglEntry = async (
   context: Context.Context,
-  entry: Toggl.Entry.Entry
+  entry: Toggl.Entry
 ): Promise<Result.Result<Narrative>> =>
   (await Tag.getAllFromNames(context, entry.tags || [])).map(tags => {
     const description = entry.description || descriptionFromTags(tags);
@@ -79,8 +79,8 @@ export const resolvers = {
     narratives: (
       _: undefined,
       _args: {
-        time?: Time.Selection;
-        tags?: Tag.Selection;
+        time: Time.Selection;
+        tags: DeepPartial<Tag.Filter>;
       }
     ) => []
   },
@@ -90,8 +90,8 @@ export const resolvers = {
       _: undefined,
       args: {
         description?: string;
-        time?: Time.Selection;
-        tags?: Tag.Filter;
+        time: Time.Selection;
+        tags: DeepPartial<Tag.Filter>;
       },
       context: Context.Context
     ): Promise<Narrative> => {
@@ -102,6 +102,11 @@ export const resolvers = {
       const time = args.time
         ? Time.fromSelection(args.time)
         : Time.ongoingInterval();
+
+      console.log([
+        tagsFilter.include.names,
+        args.description ? [args.description] : []
+      ]);
 
       const tagNamesToMatch = [
         ...tagsFilter.include.names,
@@ -119,37 +124,38 @@ export const resolvers = {
 
       // Protect against mass data-deletion
       if (Time.duration(Time.toStoppedInterval(time)).asHours() > 3) {
-        throw new GraphQL.GraphQLError(
-          "You cannot select more than three hours"
+        Utility.throwError(
+          new GraphQL.GraphQLError("You cannot select more than three hours")
         );
       }
 
       const newEntryStartMS = time.start.valueOf();
       const newEntryStopMS = Time.toStoppedInterval(time).stop.valueOf();
-
       const newEntry = {
-        pid: project.map(({ id }) => id),
-        description: Option.fromNullable(args.description),
+        pid: project && project.id,
+        description: args.description,
         tags: tags.map(({ name }) => name)
       };
 
       // Grab the entries we might affect
-      const entries = (await Toggl.Entry.getInterval(
-        Moment(time.start).subtract(5, "hours"),
-        Time.toStoppedInterval(time).stop
+      const start = Moment(time.start).subtract(5, "hours");
+      const entries = (await Toggl.getEntriesFromTime(
+        Time.isStoppedInterval(time)
+          ? Time.stoppedInterval(start, time.stop)
+          : Time.stoppedInterval(start)
       )).getOrElseL(Utility.throwError);
 
       // Create or start a new entry depending on if a stop time was provided
-      const { id: ID } = (Time.isStoppedInterval(time)
-        ? await Toggl.Entry.post(time.start, time.stop, newEntry)
-        : await startCurrentEntry(now, newEntryStart, newEntry)
+      const { id } = (Time.isStoppedInterval(time)
+        ? await Toggl.postEntry(time.start, time.stop, newEntry)
+        : await startCurrentEntry(context.now, time.start, newEntry)
       ).getOrElseL(Utility.throwError);
 
       for (const oldEntry of entries) {
         const oldEntryStart = Moment(oldEntry.start);
         const oldEntryStop = Option.fromNullable(oldEntry.stop)
           .map(stop => Moment(stop))
-          .getOrElse(now);
+          .getOrElse(context.now);
 
         const oldEntryStartMS = oldEntryStart.valueOf();
         const oldEntryStopMS = oldEntryStop.valueOf();
@@ -166,7 +172,7 @@ export const resolvers = {
           newEntryStartMS <= oldEntryStartMS &&
           oldEntryStopMS <= newEntryStopMS
         ) {
-          (await Toggl.Entry.delete(oldEntry)).mapLeft(Utility.throwError);
+          (await Toggl.deleteEntry(oldEntry)).mapLeft(Utility.throwError);
         } else if (
           /*
             New:            |=====|
@@ -180,14 +186,10 @@ export const resolvers = {
           newEntryStopMS < oldEntryStopMS
         ) {
           (await Promise.all([
-            Toggl.Entry.post(oldEntryStart, newEntryStart, {
-              pid: Option.fromNullable(oldEntry.pid),
-              description: Option.fromNullable(oldEntry.description),
-              tags: Option.fromNullable(oldEntry.tags).getOrElse([])
-            }),
-            Toggl.Entry.put({
+            Toggl.postEntry(oldEntryStart, time.start, oldEntry),
+            Toggl.putEntry({
               ...oldEntry,
-              start: newEntryStop.toISOString()
+              start: Time.toStoppedInterval(time).stop.toISOString()
             })
           ])).map(result => result.mapLeft(Utility.throwError));
         } else if (
@@ -202,9 +204,9 @@ export const resolvers = {
           oldEntryStartMS < newEntryStartMS &&
           newEntryStartMS < oldEntryStopMS
         ) {
-          (await Toggl.Entry.put({
+          (await Toggl.putEntry({
             ...oldEntry,
-            stop: newEntryStart.toISOString()
+            stop: time.start.toISOString()
           })).mapLeft(Utility.throwError);
         } else if (
           /*
@@ -218,17 +220,19 @@ export const resolvers = {
           newEntryStartMS < oldEntryStartMS &&
           oldEntryStartMS < newEntryStopMS
         ) {
-          (await Toggl.Entry.put({
+          (await Toggl.putEntry({
             ...oldEntry,
-            start: newEntryStop.toISOString()
+            start: time.start.toISOString()
           })).mapLeft(Utility.throwError);
         }
       }
 
+      const metadata = { created: context.now, updated: context.now };
       return {
-        ID,
+        ID: `${id}`,
+        metadata,
         time,
-        description,
+        description: args.description || "TODO",
         tags
       };
     }
@@ -238,36 +242,34 @@ export const resolvers = {
 const startCurrentEntry = async (
   now: Time.Date,
   start: Time.Date,
-  newEntry: Toggl.Entry.NewEntry
-): Promise<Either.Either<Error, Toggl.Entry.Entry>> =>
-  (await Toggl.Entry.getCurrentEntry()).fold(
+  newEntry: Toggl.NewEntry
+): Promise<Result.Result<Toggl.Entry>> =>
+  (await Toggl.getOngoingEntry()).fold(
     Utility.throwError,
-    async oldCurrentEntry => {
+    async ongoingEntry => {
       // If there is an existing current entry, stop it
-      oldCurrentEntry.map(async oldCurrentEntry => {
-        (await Toggl.Entry.stop(oldCurrentEntry)).getOrElseL(
-          Utility.throwError
-        );
+      ongoingEntry.map(async ongoingEntry => {
+        (await Toggl.stopEntry(ongoingEntry)).getOrElseL(Utility.throwError);
 
         /*
           If we're starting the current time entry in the future, the old
           entry's stop needs to be set to the new entry's start
         */
         if (now.valueOf() < start.valueOf()) {
-          (await Toggl.Entry.put({
-            ...oldCurrentEntry,
+          (await Toggl.putEntry({
+            ...ongoingEntry,
             stop: start.toISOString()
           })).getOrElseL(Utility.throwError);
         }
       });
 
       // Start the new entry
-      const currentEntry = await Toggl.Entry.start(newEntry);
+      const currentEntry = await Toggl.startEntry(newEntry);
 
       // If the current entry starts now, we're done, otherwise update the start
       return start === now
         ? currentEntry
-        : Toggl.Entry.put({
+        : Toggl.putEntry({
             ...currentEntry.getOrElseL(Utility.throwError),
             start: start.toISOString()
           });
@@ -281,9 +283,7 @@ const startCurrentEntry = async (
 */
 const projectFromTags = async (
   tags: Tag.Tag[]
-): Promise<Either.Either<Error, Option.Option<Toggl.Project>>> =>
+): Promise<Either.Either<Error, Toggl.Project | undefined>> =>
   (await Toggl.getProjects()).map(projects =>
-    Option.fromNullable(
-      projects.find(({ name }) => tags.map(({ name }) => name).includes(name))
-    )
+    projects.find(({ name }) => tags.map(({ name }) => name).includes(name))
   );

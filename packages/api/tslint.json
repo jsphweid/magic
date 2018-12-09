@@ -8,6 +8,10 @@
       "cross-fetch/polyfill",
       "lodash/fp"
     ],
-    "variable-name": [true, "allow-trailing-underscore"]
+    "variable-name": [
+      true,
+      "allow-leading-underscore",
+      "allow-trailing-underscore"
+    ]
   }
 }

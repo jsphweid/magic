@@ -31,22 +31,16 @@ export interface Entry {
   at: string;
 }
 
-interface New {
+export interface New {
   pid?: number;
   description?: string;
   tags?: string[];
 }
 
 // Required by Toggl
-interface CreatedWith {
-  created_with: "HireMeForMoney";
-}
-
-const entry = ({ pid, description, tags }: New): New & CreatedWith => ({
-  pid,
-  description,
-  tags: tags || [],
-  created_with: "HireMeForMoney"
+const withRequiredField = (entry: {}) => ({
+  created_with: "HireMeForMoney",
+  ...entry
 });
 
 /*
@@ -54,12 +48,12 @@ const entry = ({ pid, description, tags }: New): New & CreatedWith => ({
   This function helps map the result of the response to the final shape.
 */
 
-interface ResponseWithDataField<Data> {
+interface DataInField<Data> {
   data: Data;
 }
 
 const extractData = async <Data>(
-  response: Promise<Result.Result<ResponseWithDataField<Data>>>
+  response: Promise<Result.Result<DataInField<Data>>>
 ): Promise<Result.Result<Data>> => (await response).map(({ data }) => data);
 
 export const get = async (ID: number): Promise<Result.Result<Entry>> =>
@@ -74,33 +68,37 @@ export const post = async (
   entry: New
 ): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<ResponseWithDataField<Entry>>({
+    Request.execute<DataInField<Entry>>({
       method: "POST",
-      resource: `/time_entries`,
+      resource: "/time_entries",
       data: {
-        time_entry: {
+        time_entry: withRequiredField({
           ...entry,
           start: start.toISOString(),
-          duration: Time.duration(Time.stoppedInterval(start, stop)).asSeconds()
-        }
+          duration: Time.duration(Time.stoppedInterval(start, stop))
+            .abs()
+            .asSeconds()
+        })
       }
     })
   );
 
 export const put = async (entry: Entry): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<ResponseWithDataField<Entry>>({
+    Request.execute<DataInField<Entry>>({
       method: "PUT",
       resource: `/time_entries/${entry.id}`,
       data: {
-        time_entry: {
+        time_entry: withRequiredField({
           ...entry,
           duration: !entry.stop
             ? entry.duration
             : Time.duration(
                 Time.stoppedInterval(Moment(entry.start), Moment(entry.stop))
               )
-        }
+                .abs()
+                .asSeconds()
+        })
       }
     })
   );
@@ -111,15 +109,14 @@ export const delete_ = async (entry: Entry): Promise<Result.Result<void>> =>
     resource: `/time_entries/${entry.id}`
   });
 
-export const getInterval = async (
-  start: Time.Date,
-  stop: Time.Date
+export const getFromTime = async (
+  time: Time.Time
 ): Promise<Result.Result<Entry[]>> => {
   // We're limited to 1000 time entries per request
   let entries: Entry[] = [];
   for (const batch of Time.batchesFromInterval(
     Moment.duration(7, "days"),
-    Time.stoppedInterval(start, stop)
+    Time.toStoppedInterval(time)
   )) {
     const result = (await Request.execute<Entry[]>({
       method: "GET",
@@ -140,28 +137,28 @@ export const getInterval = async (
   );
 };
 
-export const getCurrentEntry = async (): Promise<
+export const getOngoing = async (): Promise<
   Result.Result<Option.Option<Entry>>
 > =>
   (await extractData(
-    Request.execute<ResponseWithDataField<Entry>>({
+    Request.execute<DataInField<Entry>>({
       method: "GET",
-      resource: `/time_entries/current`
+      resource: "/time_entries/current"
     })
   )).map(entry => Option.fromNullable(entry));
 
 export const start = async (entry: New): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<ResponseWithDataField<Entry>>({
+    Request.execute<DataInField<Entry>>({
       method: "POST",
       resource: `/time_entries/start`,
-      data: { time_entry: entry }
+      data: { time_entry: withRequiredField(entry) }
     })
   );
 
 export const stop = async (entry: Entry): Promise<Result.Result<Entry>> =>
   extractData(
-    Request.execute<ResponseWithDataField<Entry>>({
+    Request.execute<DataInField<Entry>>({
       method: "PUT",
       resource: `/time_entries/${entry.id}/stop`
     })

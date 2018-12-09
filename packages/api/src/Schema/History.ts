@@ -11,12 +11,12 @@ import * as Time from "./Time";
 
 export const schema = gql`
   type History implements Time__Timed {
-    time: Time!
+    time: Time__Time!
     narratives: [Narrative!]!
   }
 
   type History__Query {
-    history(time: Time__Selection!, tags: Tag__Selection): History!
+    all(time: Time__Selection!, tags: Tag__Filter): History!
   }
 `;
 
@@ -27,42 +27,43 @@ export interface History {
 
 export const resolvers = {
   History__Query: {
-    history: async (
-      _source: undefined,
+    all: async (
+      _: undefined,
       args: {
-        time?: Time.Selection;
-        tags?: DeepPartial<Tag.Filter>;
+        time: Time.Selection;
+        tags: DeepPartial<Tag.Filter>;
       },
       context: Context.Context
     ): Promise<History> => {
       /*
         The default `start` is actually the start of the latest time entry when
-        no `start` was provided, but we need to grab a small list of time entries
-        to know about the latest time entry
+        no `start` was provided, but we need to grab a small list of time
+        entries to know about the latest time entry
       */
-      const time = args.time
+
+      console.log(args);
+
+      const time = args.time.start
         ? Time.fromSelection(args.time)
         : Time.stoppedInterval(context.now.subtract(1, "day"));
 
-      const recentEntries = (await Toggl.Entry.getInterval(
-        time.start,
-        Time.isStoppedInterval(time) ? time.stop : context.now
-      )).getOrElseL(Utility.throwError);
+      const recentEntries = (await Toggl.getEntriesFromTime(time)).getOrElseL(
+        Utility.throwError
+      );
 
       // If no time was selected, default to the most recent narrative's time
       const entriesToInclude =
-        !args.time && recentEntries.length > 0
+        !args.time.start && recentEntries.length > 0
           ? [recentEntries[0]]
           : recentEntries;
 
-      const narratives: Narrative.Narrative[] = [];
-      for (const entry of entriesToInclude) {
-        narratives.push(
+      const narratives = await Promise.all(
+        entriesToInclude.map(async entry =>
           (await Narrative.fromTogglEntry(context, entry)).getOrElseL(
             Utility.throwError
           )
-        );
-      }
+        )
+      );
 
       return {
         time:
