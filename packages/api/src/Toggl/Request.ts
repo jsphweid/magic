@@ -34,12 +34,10 @@ export const execute = async <Data>(config: {
       data: config.data
     });
 
-    return Either.right(data);
+    return Result.success(data);
   } catch (error) {
-    const formattedError = new Error(`${error.message} ${error.response.data}`);
-
     // tslint:disable-next-line:no-console
-    console.log(formattedError);
-    return Either.left(formattedError);
+    console.log(error);
+    return Result.error(`${error.message} ${error.response.data}`);
   }
 };

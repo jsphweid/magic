@@ -11,13 +11,8 @@ export const schema = gql`
   scalar Time__Duration
   scalar Time__MS
 
-  union Time__Time =
-      Time__Instant
-    | Time__OngoingInterval
-    | Time__StoppedInterval
-
   interface Time__Timed {
-    time: Time__Time!
+    time: Time__Occurrence!
   }
 
   interface Time__Occurrence {
@@ -159,9 +154,11 @@ export const resolvers = {
   ...Date.resolvers,
   ...Duration.resolvers,
 
-  Time__Time: { __resolveType: (time: Time): string => `Time__${time.kind}` },
   Time__Timed: { __resolveType: () => "Time__Timed" },
-  Time__Occurrence: { __resolveType: () => "Time__Occurrence" },
+  Time__Occurrence: {
+    __resolveType: (time: Time): string => `Time__${time.kind}`
+  },
+
   Time__Interval: { __resolveType: () => "Time__Interval" },
   Time__OngoingInterval: { duration },
   Time__StoppedInterval: { duration },

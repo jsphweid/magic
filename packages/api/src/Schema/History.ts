@@ -11,7 +11,7 @@ import * as Time from "./Time";
 
 export const schema = gql`
   type History implements Time__Timed {
-    time: Time__Time!
+    time: Time__Occurrence!
     narratives: [Narrative!]!
   }
 
