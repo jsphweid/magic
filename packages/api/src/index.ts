@@ -6,6 +6,7 @@ import * as GraphQLTools from "graphql-tools";
 import { GraphQLServer } from "graphql-yoga";
 
 import "./Config";
+import * as Hue from "./Hue";
 import * as Message from "./Message";
 import * as Schema from "./Schema";
 
@@ -15,18 +16,15 @@ const schema = GraphQLTools.makeExecutableSchema({
 });
 
 const server = new GraphQLServer({ schema, context: Schema.context });
+const authentication = BasicAuth({
+  users: { api: `${process.env.MAGIC_API_TOKEN}` }
+});
 
 server.express
   .options("*", Cors())
+  .get("/hue-login", Hue.loginHandler)
   .post("/messages", BodyParser.json(), Message.handler(schema))
-  .post(
-    "/graphql",
-    BasicAuth({
-      users: {
-        api: `${process.env.MAGIC_API_TOKEN}`
-      }
-    })
-  );
+  .post("/graphql", authentication);
 
 server.start(
   { endpoint: "/graphql" },

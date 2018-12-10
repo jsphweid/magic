@@ -40,9 +40,6 @@ export const resolvers = {
         no `start` was provided, but we need to grab a small list of time
         entries to know about the latest time entry
       */
-
-      console.log(args);
-
       const time = args.time.start
         ? Time.fromSelection(args.time)
         : Time.stoppedInterval(context.now.subtract(1, "day"));
