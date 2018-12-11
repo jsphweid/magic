@@ -1,9 +1,9 @@
 import * as GraphQL from "graphql";
 import Moment from "moment";
 
-import * as Utility from "../../../Utility";
-import * as Time from "../index";
+import * as Utility from "../../Utility";
 import * as English from "./English";
+import * as Time from "./index";
 
 export const resolvers = {
   Time__Duration: new GraphQL.GraphQLScalarType({

@@ -13,7 +13,7 @@ import * as Tag from "./Tag";
 import * as Time from "./Time";
 
 export const schema = gql`
-  type Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
+  type Narrative__Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
     ID: ID!
     metadata: Node__Metadata!
     time: Time__Occurrence!
@@ -26,7 +26,7 @@ export const schema = gql`
       search: String
       time: Time__Selection
       tags: Tag__Filter
-    ): [Narrative!]!
+    ): [Narrative__Narrative!]!
   }
 
   type Narrative__Mutation {
@@ -34,7 +34,7 @@ export const schema = gql`
       description: String
       time: Time__Selection
       tags: Tag__Filter
-    ): Narrative!
+    ): Narrative__Narrative!
   }
 `;
 

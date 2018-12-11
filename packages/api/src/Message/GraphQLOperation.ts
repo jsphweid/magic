@@ -41,16 +41,14 @@ const source = gql`
     }
   }
 
-  fragment narrative on Narrative {
+  fragment narrative on Narrative__Narrative {
     description
     tags {
       name
     }
     time {
-      ... on Time__Occurrence {
-        start {
-          formatted(template: "h:mm A ddd")
-        }
+      start {
+        formatted(template: "h:mm A ddd")
       }
       ... on Time__Interval {
         duration {
