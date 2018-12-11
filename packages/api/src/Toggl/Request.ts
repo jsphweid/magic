@@ -1,5 +1,4 @@
 import { default as Axios } from "axios";
-import { either as Either } from "fp-ts";
 
 import * as Result from "../Result";
 
