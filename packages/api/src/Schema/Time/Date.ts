@@ -2,9 +2,9 @@ import * as GraphQL from "graphql";
 import _ from "lodash";
 import Moment from "moment-timezone";
 
-import * as Utility from "../../../Utility";
-import * as Time from "../index";
+import * as Utility from "../../Utility";
 import * as English from "./English";
+import * as Time from "./index";
 
 export const resolvers = {
   Time__Date: new GraphQL.GraphQLScalarType({

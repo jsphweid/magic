@@ -1,8 +1,8 @@
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Date from "./Scalar/Date";
-import * as Duration from "./Scalar/Duration";
+import * as Date from "./Date";
+import * as Duration from "./Duration";
 
 export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 
@@ -168,7 +168,7 @@ export const resolvers = {
     iso: (date: Date): string => date.toISOString(),
     humanized: (date: Date): string => duration(instant(date)).humanize(true),
     formatted: (date: Date, args: { template: string }): string =>
-      date.format(args.template)
+      date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
   },
 
   Time__FormattedDuration: {
