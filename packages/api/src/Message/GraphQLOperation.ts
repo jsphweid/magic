@@ -3,7 +3,7 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 
 const source = gql`
-  mutation track(
+  mutation default(
     $description: String
     $start: Time__Date
     $duration: Time__Duration
@@ -96,7 +96,7 @@ const documentFromMessage = (message: string): GraphQL.DocumentNode =>
     )
   )
     .map(([, document]) => document)
-    .getOrElse(operations.track);
+    .getOrElse(operations.default);
 
 const variablesFromDocument = (
   document: GraphQL.DocumentNode
@@ -123,7 +123,7 @@ export const variablesFromMessage = (
           variable,
 
           /*
-            Since the short-hand `track` message looks like...
+            Since the short-hand `default` message looks like...
             - "bathroom"
             - "cutting the grass"
             - "cooking dinner tags cooking, not dinner"
@@ -135,11 +135,11 @@ export const variablesFromMessage = (
             - "description cooking dinner tags cooking, not dinner"
 
             ...but not if we aren't using the short-hand version, i.e.
-            "track ..." is unchanged
+            "default ..." is unchanged
           */
           variable.variable.name.value === "description" &&
             !message.toLowerCase().includes("description") &&
-            !message.toLowerCase().includes("track")
+            !message.toLowerCase().includes("default")
             ? `description ${message}`
             : message
         )
@@ -216,10 +216,10 @@ const variableValueFromMessage = (
 
 /*
   Convert GraphQL names like...
-  `track`, `startTags`, and `thisIsLongerThanThose`
+  `default`, `startTags`, and `thisIsLongerThanThose`
 
   ...into what a human would provide...
-  "track", "start tags", "this is longer than those"
+  "default", "start tags", "this is longer than those"
 */
 const wordsFromName = (name: string): string =>
   name

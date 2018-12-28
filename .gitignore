@@ -6,6 +6,11 @@ functions
 
 data
 data.json
+ 
+firebase.json
+firestore.indexes.json
+firestore.rules
+.firebaserc
 
 .tst
 .cache
