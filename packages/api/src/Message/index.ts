@@ -90,7 +90,7 @@ const validateSender = (
   Either.fromNullable(responses.errors.senderIsMissing)(
     request.body.From
   ).chain(from =>
-    from !== "+16185205959"
+    from !== process.env.TWILIO_NUMBERS_OWNER
       ? Either.left(responses.errors.senderIsNotOwner)
       : Either.right(from)
   );
