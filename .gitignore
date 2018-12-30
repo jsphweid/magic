@@ -6,6 +6,7 @@ functions
 
 data
 data.json
+environment.json
  
 firebase.json
 firestore.indexes.json

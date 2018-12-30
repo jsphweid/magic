@@ -1,0 +1,9 @@
+schema: http://localhost:4000/graphql
+documents: src/**/*.graphql
+generates:
+  src/GraphQL/Generated.elm:
+    plugins:
+      - generator/index.ts
+
+overwrite: true
+require: ts-node/register

@@ -1,0 +1,7 @@
+query test {
+  Narrative {
+    narratives {
+      description
+    }
+  }
+}

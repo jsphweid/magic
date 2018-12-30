@@ -7,10 +7,11 @@
     "tst:deps": "tst deps",
     "api:test": "tst test api",
     "api:test:watch": "tst test api --watch",
-    "api:dev": "tst dev api",
+    "api:dev": "NODE_ENV=dev tst dev api",
     "api:build": "tst build api",
     "ui:test": "tst test ui",
     "ui:test:watch": "tst test ui --watch",
+    "ui:generate": "lerna run generate --stream --scope ui",
     "ui:dev": "lerna run dev --stream --scope ui",
     "ui:build": "tst build ui",
     "api:backup": "lerna run backup --stream --scope api"

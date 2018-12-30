@@ -1,0 +1,11 @@
+{{#*inline "field"}}
+  {{name}}
+  {{#each fields}}{{> field}}{{/each}}
+{{/inline}}
+
+
+{{#each operations}}type alias {{ name }} =
+  { {{#each fields}}{{> field}}{{/each}} }
+{{/each}}
+
+

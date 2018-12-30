@@ -2,9 +2,14 @@
   "private": true,
   "name": "ui",
   "scripts": {
-    "dev": "elm reactor"
+    "dev": "elm reactor",
+    "generate": "gql-gen"
   },
   "devDependencies": {
-    "elm": "^0.19.0-bugfix2"
+    "@types/handlebars": "^4.0.40",
+    "elm": "^0.19.0-bugfix2",
+    "graphql": "^14.0.2",
+    "graphql-code-generator": "^0.15.2",
+    "handlebars": "^4.0.12"
   }
 }

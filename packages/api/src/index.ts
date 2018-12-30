@@ -10,21 +10,27 @@ import * as Hue from "./Hue";
 import * as Message from "./Message";
 import * as Schema from "./Schema";
 
-const schema = GraphQLTools.makeExecutableSchema({
+export const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.source,
   resolvers: Schema.resolvers
 });
 
 const server = new GraphQLServer({ schema, context: Schema.context });
-const authentication = BasicAuth({
-  users: { api: `${process.env.MAGIC_API_TOKEN}` }
-});
 
 server.express
   .options("*", Cors())
   .get("/hue-login", Hue.loginHandler)
-  .post("/messages", BodyParser.json(), Message.handler(schema))
-  .post("/graphql", authentication);
+  .post("/messages", BodyParser.json(), Message.handler(schema));
+
+// Disable authentication for local testing
+if (process.env.NODE_ENV !== "dev") {
+  server.express.post(
+    "/graphql",
+    BasicAuth({
+      users: { api: `${process.env.MAGIC_API_TOKEN}` }
+    })
+  );
+}
 
 server.start(
   { endpoint: "/graphql" },
