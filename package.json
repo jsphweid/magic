@@ -13,6 +13,7 @@
     "tag-editor:test:watch": "tst test tag-editor --watch",
     "tag-editor:dev": "lerna run dev --stream --scope tag-editor",
     "tag-editor:build": "tst build tag-editor",
+    "tag-editor:gen": "ts-node packages/tag-editor/generateTypes.ts",
     "ui:test": "tst test ui",
     "ui:test:watch": "tst test ui --watch",
     "ui:generate": "lerna run generate --stream --scope ui",

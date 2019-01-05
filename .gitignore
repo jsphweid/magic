@@ -23,3 +23,6 @@ firestore.rules
 
 *.iml
 *.log
+
+packages/tag-editor/src/data.ts
+packages/tag-editor/__generatedTypes__.ts
