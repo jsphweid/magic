@@ -14,7 +14,7 @@ const options = {
 };
 
 function createNode(x: number, y: number) {
-  console.log("lol", x, y);
+  getStores().graph.createTag("temp");
 }
 
 const Graph: React.SFC = observer(() => {

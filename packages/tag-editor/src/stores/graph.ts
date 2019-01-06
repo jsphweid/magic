@@ -1,10 +1,16 @@
 import { action, computed, decorate, observable } from "mobx";
-import { Graph, Tag } from "../types";
+import { Graph } from "../types";
 
 import client from "../graphql/client";
 
-import { AllTags } from "../../__generatedTypes__";
+import {
+  AllTags,
+  Tag,
+  CreateTag,
+  CreateTagVariables
+} from "../../__generatedTypes__";
 import AllTagsQuery from "../graphql/queries/AllTags";
+import CreateTagMutation from "../graphql/queries/CreateTag";
 import { deriveEdgesFromTags } from "../utils";
 
 /*
@@ -56,6 +62,18 @@ export default class GraphStore {
     this._rawTagsData = response.data.Tag.tags;
   };
 
+  public createTag = async (name: string): Promise<void> => {
+    try {
+      const response = await client.mutate<CreateTag, CreateTagVariables>({
+        mutation: CreateTagMutation,
+        variables: { name }
+      });
+      console.log("create tag response", response);
+    } catch (e) {
+      console.log("Could not create tag:", e);
+    }
+  };
+
   public setActiveNode = (id: string): void => {
     this._activeNodeId = id;
   };
@@ -68,5 +86,6 @@ decorate(GraphStore, {
   activeTag: [computed],
   graphState: [computed],
   fetchState: [action],
-  setActiveNode: [action]
+  setActiveNode: [action],
+  createTag: [action]
 });

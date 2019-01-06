@@ -1,18 +1,9 @@
 import { InMemoryCache } from "apollo-cache-inmemory";
 import ApolloClient from "apollo-client";
 import { ApolloLink } from "apollo-link";
-import { onError } from "apollo-link-error";
 import { HttpLink } from "apollo-link-http";
 
 import { apiUrl, authHeader } from "../data";
-
-const errorLink = onError((error: any) => {
-  console.log(
-    "network error message",
-    error.networkError && JSON.stringify(error.networkError.message)
-  );
-  console.log("graphql error", JSON.stringify(error.graphQLErrors));
-});
 
 const httpLink = new HttpLink({
   fetch,
@@ -22,7 +13,7 @@ const httpLink = new HttpLink({
   }
 });
 
-const link = ApolloLink.from([errorLink, httpLink]);
+const link = ApolloLink.from([httpLink]);
 
 export default new ApolloClient({
   link,

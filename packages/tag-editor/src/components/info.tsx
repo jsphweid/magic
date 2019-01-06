@@ -2,7 +2,8 @@ import * as React from "react";
 
 import { observer } from "mobx-react";
 import { getStores } from "../stores";
-import { Tag } from "../types";
+
+import { Tag } from "../../__generatedTypes__";
 
 const Info: React.SFC = observer(() => {
   console.log("rendering info");

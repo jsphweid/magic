@@ -2,9 +2,9 @@ import gql from "graphql-tag";
 import { Tag } from "./Fragments";
 
 export default gql`
-  query AllTags {
+  mutation CreateTag($name: String!) {
     Tag {
-      tags {
+      create(name: $name) {
         ...Tag
       }
     }
