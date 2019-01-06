@@ -4,7 +4,7 @@ import { observer } from "mobx-react";
 import Graph from "./components/graph";
 import { getStores } from "./stores";
 
-import { toJS } from "mobx";
+import Info from "./components/info";
 
 const App = observer(
   class App extends React.Component<any, any> {
@@ -19,6 +19,7 @@ const App = observer(
     public render() {
       return (
         <div>
+          <Info />
           <Graph />
         </div>
       );

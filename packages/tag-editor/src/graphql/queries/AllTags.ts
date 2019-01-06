@@ -27,5 +27,7 @@ export default gql`
     ID
     name
     aliases
+    score
+    aliases
   }
 `;

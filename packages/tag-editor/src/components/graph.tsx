@@ -17,20 +17,19 @@ function createNode(x: number, y: number) {
   console.log("lol", x, y);
 }
 
-const Graph = observer(() => {
-  const { state } = getStores().graph;
-  if (!state) return null;
+const Graph: React.SFC = observer(() => {
+  const { graphState, setActiveNode } = getStores().graph;
+  if (!graphState) return null;
   return (
     <GraphVis
-      graph={state}
+      graph={graphState}
       options={options}
       events={{
         select: (event: any) => {
-          const { nodes, edges } = event;
-          console.log("Selected nodes:");
-          console.log(nodes);
-          console.log("Selected edges:");
-          console.log(edges);
+          const { nodes } = event;
+          if (nodes.length) {
+            setActiveNode(nodes[0]);
+          }
         },
         doubleClick: (event: any) => {
           const {
