@@ -107,9 +107,9 @@ export const getAll = async (
 
           return tag;
         })
-    );
+    ) as any;
   } catch (error) {
-    return Either.left(error);
+    return Either.left(error) as any;
   }
 };
 

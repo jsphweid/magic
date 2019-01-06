@@ -265,11 +265,11 @@ export const getAllFromNames = async (
 ): Promise<Result.Result<Tag[]>> => {
   const tags: Tag[] = [];
   for (const result of await context.tagLoader.loadMany(names)) {
-    if (result.isLeft()) return Result.error(result.value.message);
+    if (result.isLeft()) return Result.error(result.value.message) as any;
     tags.push(result.value);
   }
 
-  return Result.success(tags);
+  return Result.success(tags) as any;
 };
 
 export const findMatches = async (

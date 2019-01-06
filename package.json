@@ -19,7 +19,8 @@
     "ui:generate": "lerna run generate --stream --scope ui",
     "ui:dev": "lerna run dev --stream --scope ui",
     "ui:build": "tst build ui",
-    "api:backup": "lerna run backup --stream --scope api"
+    "api:backup": "lerna run backup --stream --scope api",
+    "postinstall": "lerna bootstrap"
   },
   "devDependencies": {
     "@types/jest": "^23.3.2",

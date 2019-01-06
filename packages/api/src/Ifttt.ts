@@ -10,10 +10,10 @@ export const trigger = async (name: string): Promise<Result.Result<void>> => {
       }`
     });
 
-    return Result.success(void 0);
+    return Result.success(void 0) as any;
   } catch (error) {
     // tslint:disable-next-line:no-console
     console.log(error);
-    return Result.error(`${error.message} ${error.response.data}`);
+    return Result.error(`${error.message} ${error.response.data}`) as any;
   }
 };
