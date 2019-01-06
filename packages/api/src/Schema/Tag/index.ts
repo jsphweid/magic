@@ -1,8 +1,9 @@
 import { either as Either, option as Option } from "fp-ts";
 import gql from "graphql-tag";
-import _ from "lodash/fp";
+import { cloneDeep, intersection } from "lodash/fp";
 import Moment from "moment";
 
+import * as GraphQL from "graphql";
 import * as Result from "../../Result";
 import * as Utility from "../../Utility";
 import * as Context from "../Context";
@@ -35,8 +36,18 @@ export const schema = gql`
       name: String!
       aliases: [String!] = []
       score: Int = 0
-      connections: Tag__Selection
+      connections: [String!] = []
     ): Tag__Tag!
+
+    update(
+      ID: ID!
+      name: String!
+      aliases: [String!]
+      score: Int
+      connections: [String!]
+    ): Tag__Tag!
+
+    delete(ID: ID!): Boolean!
   }
 
   input Tag__Filter {
@@ -95,8 +106,8 @@ export const defaultFilter = (
 
   // Tags can't be both included and excluded
   const conflicts = [
-    ..._.intersection(filter.include.names, filter.exclude.names),
-    ..._.intersection(filter.include.ids, filter.exclude.ids)
+    ...intersection(filter.include.names, filter.exclude.names),
+    ...intersection(filter.include.ids, filter.exclude.ids)
   ];
 
   return conflicts.length === 0
@@ -139,6 +150,111 @@ export const resolvers = {
       context: Context.Context
     ): Promise<Tag[]> => {
       return (await Loader.getAll(context)).getOrElseL(Utility.throwError);
+    }
+  },
+
+  Tag__Mutation: {
+    create: async (
+      _: undefined,
+      _args: {
+        name: string;
+        aliases: string[];
+        score: number;
+        connections: any[];
+      },
+      context: Context.Context
+    ): Promise<Tag> => {
+      await validateTag(context, _args);
+
+      const connections = transformConnectionsToReferences(
+        context,
+        _args.connections
+      );
+      const newTagRef = await context.DB.collection("tags").doc();
+      newTagRef.set({ ..._args, connections });
+
+      return (await Loader.getByID(context.DB, newTagRef.id)).getOrElseL(
+        Utility.throwError
+      );
+    },
+    update: async (
+      _: undefined,
+      _args: {
+        ID: string;
+        name?: string;
+        aliases?: string[];
+        score?: number;
+        connections?: any[];
+      },
+      context: Context.Context
+    ): Promise<Tag> => {
+      await validateTag(context, _args);
+
+      const updateObj = cloneDeep(_args);
+      delete updateObj.ID;
+
+      if (_args.connections) {
+        updateObj.connections = transformConnectionsToReferences(
+          context,
+          _args.connections
+        );
+      }
+
+      await context.DB.collection("tags")
+        .doc(_args.ID)
+        .set(updateObj, { merge: true });
+
+      return (await Loader.getByID(context.DB, _args.ID)).getOrElseL(
+        Utility.throwError
+      );
+    },
+    delete: async (
+      _: undefined,
+      _args: {
+        ID: string;
+      },
+      context: Context.Context
+    ): Promise<boolean> => {
+      await context.DB.collection("tags")
+        .doc(_args.ID)
+        .delete();
+      return true;
+    }
+  }
+};
+
+const transformConnectionsToReferences = (
+  context: Context.Context,
+  connections: string[]
+): firebase.firestore.DocumentReference[] => {
+  return connections.map(id => context.DB.collection("tags").doc(id));
+};
+
+const validateTag = async (
+  context: Context.Context,
+  tag: Partial<Tag>
+): Promise<void> => {
+  // TODO: Don't create if it already exists? Also consider checking aliases...
+  // const tagWithSameName = allTags.find(tag => tag.name === _args.name);
+
+  // TODO: Prevent tag from connecting to itself
+
+  if (tag.connections) {
+    const allTags = (await Loader.getAll(context)).getOrElseL(
+      Utility.throwError
+    );
+
+    // double check that any alleged connections exist...
+    const existingTagIds = allTags.map(t => t.ID);
+    const allConnectionsValid = tag.connections.every(c =>
+      existingTagIds.includes(c)
+    );
+    if (!allConnectionsValid) {
+      Utility.throwError(
+        new GraphQL.GraphQLError(
+          "At least one of the connections you entered is not a real Tag."
+        )
+      );
     }
   }
 };

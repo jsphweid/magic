@@ -73,7 +73,10 @@ const getByName = async (
       Either.left(new Error(`There is no tag with the \`name\` "${name}"`))
     );
 
-const getByID = async (DB: Firestore.Firestore, ID: string): Promise<Result> =>
+export const getByID = async (
+  DB: Firestore.Firestore,
+  ID: string
+): Promise<Result> =>
   Option.fromNullable(
     await DB.collection("tags")
       .doc(ID)
