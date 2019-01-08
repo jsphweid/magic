@@ -1,11 +1,14 @@
 type ID = string | number;
 
-export interface Node {
-  id: ID;
+export interface NodeInput {
   label: string;
   color?: string;
   x?: number;
   y?: number;
+}
+
+export interface Node extends NodeInput {
+  id: ID;
 }
 
 export interface Edge {

@@ -8,7 +8,8 @@ import {
   CreateTag,
   CreateTagVariables,
   DeleteTag,
-  DeleteTagVariables
+  DeleteTagVariables,
+  Tag
 } from "../../__generatedTypes__";
 import AllTagsQuery from "../graphql/queries/AllTags";
 import CreateTagMutation from "../graphql/queries/CreateTag";
@@ -25,28 +26,25 @@ export default class ApiInterfaceStore {
     getStores().graph.setRawTagsData(response.data.Tag.tags);
   };
 
-  public createTag = async (name: string): Promise<void> => {
-    const response = await client.mutate<CreateTag, CreateTagVariables>({
-      mutation: CreateTagMutation,
-      variables: { name }
-    });
-    if (response.data.Tag.create) {
-      const { graph, visjsInterface } = getStores();
-      const { create } = response.data.Tag;
-      graph.addLocalTag(create);
-      visjsInterface.selectNode(create.ID);
-    }
+  public createTag = async (name: string): Promise<Tag> => {
+    return client
+      .mutate<CreateTag, CreateTagVariables>({
+        mutation: CreateTagMutation,
+        variables: { name }
+      })
+      .then(response => {
+        console.log("response", response);
+        return response.data.Tag.create;
+      });
   };
 
-  public deleteTag = async (id: string): Promise<void> => {
-    const response = await client.mutate<DeleteTag, DeleteTagVariables>({
-      mutation: DeleteTagMutation,
-      variables: { id }
-    });
-
-    if (response.data.Tag.delete) {
-      getStores().graph.deleteLocalTag(id);
-    }
+  public deleteTag = async (id: string): Promise<boolean> => {
+    return client
+      .mutate<DeleteTag, DeleteTagVariables>({
+        mutation: DeleteTagMutation,
+        variables: { id }
+      })
+      .then(response => response.data.Tag.delete);
   };
 }
 

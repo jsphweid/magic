@@ -13,8 +13,8 @@ const options = {
   }
 };
 
-function createNode(x: number, y: number) {
-  getStores().apiInterface.createTag("temp");
+function createNodeHandler(x: number, y: number) {
+  getStores().graph.addNode({ label: "temp", x, y });
 }
 
 const Graph: React.SFC = observer(() => {
@@ -35,7 +35,7 @@ const Graph: React.SFC = observer(() => {
           const {
             pointer: { canvas }
           } = event;
-          createNode(canvas.x, canvas.y);
+          createNodeHandler(canvas.x, canvas.y);
         }
       }}
       style={{ height: "640px" }}

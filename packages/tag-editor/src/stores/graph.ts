@@ -3,6 +3,7 @@ import { Graph } from "../types";
 
 import { getStores } from ".";
 import { Tag } from "../../__generatedTypes__";
+import { NodeInput } from "../types/graph";
 import { deriveEdgesFromTags } from "../utils";
 
 /*
@@ -60,13 +61,18 @@ export default class GraphStore {
   };
 
   // consider just getting raw tags data again upon every action...
-  public deleteLocalTag = (id: string): void => {
+  public deleteNode = async (id: string): Promise<void> => {
     if (!this._rawTagsData) return;
-    this._rawTagsData = this._rawTagsData.filter(tag => tag.ID !== id);
+    const wasSuccessful = await getStores().apiInterface.deleteTag(id);
+    if (wasSuccessful) {
+      this._rawTagsData = this._rawTagsData.filter(tag => tag.ID !== id);
+    }
   };
-  public addLocalTag = (tag: Tag): void => {
+  public addNode = async (node: NodeInput): Promise<void> => {
     if (!this._rawTagsData) return;
+    const tag = await getStores().apiInterface.createTag(node.label);
     this._rawTagsData.push(tag);
+    getStores().visjsInterface.selectNode(tag.ID);
   };
 }
 
