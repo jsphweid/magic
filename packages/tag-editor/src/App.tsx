@@ -13,7 +13,7 @@ const App = observer(
     }
 
     public componentDidMount() {
-      getStores().graph.fetchState();
+      getStores().apiInterface.fetchState();
     }
 
     public render() {

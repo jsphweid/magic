@@ -1,17 +1,8 @@
 import { action, computed, decorate, observable } from "mobx";
 import { Graph } from "../types";
 
-import client from "../graphql/client";
-
 import { getStores } from ".";
-import {
-  AllTags,
-  CreateTag,
-  CreateTagVariables,
-  Tag
-} from "../../__generatedTypes__";
-import AllTagsQuery from "../graphql/queries/AllTags";
-import CreateTagMutation from "../graphql/queries/CreateTag";
+import { Tag } from "../../__generatedTypes__";
 import { deriveEdgesFromTags } from "../utils";
 
 /*
@@ -54,21 +45,9 @@ export default class GraphStore {
   }
 
   // actions
-  public fetchState = async (): Promise<void> => {
-    const response = await client.query<AllTags>({ query: AllTagsQuery });
-    this._rawTagsData = response.data.Tag.tags;
-  };
 
-  public createTag = async (name: string): Promise<void> => {
-    try {
-      const response = await client.mutate<CreateTag, CreateTagVariables>({
-        mutation: CreateTagMutation,
-        variables: { name }
-      });
-      console.log("create tag response", response);
-    } catch (e) {
-      console.log("Could not create tag:", e);
-    }
+  public setRawTagsData = (rawTagsData: Tag[]): void => {
+    this._rawTagsData = rawTagsData;
   };
 
   public setActiveNode = (id: string): void => {
@@ -87,8 +66,6 @@ decorate(GraphStore, {
   memoizedTagMap: [computed],
   activeTag: [computed],
   graphState: [computed],
-  fetchState: [action],
   setActiveNode: [action],
-  clearActiveNode: [action],
-  createTag: [action]
+  clearActiveNode: [action]
 });
