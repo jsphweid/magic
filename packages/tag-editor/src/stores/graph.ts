@@ -3,11 +3,12 @@ import { Graph } from "../types";
 
 import client from "../graphql/client";
 
+import { getStores } from ".";
 import {
   AllTags,
-  Tag,
   CreateTag,
-  CreateTagVariables
+  CreateTagVariables,
+  Tag
 } from "../../__generatedTypes__";
 import AllTagsQuery from "../graphql/queries/AllTags";
 import CreateTagMutation from "../graphql/queries/CreateTag";
@@ -20,13 +21,10 @@ import { deriveEdgesFromTags } from "../utils";
  */
 export default class GraphStore {
   // observables
-
   public _rawTagsData: Tag[] | null = null;
-
   public _activeNodeId: string | null = null;
 
   // computed
-
   public get activeTag(): Tag | null {
     return this._activeNodeId && this.memoizedTagMap
       ? this.memoizedTagMap[this._activeNodeId]
@@ -56,7 +54,6 @@ export default class GraphStore {
   }
 
   // actions
-
   public fetchState = async (): Promise<void> => {
     const response = await client.query<AllTags>({ query: AllTagsQuery });
     this._rawTagsData = response.data.Tag.tags;
@@ -77,6 +74,11 @@ export default class GraphStore {
   public setActiveNode = (id: string): void => {
     this._activeNodeId = id;
   };
+
+  public clearActiveNode = (): void => {
+    this._activeNodeId = null;
+    getStores().network.deselectAll();
+  };
 }
 
 decorate(GraphStore, {
@@ -87,5 +89,6 @@ decorate(GraphStore, {
   graphState: [computed],
   fetchState: [action],
   setActiveNode: [action],
+  clearActiveNode: [action],
   createTag: [action]
 });

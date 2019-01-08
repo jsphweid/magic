@@ -4,6 +4,8 @@
     "no-var-requires": false,
     "no-console": false,
     "member-ordering": false,
-    "no-object-literal-type-assertion": false
+    "no-object-literal-type-assertion": false,
+    "radix": false,
+    "no-submodule-imports": false
   }
 }

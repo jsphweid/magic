@@ -1,13 +1,16 @@
 import { observable } from "mobx";
 import GraphStore from "./graph";
+import NetworkStore from "./network";
 
 let stores = initialize();
 
 function initialize() {
   const graph = new GraphStore();
+  const network = new NetworkStore();
 
   return observable({
-    graph
+    graph,
+    network
   });
 }
 

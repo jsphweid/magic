@@ -1,4 +1,5 @@
-import { Edge, Tag } from "./types";
+import { Tag } from "../__generatedTypes__";
+import { Edge } from "./types";
 
 export function deriveEdgesFromTags(tags: Tag[]): Edge[] {
   const edges: Edge[] = [];
@@ -17,4 +18,8 @@ export function deriveEdgesFromTags(tags: Tag[]): Edge[] {
   });
 
   return edges;
+}
+
+export function cloneObj<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
 }

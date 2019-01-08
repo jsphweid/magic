@@ -39,6 +39,7 @@ const Graph: React.SFC = observer(() => {
         }
       }}
       style={{ height: "640px" }}
+      getNetwork={(network: any) => getStores().network.init(network)}
     />
   );
 });
