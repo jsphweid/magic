@@ -14,21 +14,21 @@ const options = {
 };
 
 function createNode(x: number, y: number) {
-  getStores().graph.createTag("temp");
+  getStores().apiInterface.createTag("temp");
 }
 
 const Graph: React.SFC = observer(() => {
-  const { graphState, setActiveNode } = getStores().graph;
-  if (!graphState) return null;
+  const { graph, visjsInterface } = getStores();
+  if (!graph.graphState) return null;
   return (
     <GraphVis
-      graph={graphState}
+      graph={graph.graphState}
       options={options}
       events={{
         select: (event: any) => {
           const { nodes } = event;
           if (nodes.length) {
-            setActiveNode(nodes[0]);
+            visjsInterface.selectNode(nodes[0]);
           }
         },
         doubleClick: (event: any) => {
@@ -39,7 +39,7 @@ const Graph: React.SFC = observer(() => {
         }
       }}
       style={{ height: "640px" }}
-      getNetwork={(network: any) => getStores().network.init(network)}
+      getNetwork={(network: any) => visjsInterface.init(network)}
     />
   );
 });

@@ -1,4 +1,5 @@
 import { action, decorate, observable } from "mobx";
+import { getStores } from ".";
 
 export default class NetworkStore {
   // observables
@@ -14,6 +15,11 @@ export default class NetworkStore {
   public deselectAll = (): void => {
     this._network.selectNodes([]);
     this._network.selectEdges([]);
+  };
+
+  public selectNode = (id: string): void => {
+    this._network.selectNodes([id]);
+    getStores().graph.setActiveNode(id);
   };
 }
 

@@ -1,18 +1,18 @@
 import { observable } from "mobx";
 import ApiInterfaceStore from "./api-interface";
 import GraphStore from "./graph";
-import NetworkStore from "./network";
+import VisjsInterface from "./visjs-interface";
 
 let stores = initialize();
 
 function initialize() {
   const graph = new GraphStore();
-  const network = new NetworkStore();
+  const visjsInterface = new VisjsInterface();
   const apiInterface = new ApiInterfaceStore();
 
   return observable({
     graph,
-    network,
+    visjsInterface,
     apiInterface
   });
 }

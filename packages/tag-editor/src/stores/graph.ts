@@ -56,7 +56,17 @@ export default class GraphStore {
 
   public clearActiveNode = (): void => {
     this._activeNodeId = null;
-    getStores().network.deselectAll();
+    getStores().visjsInterface.deselectAll();
+  };
+
+  // consider just getting raw tags data again upon every action...
+  public deleteLocalTag = (id: string): void => {
+    if (!this._rawTagsData) return;
+    this._rawTagsData = this._rawTagsData.filter(tag => tag.ID !== id);
+  };
+  public addLocalTag = (tag: Tag): void => {
+    if (!this._rawTagsData) return;
+    this._rawTagsData.push(tag);
   };
 }
 
