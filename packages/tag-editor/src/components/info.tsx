@@ -12,6 +12,7 @@ const Info: React.SFC = observer(() => {
       key={activeTag.ID}
       tag={activeTag}
       update={() => console.log("update")}
+      delete={() => console.log("delete")}
       cancel={() => getStores().graph.clearActiveNode()}
     />
   ) : (

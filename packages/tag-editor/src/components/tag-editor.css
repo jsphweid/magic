@@ -6,13 +6,9 @@
   width: 100%;
 }
 
-.tagEditor-tagEditor-buttons {
-  margin-top: 8px;
-}
-
-.tagEditor-tagEditor-buttons button {
+.tagEditor-tagEditor button {
   padding: 8px;
-  margin: 0 8px 0 0;
+  margin: 8px 8px 0 0;
   font-size: 16px;
 }
 
