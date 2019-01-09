@@ -1,4 +1,4 @@
-import { action, decorate } from "mobx";
+import { action, decorate, observable } from "mobx";
 
 import client from "../graphql/client";
 
@@ -23,6 +23,7 @@ import { rawTagToTag } from "../utils";
 
 export default class ApiInterfaceStore {
   // observables
+  public isLoading: boolean = false;
   // computed
   // actions
 
@@ -33,34 +34,41 @@ export default class ApiInterfaceStore {
   };
 
   public createTag = async (name: string): Promise<Tag> => {
+    this.isLoading = true;
     return client
       .mutate<CreateTag, CreateTagVariables>({
         mutation: CreateTagMutation,
         variables: { name }
       })
-      .then(response => rawTagToTag(response.data.Tag.create));
+      .then(response => rawTagToTag(response.data.Tag.create))
+      .finally(() => (this.isLoading = false));
   };
 
   public updateTag = async (basicTag: BasicTag): Promise<Tag> => {
+    this.isLoading = true;
     return client
       .mutate<UpdateTag, UpdateTagVariables>({
         mutation: UpdateTagMutation,
         variables: { ...basicTag }
       })
-      .then(response => rawTagToTag(response.data.Tag.update));
+      .then(response => rawTagToTag(response.data.Tag.update))
+      .finally(() => (this.isLoading = false));
   };
 
   public deleteTag = async (id: string): Promise<boolean> => {
+    this.isLoading = true;
     return client
       .mutate<DeleteTag, DeleteTagVariables>({
         mutation: DeleteTagMutation,
         variables: { id }
       })
-      .then(response => response.data.Tag.delete);
+      .then(response => response.data.Tag.delete)
+      .finally(() => (this.isLoading = false));
   };
 }
 
 decorate(ApiInterfaceStore, {
+  isLoading: [observable],
   fetchState: [action],
   createTag: [action]
 });
