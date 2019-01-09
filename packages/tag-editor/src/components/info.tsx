@@ -6,14 +6,19 @@ import { getStores } from "../stores";
 import TagEditor from "./tag-editor";
 
 const Info: React.SFC = observer(() => {
-  const { activeTag } = getStores().graph;
+  const {
+    activeTag,
+    deleteNode,
+    clearActiveNode,
+    updateNode
+  } = getStores().graph;
   const content = activeTag ? (
     <TagEditor
       key={activeTag.ID}
       tag={activeTag}
-      update={() => console.log("update")}
-      delete={id => getStores().graph.deleteNode(id)}
-      cancel={() => getStores().graph.clearActiveNode()}
+      update={basicTag => updateNode(basicTag)}
+      delete={id => deleteNode(id)}
+      cancel={() => clearActiveNode()}
     />
   ) : (
     <div>Select a node to edit it.</div>

@@ -3,6 +3,7 @@ import { Graph } from "../types";
 
 import { getStores } from ".";
 import { Tag } from "../../__generatedTypes__";
+import { BasicTag } from "../components/tag-editor";
 import { NodeInput } from "../types/graph";
 import { deriveEdgesFromTags } from "../utils";
 
@@ -73,6 +74,20 @@ export default class GraphStore {
     const tag = await getStores().apiInterface.createTag(node.label);
     this._rawTagsData.push(tag);
     getStores().visjsInterface.selectNode(tag.ID);
+  };
+  public updateNode = async (basicTag: BasicTag): Promise<void> => {
+    if (!this._rawTagsData) return;
+    console.log("updateNode");
+    const updatedTag = await getStores().apiInterface.updateTag(basicTag);
+    console.log("searching");
+    // this._rawTagsData.forEach(tag => {
+    //   if (tag.ID === updatedTag.ID) {
+    //     console.log("updating");
+    //     tag = updatedTag;
+    //   }
+    // });
+    const i = this._rawTagsData.findIndex(tag => tag.ID === basicTag.ID);
+    this._rawTagsData[i] = updatedTag;
   };
 }
 
