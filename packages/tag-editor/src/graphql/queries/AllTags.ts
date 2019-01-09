@@ -1,13 +1,13 @@
 import gql from "graphql-tag";
-import { Tag } from "./Fragments";
+import { RawTag } from "./Fragments";
 
 export default gql`
   query AllTags {
     Tag {
       tags {
-        ...Tag
+        ...RawTag
       }
     }
   }
-  ${Tag}
+  ${RawTag}
 `;

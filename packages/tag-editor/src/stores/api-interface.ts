@@ -9,7 +9,6 @@ import {
   CreateTagVariables,
   DeleteTag,
   DeleteTagVariables,
-  Tag,
   UpdateTag,
   UpdateTagVariables
 } from "../../__generatedTypes__";
@@ -19,7 +18,8 @@ import AllTagsQuery from "../graphql/queries/AllTags";
 import CreateTagMutation from "../graphql/queries/CreateTag";
 import DeleteTagMutation from "../graphql/queries/DeleteTag";
 import UpdateTagMutation from "../graphql/queries/UpdateTag";
-import { NodeInput } from "../types";
+import { Tag } from "../types";
+import { rawTagToTag } from "../utils";
 
 export default class ApiInterfaceStore {
   // observables
@@ -38,7 +38,7 @@ export default class ApiInterfaceStore {
         mutation: CreateTagMutation,
         variables: { name }
       })
-      .then(response => response.data.Tag.create);
+      .then(response => rawTagToTag(response.data.Tag.create));
   };
 
   public updateTag = async (basicTag: BasicTag): Promise<Tag> => {
@@ -47,7 +47,7 @@ export default class ApiInterfaceStore {
         mutation: UpdateTagMutation,
         variables: { ...basicTag }
       })
-      .then(response => response.data.Tag.update);
+      .then(response => rawTagToTag(response.data.Tag.update));
   };
 
   public deleteTag = async (id: string): Promise<boolean> => {

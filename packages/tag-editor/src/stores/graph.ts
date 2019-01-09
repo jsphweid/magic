@@ -1,11 +1,11 @@
 import { action, computed, decorate, observable } from "mobx";
-import { Graph } from "../types";
+import { Graph, Tag } from "../types";
 
 import { getStores } from ".";
-import { Tag } from "../../__generatedTypes__";
+import { RawTag } from "../../__generatedTypes__";
 import { BasicTag } from "../components/tag-editor";
 import { NodeInput } from "../types/graph";
-import { deriveEdgesFromTags } from "../utils";
+import { deriveEdgesFromTags, rawTagToTag } from "../utils";
 
 /*
  * Unfortunately, it seems that without using '@' decorators (I gave up trying to
@@ -14,7 +14,7 @@ import { deriveEdgesFromTags } from "../utils";
  */
 export default class GraphStore {
   // observables
-  public _rawTagsData: Tag[] | null = null;
+  public _allTags: Tag[] | null = null;
   public _activeNodeId: string | null = null;
 
   // computed
@@ -25,11 +25,11 @@ export default class GraphStore {
   }
 
   public get memoizedTagMap(): { [key: string]: Tag } | null {
-    if (!this._rawTagsData) return null;
+    if (!this._allTags) return null;
 
     const obj: { [key: string]: Tag } = {};
 
-    this._rawTagsData.forEach(tag => {
+    this._allTags.forEach(tag => {
       obj[tag.ID] = tag;
     });
 
@@ -37,22 +37,21 @@ export default class GraphStore {
   }
 
   public get graphState(): Graph | null {
-    if (!this._rawTagsData) return null;
-    const nodes = this._rawTagsData.map(({ ID, name }) => ({
+    if (!this._allTags) return null;
+    const nodes = this._allTags.map(({ ID, name }) => ({
       id: ID,
       label: name
     }));
-
-    return { nodes, edges: deriveEdgesFromTags(this._rawTagsData) };
+    return { nodes, edges: deriveEdgesFromTags(this._allTags) };
   }
 
   // actions
 
-  public setRawTagsData = (rawTagsData: Tag[]): void => {
-    this._rawTagsData = rawTagsData;
+  public setRawTagsData = (rawTagsData: RawTag[]): void => {
+    this._allTags = rawTagsData.map(rawTagToTag);
   };
 
-  public setActiveNode = (id: string): void => {
+  public setActiveNode = (id: string | null): void => {
     this._activeNodeId = id;
   };
 
@@ -63,20 +62,20 @@ export default class GraphStore {
 
   // consider just getting raw tags data again upon every action...
   public deleteNode = async (id: string): Promise<void> => {
-    if (!this._rawTagsData) return;
+    if (!this._allTags) return;
     const wasSuccessful = await getStores().apiInterface.deleteTag(id);
     if (wasSuccessful) {
-      this._rawTagsData = this._rawTagsData.filter(tag => tag.ID !== id);
+      this._allTags = this._allTags.filter(tag => tag.ID !== id);
     }
   };
   public addNode = async (node: NodeInput): Promise<void> => {
-    if (!this._rawTagsData) return;
+    if (!this._allTags) return;
     const tag = await getStores().apiInterface.createTag(node.label);
-    this._rawTagsData.push(tag);
+    this._allTags.push(tag);
     getStores().visjsInterface.selectNode(tag.ID);
   };
   public updateNode = async (basicTag: BasicTag): Promise<void> => {
-    if (!this._rawTagsData) return;
+    if (!this._allTags) return;
     console.log("updateNode");
     const updatedTag = await getStores().apiInterface.updateTag(basicTag);
     console.log("searching");
@@ -86,13 +85,13 @@ export default class GraphStore {
     //     tag = updatedTag;
     //   }
     // });
-    const i = this._rawTagsData.findIndex(tag => tag.ID === basicTag.ID);
-    this._rawTagsData[i] = updatedTag;
+    const i = this._allTags.findIndex(tag => tag.ID === basicTag.ID);
+    this._allTags[i] = updatedTag;
   };
 }
 
 decorate(GraphStore, {
-  _rawTagsData: [observable],
+  _allTags: [observable],
   _activeNodeId: [observable],
   memoizedTagMap: [computed],
   activeTag: [computed],

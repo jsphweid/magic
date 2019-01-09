@@ -17,9 +17,13 @@ export default class NetworkStore {
     this._network.selectEdges([]);
   };
 
-  public selectNode = (id: string): void => {
-    this._network.selectNodes([id]);
-    getStores().graph.setActiveNode(id);
+  public selectNode = (id?: string): void => {
+    if (id) {
+      this._network.selectNodes([id]);
+      getStores().graph.setActiveNode(id);
+    } else {
+      getStores().graph.setActiveNode(null);
+    }
   };
 }
 

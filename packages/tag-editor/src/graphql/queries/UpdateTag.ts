@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { Tag } from "./Fragments";
+import { RawTag } from "./Fragments";
 
 export default gql`
   mutation UpdateTag(
@@ -17,9 +17,9 @@ export default gql`
         score: $score
         connections: $connections
       ) {
-        ...Tag
+        ...RawTag
       }
     }
   }
-  ${Tag}
+  ${RawTag}
 `;

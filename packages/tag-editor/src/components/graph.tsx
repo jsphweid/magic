@@ -31,6 +31,12 @@ const Graph: React.SFC = observer(() => {
             visjsInterface.selectNode(nodes[0]);
           }
         },
+        deselectNode: (event: any) => {
+          const { nodes } = event;
+          if (!nodes.length) {
+            visjsInterface.selectNode();
+          }
+        },
         doubleClick: (event: any) => {
           const {
             pointer: { canvas }

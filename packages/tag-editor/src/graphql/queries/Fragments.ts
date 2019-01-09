@@ -10,8 +10,8 @@ const baseTag = gql`
   }
 `;
 
-export const Tag = gql`
-  fragment Tag on Tag__Tag {
+export const RawTag = gql`
+  fragment RawTag on Tag__Tag {
     ...BaseTag
     connections {
       ...BaseTag
