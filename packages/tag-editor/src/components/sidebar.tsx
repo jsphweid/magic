@@ -5,7 +5,7 @@ import { getStores } from "../stores";
 
 import TagEditor from "./tag-editor";
 
-const Info: React.SFC = observer(() => {
+const Sidebar: React.SFC = observer(() => {
   const {
     activeTag,
     deleteNode,
@@ -23,7 +23,13 @@ const Info: React.SFC = observer(() => {
   ) : (
     <div>Select a node to edit it.</div>
   );
-  return <div className="tagEditor-info">{content}</div>;
+  const loading = getStores().apiInterface.isLoading ? "loading..." : null;
+  return (
+    <div className="tagEditor-sidebar">
+      {content}
+      {loading}
+    </div>
+  );
 });
 
-export default Info;
+export default Sidebar;

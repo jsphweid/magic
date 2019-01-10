@@ -1,0 +1,10 @@
+.tagEditor-sidebar {
+  border: 1px solid var(--main-border-color);
+  border-radius: 4px;
+  padding: 8px;
+  margin-right: 8px;
+
+  width: 300px;
+  float: left;
+  height: calc(100vh - 32px);
+}

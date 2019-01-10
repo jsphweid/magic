@@ -21,32 +21,33 @@ const Graph: React.SFC = observer(() => {
   const { graph, visjsInterface } = getStores();
   if (!graph.graphState) return null;
   return (
-    <GraphVis
-      graph={graph.graphState}
-      options={options}
-      events={{
-        select: (event: any) => {
-          const { nodes } = event;
-          if (nodes.length) {
-            visjsInterface.selectNode(nodes[0]);
+    <div className="tagEditor-graph">
+      <GraphVis
+        graph={graph.graphState}
+        options={options}
+        events={{
+          select: (event: any) => {
+            const { nodes } = event;
+            if (nodes.length) {
+              visjsInterface.selectNode(nodes[0]);
+            }
+          },
+          deselectNode: (event: any) => {
+            const { nodes } = event;
+            if (!nodes.length) {
+              visjsInterface.selectNode();
+            }
+          },
+          doubleClick: (event: any) => {
+            const {
+              pointer: { canvas }
+            } = event;
+            createNodeHandler(canvas.x, canvas.y);
           }
-        },
-        deselectNode: (event: any) => {
-          const { nodes } = event;
-          if (!nodes.length) {
-            visjsInterface.selectNode();
-          }
-        },
-        doubleClick: (event: any) => {
-          const {
-            pointer: { canvas }
-          } = event;
-          createNodeHandler(canvas.x, canvas.y);
-        }
-      }}
-      style={{ height: "640px" }}
-      getNetwork={(network: any) => visjsInterface.init(network)}
-    />
+        }}
+        getNetwork={(network: any) => visjsInterface.init(network)}
+      />
+    </div>
   );
 });
 

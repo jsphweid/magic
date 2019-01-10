@@ -104,7 +104,7 @@ export default class TagEditor extends React.Component<
           </tr>
         </tbody>
       </table>
-      <div>
+      <div className="tagEditor-tagEditor-buttons">
         <button
           disabled={
             JSON.stringify(this.state.tag) === JSON.stringify(this.props.tag)
