@@ -3,19 +3,16 @@ import * as React from "react";
 import { observer } from "mobx-react";
 import { getStores } from "../stores";
 const GraphVis = require("react-graph-vis").default;
+import * as GraphEvents from "./graphEvents";
 
 const options = {
-  layout: {
-    hierarchical: false
-  },
   edges: {
     color: "#000000"
+  },
+  manipulation: {
+    ...GraphEvents.manipulationEvents
   }
 };
-
-function createNodeHandler(x: number, y: number) {
-  getStores().graph.addNode({ label: "temp", x, y });
-}
 
 const Graph: React.SFC = observer(() => {
   const { graph, visjsInterface } = getStores();
@@ -25,26 +22,7 @@ const Graph: React.SFC = observer(() => {
       <GraphVis
         graph={graph.graphState}
         options={options}
-        events={{
-          select: (event: any) => {
-            const { nodes } = event;
-            if (nodes.length) {
-              visjsInterface.selectNode(nodes[0]);
-            }
-          },
-          deselectNode: (event: any) => {
-            const { nodes } = event;
-            if (!nodes.length) {
-              visjsInterface.selectNode();
-            }
-          },
-          doubleClick: (event: any) => {
-            const {
-              pointer: { canvas }
-            } = event;
-            createNodeHandler(canvas.x, canvas.y);
-          }
-        }}
+        events={GraphEvents.userEvents}
         getNetwork={(network: any) => visjsInterface.init(network)}
       />
     </div>

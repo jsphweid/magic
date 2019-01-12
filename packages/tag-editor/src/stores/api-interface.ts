@@ -13,13 +13,12 @@ import {
   UpdateTagVariables
 } from "../../__generatedTypes__";
 
-import { BasicTag } from "../components/tag-editor";
 import AllTagsQuery from "../graphql/queries/AllTags";
 import CreateTagMutation from "../graphql/queries/CreateTag";
 import DeleteTagMutation from "../graphql/queries/DeleteTag";
 import UpdateTagMutation from "../graphql/queries/UpdateTag";
 import { Tag } from "../types";
-import { rawTagToTag } from "../utils";
+import { convertRawTagToTag } from "../utils";
 
 export default class ApiInterfaceStore {
   // observables
@@ -29,8 +28,7 @@ export default class ApiInterfaceStore {
 
   public fetchState = async (): Promise<void> => {
     const response = await client.query<AllTags>({ query: AllTagsQuery });
-
-    getStores().graph.setRawTagsData(response.data.Tag.tags);
+    getStores().graph.initData(response.data.Tag.tags);
   };
 
   public createTag = async (name: string): Promise<Tag> => {
@@ -40,18 +38,21 @@ export default class ApiInterfaceStore {
         mutation: CreateTagMutation,
         variables: { name }
       })
-      .then(response => rawTagToTag(response.data.Tag.create))
+      .then(response => convertRawTagToTag(response.data.Tag.create))
       .finally(() => (this.isLoading = false));
   };
 
-  public updateTag = async (basicTag: BasicTag): Promise<Tag> => {
+  public updateTag = async (tag: Tag): Promise<Tag> => {
     this.isLoading = true;
     return client
       .mutate<UpdateTag, UpdateTagVariables>({
         mutation: UpdateTagMutation,
-        variables: { ...basicTag }
+        variables: {
+          ...tag,
+          connections: tag.immediateConnections.map(c => c.toId)
+        }
       })
-      .then(response => rawTagToTag(response.data.Tag.update))
+      .then(response => convertRawTagToTag(response.data.Tag.update))
       .finally(() => (this.isLoading = false));
   };
 

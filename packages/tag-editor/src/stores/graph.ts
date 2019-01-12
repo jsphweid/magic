@@ -1,11 +1,10 @@
-import { action, computed, decorate, observable } from "mobx";
+import { action, computed, decorate, observable, toJS } from "mobx";
 import { Graph, Tag } from "../types";
 
 import { getStores } from ".";
 import { RawTag } from "../../__generatedTypes__";
-import { BasicTag } from "../components/tag-editor";
 import { NodeInput } from "../types/graph";
-import { deriveEdgesFromTags, rawTagToTag } from "../utils";
+import { convertRawTagToTag, deriveEdgesFromTags, parseEdgeId } from "../utils";
 
 /*
  * Unfortunately, it seems that without using '@' decorators (I gave up trying to
@@ -14,45 +13,93 @@ import { deriveEdgesFromTags, rawTagToTag } from "../utils";
  */
 export default class GraphStore {
   // observables
-  public _allTags: Tag[] | null = null;
   public _activeNodeId: string | null = null;
+  public _activeEdgeId: string | null = null;
+  public tagMap: { [key: string]: Tag } = {};
 
   // computed
   public get activeTag(): Tag | null {
-    return this._activeNodeId && this.memoizedTagMap
-      ? this.memoizedTagMap[this._activeNodeId]
-      : null;
-  }
-
-  public get memoizedTagMap(): { [key: string]: Tag } | null {
-    if (!this._allTags) return null;
-
-    const obj: { [key: string]: Tag } = {};
-
-    this._allTags.forEach(tag => {
-      obj[tag.ID] = tag;
-    });
-
-    return obj;
+    return this._activeNodeId ? this.tagMap[this._activeNodeId] : null;
   }
 
   public get graphState(): Graph | null {
-    if (!this._allTags) return null;
-    const nodes = this._allTags.map(({ ID, name }) => ({
+    const tagsAsArray = Object.values(this.tagMap);
+    const nodes = tagsAsArray.map(({ ID, name }) => ({
       id: ID,
       label: name
     }));
-    return { nodes, edges: deriveEdgesFromTags(this._allTags) };
+    return { nodes, edges: deriveEdgesFromTags(tagsAsArray) };
   }
 
   // actions
 
-  public setRawTagsData = (rawTagsData: RawTag[]): void => {
-    this._allTags = rawTagsData.map(rawTagToTag);
+  public initData = (rawTagsData: RawTag[]): void => {
+    const tagMap: { [key: string]: Tag } = {};
+
+    rawTagsData.map(convertRawTagToTag).forEach(tag => {
+      tagMap[tag.ID] = tag;
+    });
+
+    this.tagMap = tagMap;
   };
 
   public setActiveNode = (id: string | null): void => {
     this._activeNodeId = id;
+  };
+
+  public setActiveEdge = (id: string | null): void => {
+    this._activeEdgeId = id;
+  };
+
+  public deleteActiveElement = async (): Promise<void> => {
+    if (this._activeNodeId) {
+      // handle this some day
+    } else if (this._activeEdgeId) {
+      const { fromId, toId } = parseEdgeId(this._activeEdgeId);
+      const relevantTag = this.tagMap[fromId];
+      const newConnections = relevantTag.immediateConnections.filter(
+        c => c.toId !== toId
+      );
+      this.setActiveEdge(null);
+      this.tagMap[fromId] = {
+        ...relevantTag,
+        immediateConnections: relevantTag.immediateConnections.map(c =>
+          c.toId === toId ? { toId: c.toId, isLoading: true } : c
+        )
+      };
+      await this.updateNode({
+        ...relevantTag,
+        immediateConnections: newConnections
+      });
+    }
+  };
+
+  public addConnection = async (from: string, to: string): Promise<void> => {
+    // callback({ from, to, id, dashes: true });
+
+    const relevantTag = this.tagMap[from];
+    if (relevantTag.immediateConnections.map(c => c.toId).includes(to)) return;
+
+    // add temp connection
+    // const i = this._allTags.findIndex(t => t.ID === from);
+    this.tagMap[from] = {
+      ...relevantTag,
+      immediateConnections: [
+        ...relevantTag.immediateConnections,
+        { toId: to, isLoading: true }
+      ]
+    };
+
+    console.log("---", toJS(this.tagMap[from]));
+
+    const updatedTag = await getStores().apiInterface.updateTag({
+      ...relevantTag,
+      immediateConnections: [
+        ...relevantTag.immediateConnections,
+        { toId: to, isLoading: false }
+      ]
+    });
+    this.tagMap[from] = updatedTag;
   };
 
   public clearActiveNode = (): void => {
@@ -62,38 +109,32 @@ export default class GraphStore {
 
   // consider just getting raw tags data again upon every action...
   public deleteNode = async (id: string): Promise<void> => {
-    if (!this._allTags) return;
     const wasSuccessful = await getStores().apiInterface.deleteTag(id);
     if (wasSuccessful) {
-      this._allTags = this._allTags.filter(tag => tag.ID !== id);
+      delete this.tagMap[id];
     }
   };
   public addNode = async (node: NodeInput): Promise<void> => {
-    if (!this._allTags) return;
+    // push temp?
     const tag = await getStores().apiInterface.createTag(node.label);
-    this._allTags.push(tag);
+    this.tagMap[tag.ID] = tag;
     getStores().visjsInterface.selectNode(tag.ID);
   };
-  public updateNode = async (basicTag: BasicTag): Promise<void> => {
-    if (!this._allTags) return;
-    console.log("updateNode");
-    const updatedTag = await getStores().apiInterface.updateTag(basicTag);
-    console.log("searching");
-    // this._rawTagsData.forEach(tag => {
-    //   if (tag.ID === updatedTag.ID) {
-    //     console.log("updating");
-    //     tag = updatedTag;
-    //   }
-    // });
-    const i = this._allTags.findIndex(tag => tag.ID === basicTag.ID);
-    this._allTags[i] = updatedTag;
+  public updateNode = async (tag: Tag): Promise<void> => {
+    const updatedTag = await getStores().apiInterface.updateTag(tag);
+    this.tagMap[tag.ID] = updatedTag;
   };
 }
 
+// do this in a singular transaction? (combine graph and api-interface)
+// i dont like how multiple updates can be called from anywhere
+
 decorate(GraphStore, {
-  _allTags: [observable],
   _activeNodeId: [observable],
-  memoizedTagMap: [computed],
+  _activeEdgeId: [observable],
+  tagMap: [observable],
+  addConnection: [action],
+  deleteActiveElement: [action],
   activeTag: [computed],
   graphState: [computed],
   setActiveNode: [action],

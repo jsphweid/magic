@@ -12,8 +12,10 @@ export interface Node extends NodeInput {
 }
 
 export interface Edge {
+  id: string;
   from: ID;
   to: ID;
+  dashes?: boolean;
 }
 
 export interface Graph {

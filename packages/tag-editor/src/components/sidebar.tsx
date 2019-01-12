@@ -3,6 +3,7 @@ import * as React from "react";
 import { observer } from "mobx-react";
 import { getStores } from "../stores";
 
+import Instructions from "./instructions";
 import TagEditor from "./tag-editor";
 
 const Sidebar: React.SFC = observer(() => {
@@ -16,16 +17,15 @@ const Sidebar: React.SFC = observer(() => {
     <TagEditor
       key={activeTag.ID}
       tag={activeTag}
-      update={basicTag => updateNode(basicTag)}
+      update={tag => updateNode(tag)}
       delete={id => deleteNode(id)}
       cancel={() => clearActiveNode()}
     />
-  ) : (
-    <div>Select a node to edit it.</div>
-  );
+  ) : null;
   const loading = getStores().apiInterface.isLoading ? "loading..." : null;
   return (
     <div className="tagEditor-sidebar">
+      <Instructions />
       {content}
       {loading}
     </div>

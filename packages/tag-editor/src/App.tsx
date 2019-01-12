@@ -5,6 +5,7 @@ import Graph from "./components/graph";
 import { getStores } from "./stores";
 
 import Sidebar from "./components/sidebar";
+import { initKeyListeners } from "./keys";
 
 const App = observer(
   class App extends React.Component<any, any> {
@@ -13,7 +14,20 @@ const App = observer(
     }
 
     public componentDidMount() {
-      getStores().apiInterface.fetchState();
+      const { apiInterface, visjsInterface, graph } = getStores();
+
+      apiInterface.fetchState();
+
+      initKeyListeners({
+        e: () => visjsInterface.toggleEditConnection(),
+        c: () => visjsInterface.toggleCreateConnection(),
+        Escape: () => {
+          visjsInterface.selectNode();
+          visjsInterface.disableEditMode();
+        },
+        Delete: () => graph.deleteActiveElement(),
+        Backspace: () => graph.deleteActiveElement()
+      });
     }
 
     public render() {

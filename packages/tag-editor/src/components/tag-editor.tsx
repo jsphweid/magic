@@ -1,25 +1,17 @@
 import * as React from "react";
 
-import { Tag } from "../../__generatedTypes__";
-
 import TagsInput from "react-tagsinput";
+import { Tag } from "../types";
 
 interface TagEditorProps {
   tag: Tag;
-  update: (tag: BasicTag) => void;
+  update: (tag: Tag) => void;
   delete: (id: string) => void;
   cancel: () => void;
 }
 
-export interface BasicTag {
-  ID: string;
-  name: string;
-  aliases: string[];
-  score: number;
-}
-
 interface TagEditorState {
-  tag: BasicTag;
+  tag: Tag;
   deleteConfirmation: boolean;
 }
 
@@ -39,7 +31,7 @@ export default class TagEditor extends React.Component<
     this.props.update(this.state.tag);
   };
 
-  private updateTagProperties = (updates: Partial<BasicTag>) => {
+  private updateTagProperties = (updates: Partial<Tag>) => {
     this.setState({ tag: { ...this.state.tag, ...updates } });
   };
 
