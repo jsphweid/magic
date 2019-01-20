@@ -14,6 +14,8 @@
     "ui:generate": "lerna run generate --stream --scope ui",
     "ui:dev": "lerna run dev --stream --scope ui",
     "ui:build": "tst build ui",
+    "tag-editor:generateTypes": "lerna exec --scope tag-editor npm run generateTypes",
+    "tag-editor:dev": "lerna exec --scope tag-editor npm run dev",
     "api:backup": "lerna run backup --stream --scope api"
   },
   "devDependencies": {

@@ -41,7 +41,7 @@ export const schema = gql`
 
     update(
       ID: ID!
-      name: String!
+      name: String
       aliases: [String!]
       score: Int
       connections: [String!]

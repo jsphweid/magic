@@ -1,0 +1,23 @@
+{
+  "name": "tag-editor",
+  "private": true,
+  "scripts": {
+    "dev": "parcel src/index.html",
+    "generateTypes": "ts-node ./generateTypes.ts"
+  },
+  "dependencies": {
+    "react-graph-db-editor": "0.0.10"
+  },
+  "devDependencies": {
+    "@types/react": "^16.7.18",
+    "@types/react-dom": "^16.0.11",
+    "apollo-cache-inmemory": "^1.3.12",
+    "apollo-client": "^2.4.8",
+    "apollo-link": "^1.2.6",
+    "apollo-link-http": "^1.5.9",
+    "graphql": "^14.0.2",
+    "graphql-tag": "^2.10.0",
+    "react": "^16.7.0",
+    "react-dom": "^16.7.0"
+  }
+}
