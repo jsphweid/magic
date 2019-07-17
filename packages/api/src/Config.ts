@@ -17,8 +17,6 @@ const REQUIRED_ENVIRONMENT_VARIABLES = [
 
   "TWILIO_NUMBERS_OWNER",
 
-  "IFTTT_KEY",
-
   "FIREBASE_API_KEY",
   "FIREBASE_AUTH_DOMAIN",
   "FIREBASE_DATABASE_URL",
@@ -37,9 +35,7 @@ if (process.env.NODE_ENV === "production") {
     TOGGL_TOKEN: config.toggl.token,
     TOGGL_WORKSPACE_ID: config.toggl.workspace_id,
 
-    TWILIO_NUMBERS_OWNER: config.twilio.numbers.owner,
-
-    IFTTT_KEY: config.ifttt.key
+    TWILIO_NUMBERS_OWNER: config.twilio.numbers.owner
   };
 
   const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG as any);

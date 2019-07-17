@@ -9,7 +9,7 @@ import * as Narrative from "./Narrative";
 import * as Tag from "./Tag";
 import * as Time from "./Time";
 
-export const schema = gql`
+export const typeDefs = gql`
   type History implements Time__Timed {
     time: Time__Occurrence!
     narratives: [Narrative__Narrative!]!

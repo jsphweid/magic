@@ -6,7 +6,7 @@ import * as Duration from "./Duration";
 
 export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 
-export const schema = gql`
+export const typeDefs = gql`
   scalar Time__Date
   scalar Time__Duration
   scalar Time__MS

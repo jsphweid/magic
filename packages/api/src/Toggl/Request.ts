@@ -33,10 +33,10 @@ export const execute = async <Data>(config: {
       data: config.data
     });
 
-    return Result.success(data);
+    return Result.success(data) as any;
   } catch (error) {
     // tslint:disable-next-line:no-console
     console.log(error);
-    return Result.error(`${error.message} ${error.response.data}`);
+    return Result.error(`${error.message} ${error.response.data}`) as any;
   }
 };

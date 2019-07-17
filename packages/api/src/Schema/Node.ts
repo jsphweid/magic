@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 
 import * as Time from "./Time";
 
-export const schema = gql`
+export const typeDefs = gql`
   interface Node__Identifiable {
     ID: ID!
   }

@@ -9,13 +9,16 @@
     "api:test:watch": "tst test api --watch",
     "api:dev": "NODE_ENV=dev tst dev api",
     "api:build": "tst build api",
+    "tag-editor:test": "tst test tag-editor",
+    "tag-editor:test:watch": "tst test tag-editor --watch",
+    "tag-editor:dev": "lerna exec --scope tag-editor npm run dev",
+    "tag-editor:build": "tst build tag-editor",
     "ui:test": "tst test ui",
     "ui:test:watch": "tst test ui --watch",
-    "ui:generate": "lerna run generate --stream --scope ui",
     "ui:dev": "lerna run dev --stream --scope ui",
     "ui:build": "tst build ui",
+    "ui:generate": "lerna run generate --stream --scope ui",
     "tag-editor:generateTypes": "lerna exec --scope tag-editor npm run generateTypes",
-    "tag-editor:dev": "lerna exec --scope tag-editor npm run dev",
     "api:backup": "lerna run backup --stream --scope api"
   },
   "devDependencies": {

@@ -1,30 +1,30 @@
+import { ApolloServer } from "apollo-server-express";
 import * as BodyParser from "body-parser";
 import Cors from "cors";
+import express from "express";
 import BasicAuth from "express-basic-auth";
-import * as Functions from "firebase-functions";
 import * as GraphQLTools from "graphql-tools";
-import { GraphQLServer } from "graphql-yoga";
 
 import "./Config";
-import * as Hue from "./Hue";
 import * as Message from "./Message";
 import * as Schema from "./Schema";
 
 export const schema = GraphQLTools.makeExecutableSchema({
-  typeDefs: Schema.source,
+  typeDefs: Schema.typeDefs,
   resolvers: Schema.resolvers
 });
 
-const server = new GraphQLServer({ schema, context: Schema.context });
+const server = new ApolloServer({ schema, context: () => Schema.context() });
 
-server.express
+const app = express();
+
+app
   .options("*", Cors())
-  .get("/hue-login", Hue.loginHandler)
   .post("/messages", BodyParser.json(), Message.handler(schema));
 
 // Disable authentication for local testing
 if (process.env.NODE_ENV !== "dev") {
-  server.express.post(
+  app.post(
     "/graphql",
     BasicAuth({
       users: { api: `${process.env.MAGIC_API_TOKEN}` }
@@ -32,11 +32,8 @@ if (process.env.NODE_ENV !== "dev") {
   );
 }
 
-server.start(
-  { endpoint: "/graphql" },
+server.applyMiddleware({ app });
 
-  // tslint:disable-next-line:no-console
-  () => console.log("Server running at http://localhost:4000")
+app.listen({ port: 4000 }, () =>
+  console.log("Server running at http://localhost:4000")
 );
-
-exports.api = Functions.https.onRequest(server.express);

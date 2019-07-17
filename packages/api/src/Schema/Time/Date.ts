@@ -39,7 +39,7 @@ const parse = (source: string, valueNode?: GraphQL.ValueNode): Time.Date => {
   const timeZone = `${process.env.MAGIC_TIME_ZONE}`;
 
   for (const format of possibleFormats) {
-    const date = Moment.tz(source, format, true, timeZone);
+    const date = Moment.tz(source, format as any, true, timeZone);
     if (!date.isValid()) {
       continue;
     }

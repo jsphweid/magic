@@ -3,7 +3,6 @@ import * as GraphQL from "graphql";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Ifttt from "../Ifttt";
 import * as Result from "../Result";
 import * as Toggl from "../Toggl";
 import * as Utility from "../Utility";
@@ -12,7 +11,7 @@ import * as Node from "./Node";
 import * as Tag from "./Tag";
 import * as Time from "./Time";
 
-export const schema = gql`
+export const typeDefs = gql`
   type Narrative__Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
     ID: ID!
     metadata: Node__Metadata!
@@ -87,6 +86,18 @@ export const resolvers = {
   },
 
   Narrative__Mutation: {
+    updateTag: async (
+      _: undefined,
+      args: {
+        id: string;
+      },
+      context: Context.Context
+    ) => {
+      //
+      Entry.getEntry(args.id).then(entryEither =>
+        entryEither.map(entry => entry.tags)
+      );
+    },
     new: async (
       _: undefined,
       args: {
@@ -113,10 +124,6 @@ export const resolvers = {
         context,
         tagNamesToMatch.join(" ")
       )).getOrElseL(Utility.throwError);
-
-      if (tags.find(({ name }) => name === "cooking")) {
-        Ifttt.trigger("Cooking");
-      }
 
       const project = (await projectFromTags(tags)).getOrElseL(
         Utility.throwError

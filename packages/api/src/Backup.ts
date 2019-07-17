@@ -11,7 +11,7 @@ import * as Utility from "./Utility";
 
 const MAGIC_START = Moment("2018-06-22T13:10:55+00:00");
 const DATA_DIR = Path.join(__dirname, "../data");
-const BACKUP_DIR = `${DATA_DIR}/backup`;
+export const BACKUP_DIR = `${DATA_DIR}/backup`;
 
 // Convert entries to CSV format so they can be imported by calendar apps
 const entriesToCsv = (entries: Toggl.Entry[]): Result.Result<string> => {
@@ -41,7 +41,7 @@ const entriesToCsv = (entries: Toggl.Entry[]): Result.Result<string> => {
 };
 
 // Write a text file
-const save = (filePath: string, contents: string): void => {
+export const save = (filePath: string, contents: string): void => {
   const backupPath = `${BACKUP_DIR}/${filePath}`;
   FS.writeFileSync(backupPath, contents);
 
@@ -62,7 +62,7 @@ const saveJson = (filePath: string, contents: object): void =>
   const entries = (await Toggl.getEntriesFromTime(
     Time.ongoingInterval(MAGIC_START)
   )).getOrElseL(Utility.throwError);
-
+  console.log("---entries", entries);
   const csv = entriesToCsv(entries).getOrElseL(Utility.throwError);
 
   saveJson(`toggl/entries.json`, entries);

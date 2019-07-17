@@ -1,5 +1,6 @@
 import { option as Option } from "fp-ts";
 import _ from "lodash";
+import * as UUID from "uuid";
 
 export const throwError = (error: Error) => {
   // tslint:disable-next-line:no-console
@@ -22,3 +23,5 @@ export const trim = (strings: TemplateStringsArray, ...args: any[]): string => {
 
   return string.replace(new RegExp(indent, "g"), "").trim();
 };
+
+export const makeRandomUniqueID = (): string => UUID.v4();

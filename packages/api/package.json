@@ -5,10 +5,11 @@
     "node": "8"
   },
   "scripts": {
-    "backup": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Backup.ts"
+    "backup": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Backup.ts",
+    "generate:types": "TS_NODE_TRANSPILE_ONLY=true gql-gen"
   },
   "dependencies": {
-    "@types/graphql": "^14.0.3",
+    "apollo-server": "^2.6.9",
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
@@ -23,7 +24,6 @@
     "graphql": "^0.13.2",
     "graphql-tag": "^2.9.2",
     "graphql-tools": "^3.1.1",
-    "graphql-yoga": "^1.16.1",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.21",
@@ -31,12 +31,18 @@
     "word-wrap": "^1.2.3"
   },
   "devDependencies": {
-    "@types/graphql": "^0.13.4",
+    "@graphql-codegen/add": "^1.4.0",
+    "@graphql-codegen/cli": "^1.4.0",
+    "@graphql-codegen/typescript": "^1.4.0",
+    "@graphql-codegen/typescript-resolvers": "^1.4.0",
+    "@types/graphql": "^14.2.2",
     "@types/lodash": "^4.14.116",
     "@types/moment-timezone": "^0.5.8",
     "@types/stringify-object": "^3.2.0",
+    "@types/uuid": "^3.4.5",
     "parcel-bundler": "^1.9.4",
     "parcel-plugin-typescript": "^1.0.0",
-    "typescript": "^3.0.3"
+    "typescript": "^3.5.3",
+    "uuid": "^3.3.2"
   }
 }

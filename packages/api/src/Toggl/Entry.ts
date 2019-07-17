@@ -134,7 +134,7 @@ export const getFromTime = async (
     entries.sort((a, b) =>
       Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
     )
-  );
+  ) as any;
 };
 
 export const getOngoing = async (): Promise<
