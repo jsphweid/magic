@@ -1,0 +1,10 @@
+{
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@grapheng/prelude": "^5.2.0",
+    "@types/uuid": "^3.4.5"
+  },
+  "dependencies": {
+    "uuid": "^3.3.2"
+  }
+}
