@@ -1,10 +1,11 @@
-import { Either, Option } from "@grapheng/prelude";
+import { Either, Error, flow, Option, pipe } from "@grapheng/prelude";
 
 import * as ID from "./id";
 
 export interface Archive {
   raw: RawArchive;
   writeNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<Archive>;
+  mutateTag: (id: string, updates: Partial<RawTag>) => Either.ErrorOr<Archive>;
 
   getRawTagByID: (id: string) => Option.Option<RawTag>;
   getRawTagsByIDs: (ids: string[]) => Array<Option.Option<RawTag>>;
@@ -57,46 +58,69 @@ const getClonedArchive = (rawArchive: RawArchive): RawArchive =>
 
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
+  const getTag = (id: string): Option.Option<RawTag> =>
+    Option.fromNullable(rawArchive.tags.find(tag => tag.id === id));
+
   return {
     raw: rawArchive,
-    writeNewTag: tag => {
-      const existingTagNames = existingTagNamesMap(rawArchive.tags);
-      const tagIsUnique = getAllNamesInTagLowerCase(tag).every(
-        name => !existingTagNames[name.toLowerCase()]
-      );
-      const newTag = {
-        id: ID.makeUnique(),
-        name: "", // it will get overridden since name is ultimately required
-        aliases: [],
-        ...tag,
-        connections: [] // a new tag cannot have connections already for now
-      };
-
-      return tagIsUnique
-        ? Either.right(
-            makeArchive({
-              ...rawArchive,
-              tags: [...rawArchive.tags, newTag]
-            })
+    mutateTag: (id, updates) =>
+      pipe(
+        getTag(id),
+        Either.fromOption(
+          Error.fromL("The tag you're trying to change does not exist")
+        ),
+        Either.map(
+          flow(
+            rawTag => ({ ...rawTag, ...updates, id: rawTag.id }),
+            newTag =>
+              pipe(
+                rawArchive.tags.findIndex(tag => tag.id === id),
+                index => (rawArchive.tags[index] = newTag),
+                () => makeArchive(rawArchive)
+              )
           )
-        : Either.left(
-            new Error(
-              "Could not add this tag because its name already exists in other tags"
-            )
-          );
-    },
-    getRawTagByID: id =>
-      Option.fromNullable(rawArchive.tags.find(tag => tag.id === id)),
-    getRawTagsByIDs: ids =>
-      ids.map(id =>
-        Option.fromNullable(rawArchive.tags.find(tag => tag.id === id))
+        )
       ),
+
+    writeNewTag: tag =>
+      pipe(
+        existingTagNamesMap(rawArchive.tags),
+        Either.fromPredicate(
+          existingTagNames =>
+            getAllNamesInTagLowerCase(tag).every(
+              name => !existingTagNames[name.toLowerCase()]
+            ),
+          Error.fromL(
+            "Could not add this tag because its name already exists in other tags"
+          )
+        ),
+        Either.map(() =>
+          pipe(
+            {
+              id: ID.makeUnique(),
+              name: "", // it will get overridden since name is ultimately required
+              aliases: [],
+              ...tag,
+              connections: [] // a new tag cannot have connections already for now
+            },
+            newTag =>
+              makeArchive({
+                ...rawArchive,
+                tags: [...rawArchive.tags, newTag]
+              })
+          )
+        )
+      ),
+
+    getRawTagByID: getTag,
+    getRawTagsByIDs: ids => ids.map(getTag),
     getAllTags: () => rawArchive.tags,
     getRawTagByName: name =>
-      Option.fromNullable(
+      pipe(
         rawArchive.tags.find(tag =>
           getAllNamesInTagLowerCase(tag).includes(name.toLowerCase())
-        )
+        ),
+        Option.fromNullable
       )
   };
 };
