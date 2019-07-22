@@ -97,6 +97,50 @@ describe("main", () => {
     });
   });
 
+  describe("deleteTag", () => {
+    test("that it deletes a tag when it exists...", () => {
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [{ id: "123", aliases: [], connections: [], name: "something" }]
+        }).deleteTag("123"),
+        Either.fold(fail, archive => {
+          expect(archive.raw.tags.filter(t => t.id === "123")).toEqual([]);
+        })
+      );
+    });
+
+    test("that it does not delete a tag when it does not exist", () => {
+      pipe(
+        makeArchive(emptyArchive).deleteTag("nope"),
+        result => {
+          expect(Either.isLeft(result)).toBe(true);
+        }
+      );
+    });
+
+    test("that it removes connections to itself from other tags...", () => {
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [
+            { id: "123", aliases: [], connections: [], name: "something" },
+            { id: "234", aliases: [], connections: ["123"], name: "something" },
+            { id: "345", aliases: [], connections: ["123"], name: "something" },
+            { id: "456", aliases: [], connections: ["234"], name: "something" }
+          ]
+        }).deleteTag("123"),
+        Either.fold(fail, archive => {
+          expect(archive.raw.tags).toEqual([
+            { id: "234", aliases: [], connections: [], name: "something" },
+            { id: "345", aliases: [], connections: [], name: "something" },
+            { id: "456", aliases: [], connections: ["234"], name: "something" }
+          ]);
+        })
+      );
+    });
+  });
+
   describe("getRawTagByID", () => {
     test("that it does not get a raw tag if it doesn't exist", () => {
       pipe(

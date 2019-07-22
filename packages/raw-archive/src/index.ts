@@ -6,6 +6,7 @@ export interface Archive {
   raw: RawArchive;
   writeNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<Archive>;
   mutateTag: (id: string, updates: Partial<RawTag>) => Either.ErrorOr<Archive>;
+  deleteTag: (id: string) => Either.ErrorOr<Archive>;
 
   getRawTagByID: (id: string) => Option.Option<RawTag>;
   getRawTagsByIDs: (ids: string[]) => Array<Option.Option<RawTag>>;
@@ -115,7 +116,26 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           )
         )
       ),
-
+    deleteTag: id =>
+      pipe(
+        getTag(id),
+        Either.fromOption(
+          Error.fromL("The tag you're trying to delete does not exist")
+        ),
+        Either.map(() =>
+          makeArchive({
+            entries: rawArchive.entries,
+            tags: rawArchive.tags
+              .filter(tag => tag.id !== id)
+              .map(tag => ({
+                ...tag,
+                connections: tag.connections.filter(
+                  connection => connection !== id
+                )
+              }))
+          })
+        )
+      ),
     writeNewTag: tag =>
       pipe(
         {
