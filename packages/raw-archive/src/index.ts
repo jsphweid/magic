@@ -1,4 +1,4 @@
-import { Either, Error, flow, Option, pipe } from "@grapheng/prelude";
+import { Either, Error, Option, pipe } from "@grapheng/prelude";
 
 import * as ID from "./id";
 
@@ -32,14 +32,14 @@ export interface RawArchive {
   entries: RawEntry[];
 }
 
-interface NameMembershipMap {
+interface StringMembershipMap {
   [key: string]: boolean;
 }
 
-const arrToMap = (arr: string[]): NameMembershipMap =>
+const arrToMap = (arr: string[]): StringMembershipMap =>
   arr.reduce((previous, current) => ({ ...previous, [current]: true }), {});
 
-const existingTagNamesMap = (tags: RawTag[]): NameMembershipMap =>
+const existingTagNamesMap = (tags: RawTag[]): StringMembershipMap =>
   tags.reduce(
     (previous, current) => ({
       ...previous,
@@ -48,6 +48,9 @@ const existingTagNamesMap = (tags: RawTag[]): NameMembershipMap =>
     {}
   );
 
+const existingTagIDs = (tags: RawTag[]): StringMembershipMap =>
+  tags.reduce((previous, current) => ({ ...previous, [current.id]: true }), {});
+
 const getAllNamesInTagLowerCase = (rawTag: Partial<RawTag>): string[] => [
   ...(rawTag.aliases || []).map(str => str.toLowerCase()),
   ...(rawTag.name ? [rawTag.name.toLowerCase()] : [])
@@ -55,6 +58,38 @@ const getAllNamesInTagLowerCase = (rawTag: Partial<RawTag>): string[] => [
 
 const getClonedArchive = (rawArchive: RawArchive): RawArchive =>
   JSON.parse(JSON.stringify(rawArchive));
+
+const validateTag = (
+  tag: RawTag,
+  archive: RawArchive
+): Either.ErrorOr<RawTag> =>
+  pipe(
+    archive.tags.filter(t => t.id !== tag.id),
+    otherTags =>
+      pipe(
+        existingTagIDs(otherTags),
+        Either.fromPredicate(
+          existingTagIDs => tag.connections.every(id => existingTagIDs[id]),
+          Error.fromL(
+            `Tag does not validate because at least one connection does not resolve...`
+          )
+        ),
+        Either.map(() => existingTagNamesMap(otherTags)),
+        Either.map(
+          Either.fromPredicate(
+            existingTagNames =>
+              getAllNamesInTagLowerCase(tag).every(
+                name => !existingTagNames[name.toLowerCase()]
+              ),
+            Error.fromL(
+              "Tag does not validate because its name already exists elsewhere..."
+            )
+          )
+        ),
+        Either.flatten,
+        Either.map(() => tag)
+      )
+  );
 
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
@@ -69,46 +104,33 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         Either.fromOption(
           Error.fromL("The tag you're trying to change does not exist")
         ),
-        Either.map(
-          flow(
-            rawTag => ({ ...rawTag, ...updates, id: rawTag.id }),
-            newTag =>
-              pipe(
-                rawArchive.tags.findIndex(tag => tag.id === id),
-                index => (rawArchive.tags[index] = newTag),
-                () => makeArchive(rawArchive)
-              )
+        Either.map(foundTag => ({ ...foundTag, ...updates, id: foundTag.id })),
+        Either.map(proposedTag => validateTag(proposedTag, rawArchive)),
+        Either.flatten,
+        Either.map(validatedTag =>
+          pipe(
+            rawArchive.tags.findIndex(tag => tag.id === id),
+            index => (rawArchive.tags[index] = validatedTag),
+            () => makeArchive(rawArchive)
           )
         )
       ),
 
     writeNewTag: tag =>
       pipe(
-        existingTagNamesMap(rawArchive.tags),
-        Either.fromPredicate(
-          existingTagNames =>
-            getAllNamesInTagLowerCase(tag).every(
-              name => !existingTagNames[name.toLowerCase()]
-            ),
-          Error.fromL(
-            "Could not add this tag because its name already exists in other tags"
-          )
-        ),
-        Either.map(() =>
-          pipe(
-            {
-              id: ID.makeUnique(),
-              name: "", // it will get overridden since name is ultimately required
-              aliases: [],
-              ...tag,
-              connections: [] // a new tag cannot have connections already for now
-            },
-            newTag =>
-              makeArchive({
-                ...rawArchive,
-                tags: [...rawArchive.tags, newTag]
-              })
-          )
+        {
+          id: ID.makeUnique(),
+          name: "", // it will get overridden since name is ultimately required
+          aliases: [],
+          ...tag,
+          connections: tag.connections || []
+        },
+        proposedTag => validateTag(proposedTag, rawArchive),
+        Either.map(newTag =>
+          makeArchive({
+            ...rawArchive,
+            tags: [...rawArchive.tags, newTag]
+          })
         )
       ),
 

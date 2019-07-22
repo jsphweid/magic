@@ -70,8 +70,28 @@ describe("main", () => {
           ]
         }),
         archive => archive.writeNewTag({ name: "different", aliases: ["oNe"] }),
-        newArchive => {
-          expect(Either.isLeft(newArchive)).toBe(true);
+        result => {
+          expect(Either.isLeft(result)).toBe(true);
+        }
+      );
+    });
+
+    test("that writeNewTag fails if it cannot result a connection", () => {
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [
+            { id: "123", aliases: ["One"], connections: [], name: "something" }
+          ]
+        }),
+        archive =>
+          archive.writeNewTag({
+            name: "different",
+            aliases: ["another"],
+            connections: ["does not exist"]
+          }),
+        result => {
+          expect(Either.isLeft(result)).toBe(true);
         }
       );
     });
@@ -204,12 +224,11 @@ describe("main", () => {
   describe("mutateTag", () => {
     test("that a basic update should work", () => {
       const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
-      const archive = makeArchive({
-        ...emptyArchive,
-        tags: [rawTag]
-      });
       pipe(
-        archive.mutateTag("123", {
+        makeArchive({
+          ...emptyArchive,
+          tags: [rawTag]
+        }).mutateTag("123", {
           aliases: ["two"],
           name: "other"
         }),
@@ -221,6 +240,67 @@ describe("main", () => {
             connections: []
           });
         })
+      );
+    });
+
+    test("should fail if tag does not exist", () => {
+      pipe(
+        makeArchive(emptyArchive).mutateTag("123", {
+          aliases: ["two"],
+          name: "other"
+        }),
+        result => {
+          expect(Either.isLeft(result)).toBe(true);
+        }
+      );
+    });
+
+    test("that modifying a connection that exists works successfully", () => {
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [
+            { id: "123", aliases: ["one"], connections: [], name: "one name" },
+            {
+              id: "234",
+              aliases: ["two"],
+              connections: [],
+              name: "two name"
+            }
+          ]
+        }).mutateTag("234", {
+          connections: ["123"]
+        }),
+        Either.fold(fail, archive => {
+          expect(archive.raw.tags[1]).toEqual({
+            id: "234",
+            aliases: ["two"],
+            connections: ["123"],
+            name: "two name"
+          });
+        })
+      );
+    });
+
+    test("that modifying a connection that does not exist fails", () => {
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [
+            { id: "123", aliases: ["one"], connections: [], name: "one name" },
+            {
+              id: "234",
+              aliases: ["other"],
+              connections: [],
+              name: "other name"
+            }
+          ]
+        }).mutateTag("234", {
+          connections: ["nop"]
+        }),
+        result => {
+          expect(Either.isLeft(result)).toBe(true);
+        }
       );
     });
   });

@@ -40,7 +40,7 @@
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
     "twilio": "^3.19.2",
-    "typescript": "^3.1.1",
+    "typescript": "^3.5.3",
     "typescript-tooling": "^4.1.0-alpha.01ab903"
   }
 }
