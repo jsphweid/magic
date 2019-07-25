@@ -76,7 +76,7 @@ const validateTag = (
           )
         ),
         Either.map(() => existingTagNamesMap(otherTags)),
-        Either.map(
+        Either.chain(
           Either.fromPredicate(
             existingTagNames =>
               getAllNamesInTagLowerCase(tag).every(
@@ -87,7 +87,6 @@ const validateTag = (
             )
           )
         ),
-        Either.flatten,
         Either.map(() => tag)
       )
   );
@@ -106,8 +105,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           Error.fromL("The tag you're trying to change does not exist")
         ),
         Either.map(foundTag => ({ ...foundTag, ...updates, id: foundTag.id })),
-        Either.map(proposedTag => validateTag(proposedTag, rawArchive)),
-        Either.flatten,
+        Either.chain(proposedTag => validateTag(proposedTag, rawArchive)),
         Either.map(validatedTag =>
           pipe(
             rawArchive.tags.findIndex(tag => tag.id === id),
