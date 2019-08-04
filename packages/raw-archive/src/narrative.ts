@@ -1,6 +1,8 @@
 import { Option, pipe } from "@grapheng/prelude";
 import Moment from "moment-timezone";
+
 import { RawNarrative } from ".";
+import * as ID from "./id";
 import * as Time from "./time";
 
 const narrativeIsOngoing = (narrative: RawNarrative): boolean =>
@@ -74,7 +76,11 @@ export const addNarrative = (
       newEntryStopMS < oldEntryStopMS
     ) {
       newNarratives.push({ ...oldNarrative, stop: newEntryStartMS });
-      newNarratives.push({ ...oldNarrative, start: newEntryStartMS });
+      newNarratives.push({
+        ...oldNarrative,
+        start: newEntryStopMS,
+        id: ID.makeUnique()
+      });
     } else if (
       /*
         New:            |===============|
@@ -106,5 +112,6 @@ export const addNarrative = (
     }
   });
   newNarratives.push(narrative);
+  newNarratives.sort((a, b) => a.start - b.start);
   return newNarratives;
 };
