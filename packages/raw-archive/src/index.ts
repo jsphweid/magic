@@ -1,10 +1,14 @@
 import { Either, Error, Option, pipe } from "@grapheng/prelude";
 
 import * as ID from "./id";
+import * as Narrative from "./narrative";
+import * as Tag from "./tag";
+import * as Time from "./time";
 
 export interface Archive {
   raw: RawArchive;
   writeNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<Archive>;
+
   mutateTag: (id: string, updates: Partial<RawTag>) => Either.ErrorOr<Archive>;
   deleteTag: (id: string) => Either.ErrorOr<Archive>;
 
@@ -12,50 +16,35 @@ export interface Archive {
   getRawTagsByIDs: (ids: string[]) => Array<Option.Option<RawTag>>;
   getAllTags: () => RawTag[];
   getRawTagByName: (name: string) => Option.Option<RawTag>;
+
+  writeNewNarrative: (narrative: NarrativeInput) => Either.ErrorOr<Archive>;
+}
+
+export interface NarrativeInput {
+  description: string;
+  timeSelection?: Time.Selection;
+  tagsFilter: Tag.DeepPartial<Tag.Filter>;
 }
 
 export interface RawTag {
-  name: string;
   id: string;
+  name: string;
   aliases: string[];
   connections: string[];
 }
 
-export interface RawEntry {
+export interface RawNarrative {
+  id: string;
   start: number;
-  end?: number;
+  stop?: number;
   tags: string[];
   description: string;
 }
 
 export interface RawArchive {
   tags: RawTag[];
-  entries: RawEntry[];
+  narratives: RawNarrative[];
 }
-
-interface StringMembershipMap {
-  [key: string]: boolean;
-}
-
-const arrToMap = (arr: string[]): StringMembershipMap =>
-  arr.reduce((previous, current) => ({ ...previous, [current]: true }), {});
-
-const existingTagNamesMap = (tags: RawTag[]): StringMembershipMap =>
-  tags.reduce(
-    (previous, current) => ({
-      ...previous,
-      ...arrToMap(getAllNamesInTagLowerCase(current))
-    }),
-    {}
-  );
-
-const existingTagIDs = (tags: RawTag[]): StringMembershipMap =>
-  tags.reduce((previous, current) => ({ ...previous, [current.id]: true }), {});
-
-const getAllNamesInTagLowerCase = (rawTag: Partial<RawTag>): string[] => [
-  ...(rawTag.aliases || []).map(str => str.toLowerCase()),
-  ...(rawTag.name ? [rawTag.name.toLowerCase()] : [])
-];
 
 const getClonedArchive = (rawArchive: RawArchive): RawArchive =>
   JSON.parse(JSON.stringify(rawArchive));
@@ -68,18 +57,18 @@ const validateTag = (
     archive.tags.filter(t => t.id !== tag.id),
     otherTags =>
       pipe(
-        existingTagIDs(otherTags),
+        Tag.existingTagIDs(otherTags),
         Either.fromPredicate(
           existingTagIDs => tag.connections.every(id => existingTagIDs[id]),
           Error.fromL(
             `Tag does not validate because at least one connection does not resolve...`
           )
         ),
-        Either.map(() => existingTagNamesMap(otherTags)),
+        Either.map(() => Tag.existingTagNamesMap(otherTags)),
         Either.chain(
           Either.fromPredicate(
             existingTagNames =>
-              getAllNamesInTagLowerCase(tag).every(
+              Tag.getAllNamesInTagLowerCase(tag).every(
                 name => !existingTagNames[name.toLowerCase()]
               ),
             Error.fromL(
@@ -122,7 +111,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         ),
         Either.map(() =>
           makeArchive({
-            entries: rawArchive.entries,
+            narratives: rawArchive.narratives,
             tags: rawArchive.tags
               .filter(tag => tag.id !== id)
               .map(tag => ({
@@ -158,9 +147,45 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
     getRawTagByName: name =>
       pipe(
         rawArchive.tags.find(tag =>
-          getAllNamesInTagLowerCase(tag).includes(name.toLowerCase())
+          Tag.getAllNamesInTagLowerCase(tag).includes(name.toLowerCase())
         ),
         Option.fromNullable
-      )
+      ),
+    writeNewNarrative: ({ tagsFilter, timeSelection, description }) => {
+      const matchingTags = Tag.getMatchingTags(
+        tagsFilter,
+        description,
+        rawArchive.tags
+      );
+
+      // just iterate through the entire thing....
+
+      const time = timeSelection
+        ? Time.fromSelection(timeSelection)
+        : Time.ongoingInterval();
+
+      const interval = Time.toStoppedInterval(time);
+
+      // Protect against mass data-deletion
+      if (Time.duration(interval).asHours() > 3) {
+        return Either.left(
+          Error.from("You cannot select more than three hours")
+        );
+      }
+
+      const newEntry: RawNarrative = {
+        id: ID.makeUnique(),
+        description,
+        start: time.start.valueOf(),
+        tags: matchingTags.map(tag => tag.id)
+      };
+
+      return Either.right(
+        makeArchive({
+          narratives: Narrative.addNarrative(newEntry, rawArchive.narratives),
+          tags: rawArchive.tags
+        })
+      );
+    }
   };
 };

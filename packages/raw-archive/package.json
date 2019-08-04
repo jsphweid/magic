@@ -2,9 +2,13 @@
   "main": "dist/index.js",
   "devDependencies": {
     "@grapheng/prelude": "^6.0.0",
+    "@types/lodash": "^4.14.136",
+    "@types/moment-timezone": "^0.5.12",
     "@types/uuid": "^3.4.5"
   },
   "dependencies": {
+    "lodash": "^4.17.15",
+    "moment-timezone": "^0.5.26",
     "uuid": "^3.3.2"
   }
 }

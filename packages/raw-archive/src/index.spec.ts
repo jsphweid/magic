@@ -2,7 +2,7 @@ import { Either, Option, pipe } from "@grapheng/prelude";
 
 import { makeArchive } from ".";
 
-const emptyArchive = { tags: [], entries: [] };
+const emptyArchive = { tags: [], narratives: [] };
 
 // TODO: discuss casing and overall functional programming convention with conner
 export const checkIdIsValid = (id: any): void => {
