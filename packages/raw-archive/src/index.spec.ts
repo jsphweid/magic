@@ -68,7 +68,9 @@ describe("main", () => {
               start: oneHundredTenMinutesAgo.valueOf()
             })
           );
-          expect(archive.raw.narratives[1].tags.length).toEqual(1);
+          expect(archive.raw.narratives[1].tags).toEqual([
+            archive.raw.tags[1].id
+          ]);
           expect(archive.raw.tags[0]).toEqual(
             expect.objectContaining({
               aliases: ["kittens"],
@@ -82,7 +84,9 @@ describe("main", () => {
               name: "cathy"
             })
           );
-          expect(archive.raw.tags[1].connections.length).toEqual(1);
+          expect(archive.raw.tags[1].connections).toEqual([
+            archive.raw.tags[0].id
+          ]);
         })
       );
     });
