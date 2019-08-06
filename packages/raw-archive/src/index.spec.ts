@@ -1,4 +1,5 @@
-import { Either, Option, pipe } from "@grapheng/prelude";
+import { Either, Error, Option, pipe } from "@grapheng/prelude";
+import Moment from "moment-timezone";
 
 import { makeArchive } from ".";
 
@@ -14,6 +15,76 @@ describe("main", () => {
   describe("raw", () => {
     test("that raw archive is returned", () => {
       expect(makeArchive(emptyArchive).raw).toEqual(emptyArchive);
+    });
+  });
+
+  describe("test everything", () => {
+    test("that give a bunch of actions, the correct archive comes out the other side", () => {
+      const oneHundredTwentyMinutesAgo = Moment().subtract(120, "minutes");
+      const oneHundredTenMinutesAgo = Moment().subtract(110, "minutes");
+      pipe(
+        makeArchive(emptyArchive).writeNewTag({
+          name: "cats",
+          aliases: ["kittens"]
+        }),
+        Either.chain(archive =>
+          archive.writeNewTag({
+            name: "cathy",
+            connections: pipe(
+              archive.getRawTagByName("cats"),
+              Option.map(tag => [tag.id] as any),
+              Option.getOrElse(() => [])
+            )
+          })
+        ),
+        Either.chain(archive =>
+          archive.writeNewNarrative({
+            description: "walking",
+            timeSelection: {
+              start: oneHundredTwentyMinutesAgo
+            }
+          })
+        ),
+        Either.chain(archive =>
+          archive.writeNewNarrative({
+            description: "walking with cathy",
+            timeSelection: {
+              start: oneHundredTenMinutesAgo
+            }
+          })
+        ),
+        Either.fold(Error.throw_, archive => {
+          expect(archive.raw.narratives[0]).toEqual(
+            expect.objectContaining({
+              description: "walking",
+              start: oneHundredTwentyMinutesAgo.valueOf(),
+              stop: oneHundredTenMinutesAgo.valueOf(),
+              tags: []
+            })
+          );
+          expect(archive.raw.narratives[1]).toEqual(
+            expect.objectContaining({
+              description: "walking with cathy",
+              start: oneHundredTenMinutesAgo.valueOf()
+            })
+          );
+          expect(archive.raw.narratives[1].tags.length).toEqual(1);
+          expect(archive.raw.tags[0]).toEqual(
+            expect.objectContaining({
+              aliases: ["kittens"],
+              connections: [],
+              name: "cats"
+            })
+          );
+          expect(archive.raw.tags[1]).toEqual(
+            expect.objectContaining({
+              aliases: [],
+              name: "cathy"
+            })
+          );
+          expect(archive.raw.tags[1].connections.length).toEqual(1);
+        })
+      );
     });
   });
 

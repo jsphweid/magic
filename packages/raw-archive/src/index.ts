@@ -23,7 +23,7 @@ export interface Archive {
 export interface NarrativeInput {
   description: string;
   timeSelection?: Time.Selection;
-  tagsFilter: Tag.DeepPartial<Tag.Filter>;
+  tagsFilter?: Tag.DeepPartial<Tag.Filter>;
 }
 
 export interface RawTag {
@@ -153,7 +153,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
       ),
     writeNewNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
-        tagsFilter,
+        tagsFilter || {},
         description,
         rawArchive.tags
       );
