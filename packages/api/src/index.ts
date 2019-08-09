@@ -5,7 +5,6 @@ import express from "express";
 import BasicAuth from "express-basic-auth";
 import * as GraphQLTools from "graphql-tools";
 
-import "./Config";
 import * as Message from "./Message";
 import * as Schema from "./Schema";
 

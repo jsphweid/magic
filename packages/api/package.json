@@ -6,7 +6,7 @@
   },
   "scripts": {
     "backup": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Backup.ts",
-    "generate:types": "TS_NODE_TRANSPILE_ONLY=true gql-gen"
+    "generate:code": "TS_NODE_TRANSPILE_ONLY=true gql-gen"
   },
   "dependencies": {
     "apollo-server": "^2.6.9",
@@ -17,9 +17,6 @@
     "dataloader": "^1.4.0",
     "express": "^4.16.3",
     "express-basic-auth": "^1.1.5",
-    "firebase": "^5.5.9",
-    "firebase-admin": "^6.2.0",
-    "firebase-functions": "^2.1.0",
     "fp-ts": "^1.8.0",
     "graphql": "^0.13.2",
     "graphql-tag": "^2.9.2",
@@ -31,10 +28,11 @@
     "word-wrap": "^1.2.3"
   },
   "devDependencies": {
-    "@graphql-codegen/add": "^1.4.0",
-    "@graphql-codegen/cli": "^1.4.0",
-    "@graphql-codegen/typescript": "^1.4.0",
-    "@graphql-codegen/typescript-resolvers": "^1.4.0",
+    "@grapheng/prelude": "^10.0.0",
+    "@graphql-codegen/add": "^1.5.0",
+    "@graphql-codegen/cli": "^1.5.0",
+    "@graphql-codegen/typescript": "^1.5.0",
+    "@graphql-codegen/typescript-resolvers": "^1.5.0",
     "@types/graphql": "^14.2.2",
     "@types/lodash": "^4.14.116",
     "@types/moment-timezone": "^0.5.8",

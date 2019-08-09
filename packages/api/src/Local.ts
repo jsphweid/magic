@@ -1,7 +1,7 @@
 import * as FS from "fs";
 import * as Path from "path";
 
-import { RawArchive } from "./Schema/Context/Archive";
+import * as Archive from "../../raw-archive/src";
 
 // import { BACKUP_DIR } from './Backup'
 // import { RawArchive } from "./Schema/Context/Archive";
@@ -22,7 +22,7 @@ const backupArchiveDir = Path.resolve(
   Path.join(__dirname, "..", "data/backup")
 );
 
-export const getMostRecentArchive = (): Promise<RawArchive> => {
+export const getMostRecentArchive = (): Promise<Archive.RawArchive> => {
   const mostRecentFile = FS.readdirSync(backupArchiveDir, "utf8")
     .filter(name => name.includes("archive"))
     .reduce((previous, current) =>
@@ -41,7 +41,7 @@ export const getMostRecentArchive = (): Promise<RawArchive> => {
   );
 };
 
-export const saveNewArchive = (archive: RawArchive): Promise<void> =>
+export const saveNewArchive = (archive: Archive.RawArchive): Promise<void> =>
   Promise.resolve(
     FS.writeFileSync(
       backupArchiveDir + `archive_${new Date().toISOString()}`,

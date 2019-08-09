@@ -1,10 +1,9 @@
-import { default as Axios } from "axios";
-
-import * as Result from "../Result";
+import { Either, Error } from "@grapheng/prelude";
+import Axios from "axios";
 
 export const workspace = async <Data>(
   resource: string
-): Promise<Result.Result<Data>> =>
+): Promise<Either.ErrorOr<Data>> =>
   execute<Data>({
     method: "GET",
     resource: `/workspaces/${process.env.TOGGL_WORKSPACE_ID}${resource}`
@@ -15,7 +14,7 @@ export const execute = async <Data>(config: {
   resource: string;
   params?: { [name: string]: string };
   data?: any;
-}): Promise<Result.Result<Data>> => {
+}): Promise<Either.ErrorOr<Data>> => {
   try {
     const { data } = await Axios.request<Data>({
       url: config.resource.includes(".com")
@@ -33,10 +32,10 @@ export const execute = async <Data>(config: {
       data: config.data
     });
 
-    return Result.success(data) as any;
+    return Either.right(data);
   } catch (error) {
     // tslint:disable-next-line:no-console
     console.log(error);
-    return Result.error(`${error.message} ${error.response.data}`) as any;
+    return Either.left(Error.from(`${error.message} ${error.response.data}`));
   }
 };

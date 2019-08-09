@@ -1,7 +1,8 @@
 import Moment from "moment";
 
-import * as Local from "../../Local";
-import * as Archive from "./Archive";
+import * as Archive from "../../../raw-archive/src";
+
+import * as Local from "../Local";
 
 export interface Context {
   now: Moment.Moment;

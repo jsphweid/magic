@@ -1,7 +1,6 @@
 import { apply as Apply, either as Either } from "fp-ts";
 import Moment from "moment";
 
-import * as Result from "../../Result";
 import * as Time from "./index";
 
 /*

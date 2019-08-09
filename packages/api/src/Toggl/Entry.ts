@@ -1,8 +1,8 @@
+import { Either, pipe } from "@grapheng/prelude";
 import { option as Option } from "fp-ts";
 import _ from "lodash";
 import Moment from "moment";
 
-import * as Result from "../Result";
 import * as Time from "../Schema/Time";
 import * as Request from "./Request";
 
@@ -53,10 +53,15 @@ interface DataInField<Data> {
 }
 
 const extractData = async <Data>(
-  response: Promise<Result.Result<DataInField<Data>>>
-): Promise<Result.Result<Data>> => (await response).map(({ data }) => data);
+  response: Promise<Either.ErrorOr<DataInField<Data>>>
+): Promise<Either.ErrorOr<Data>> =>
+  pipe(
+    await response,
+    Either.map(({ data }) => data)
+  );
+// (await response).map(({ data }) => data);
 
-export const get = async (ID: number): Promise<Result.Result<Entry>> =>
+export const get = async (ID: number): Promise<Either.ErrorOr<Entry>> =>
   Request.execute<Entry>({
     method: "GET",
     resource: `/time_entries/${ID}`
@@ -66,7 +71,7 @@ export const post = async (
   start: Time.Date,
   stop: Time.Date,
   entry: New
-): Promise<Result.Result<Entry>> =>
+): Promise<Either.ErrorOr<Entry>> =>
   extractData(
     Request.execute<DataInField<Entry>>({
       method: "POST",
@@ -83,7 +88,7 @@ export const post = async (
     })
   );
 
-export const put = async (entry: Entry): Promise<Result.Result<Entry>> =>
+export const put = async (entry: Entry): Promise<Either.ErrorOr<Entry>> =>
   extractData(
     Request.execute<DataInField<Entry>>({
       method: "PUT",
@@ -103,7 +108,7 @@ export const put = async (entry: Entry): Promise<Result.Result<Entry>> =>
     })
   );
 
-export const delete_ = async (entry: Entry): Promise<Result.Result<void>> =>
+export const delete_ = async (entry: Entry): Promise<Either.ErrorOr<void>> =>
   Request.execute<void>({
     method: "DELETE",
     resource: `/time_entries/${entry.id}`
@@ -111,43 +116,57 @@ export const delete_ = async (entry: Entry): Promise<Result.Result<void>> =>
 
 export const getFromTime = async (
   time: Time.Time
-): Promise<Result.Result<Entry[]>> => {
+): Promise<Either.ErrorOr<Entry[]>> => {
   // We're limited to 1000 time entries per request
   let entries: Entry[] = [];
   for (const batch of Time.batchesFromInterval(
     Moment.duration(7, "days"),
     Time.toStoppedInterval(time)
   )) {
-    const result = (await Request.execute<Entry[]>({
-      method: "GET",
-      resource: "/time_entries",
-      params: {
-        start_date: batch.start.toISOString(),
-        end_date: batch.stop.toISOString()
-      }
-    })).map(entriesBatch => (entries = entries.concat(entriesBatch)));
-    if (result.isLeft()) return result;
+    const result = pipe(
+      await Request.execute<Entry[]>({
+        method: "GET",
+        resource: "/time_entries",
+        params: {
+          start_date: batch.start.toISOString(),
+          end_date: batch.stop.toISOString()
+        }
+      }),
+      Either.map(entriesBatch => (entries = entries.concat(entriesBatch)))
+    );
+
+    if (
+      pipe(
+        result,
+        Either.isLeft
+      )
+    ) {
+      return result;
+    }
   }
 
   // Make sure time entries are returned in the order they were started in
-  return Result.success(
+  return Either.right(
     entries.sort((a, b) =>
       Moment(a.start).valueOf() <= Moment(b.start).valueOf() ? 1 : -1
     )
-  ) as any;
+  );
 };
 
 export const getOngoing = async (): Promise<
-  Result.Result<Option.Option<Entry>>
+  Either.ErrorOr<Option.Option<Entry>>
 > =>
-  (await extractData(
-    Request.execute<DataInField<Entry>>({
-      method: "GET",
-      resource: "/time_entries/current"
-    })
-  )).map(entry => Option.fromNullable(entry));
+  pipe(
+    await extractData(
+      Request.execute<DataInField<Entry>>({
+        method: "GET",
+        resource: "/time_entries/current"
+      })
+    ),
+    Either.map(entry => Option.fromNullable(entry))
+  );
 
-export const start = async (entry: New): Promise<Result.Result<Entry>> =>
+export const start = async (entry: New): Promise<Either.ErrorOr<Entry>> =>
   extractData(
     Request.execute<DataInField<Entry>>({
       method: "POST",
@@ -156,7 +175,7 @@ export const start = async (entry: New): Promise<Result.Result<Entry>> =>
     })
   );
 
-export const stop = async (entry: Entry): Promise<Result.Result<Entry>> =>
+export const stop = async (entry: Entry): Promise<Either.ErrorOr<Entry>> =>
   extractData(
     Request.execute<DataInField<Entry>>({
       method: "PUT",
