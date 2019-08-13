@@ -7,17 +7,21 @@ import * as Time from "./time";
 
 export interface Archive {
   raw: RawArchive;
-  writeNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<Archive>;
 
-  mutateTag: (id: string, updates: Partial<RawTag>) => Either.ErrorOr<Archive>;
-  deleteTag: (id: string) => Either.ErrorOr<Archive>;
-
+  writeNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<TagMutateResult>;
+  updateTag: (
+    id: string,
+    updates: Partial<RawTag>
+  ) => Either.ErrorOr<TagMutateResult>;
+  deleteTag: (id: string) => Either.ErrorOr<DeleteResult>;
   getRawTagByID: (id: string) => Option.Option<RawTag>;
   getRawTagsByIDs: (ids: string[]) => Array<Option.Option<RawTag>>;
   getAllTags: () => RawTag[];
   getRawTagByName: (name: string) => Option.Option<RawTag>;
 
-  writeNewNarrative: (narrative: NarrativeInput) => Either.ErrorOr<Archive>;
+  writeNewNarrative: (
+    narrative: NarrativeInput
+  ) => Either.ErrorOr<NarrativeMutateResult>;
 }
 
 export interface NarrativeInput {
@@ -84,6 +88,21 @@ const validateTag = (
       )
   );
 
+interface DeleteResult {
+  result: boolean;
+  rawArchive: RawArchive;
+}
+
+interface TagMutateResult {
+  tag: RawTag;
+  rawArchive: RawArchive;
+}
+
+interface NarrativeMutateResult {
+  narrative: RawNarrative;
+  rawArchive: RawArchive;
+}
+
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
   const getTag = (id: string): Option.Option<RawTag> =>
@@ -91,7 +110,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
 
   return {
     raw: rawArchive,
-    mutateTag: (id, updates) =>
+    updateTag: (id, updates) =>
       pipe(
         getTag(id),
         Either.fromOption(
@@ -103,7 +122,10 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           pipe(
             rawArchive.tags.findIndex(tag => tag.id === id),
             index => (rawArchive.tags[index] = validatedTag),
-            () => makeArchive(rawArchive)
+            () => ({
+              rawArchive: makeArchive(rawArchive).raw,
+              tag: validatedTag
+            })
           )
         )
       ),
@@ -113,8 +135,8 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         Either.fromOption(
           Error.fromL("The tag you're trying to delete does not exist")
         ),
-        Either.map(() =>
-          makeArchive({
+        Either.map(() => ({
+          rawArchive: makeArchive({
             narratives: rawArchive.narratives,
             tags: rawArchive.tags
               .filter(tag => tag.id !== id)
@@ -124,8 +146,9 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
                   connection => connection !== id
                 )
               }))
-          })
-        )
+          }).raw,
+          result: true
+        }))
       ),
     writeNewTag: tag =>
       pipe(
@@ -137,12 +160,13 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           connections: tag.connections || []
         },
         proposedTag => validateTag(proposedTag, rawArchive),
-        Either.map(newTag =>
-          makeArchive({
+        Either.map(newTag => ({
+          rawArchive: makeArchive({
             ...rawArchive,
             tags: [...rawArchive.tags, newTag]
-          })
-        )
+          }).raw,
+          tag: newTag
+        }))
       ),
 
     getRawTagByID: getTag,
@@ -190,12 +214,13 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         }
       };
 
-      return Either.right(
-        makeArchive({
+      return Either.right({
+        rawArchive: makeArchive({
           narratives: Narrative.addNarrative(newEntry, rawArchive.narratives),
           tags: rawArchive.tags
-        })
-      );
+        }).raw,
+        narrative: newEntry
+      });
     }
   };
 };

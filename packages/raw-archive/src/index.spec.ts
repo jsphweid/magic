@@ -27,33 +27,34 @@ describe("main", () => {
           name: "cats",
           aliases: ["kittens"]
         }),
-        Either.chain(archive =>
-          archive.writeNewTag({
+        Either.chain(result =>
+          makeArchive(result.rawArchive).writeNewTag({
             name: "cathy",
             connections: pipe(
-              archive.getRawTagByName("cats"),
+              makeArchive(result.rawArchive).getRawTagByName("cats"),
               Option.map(tag => [tag.id] as any),
               Option.getOrElse(() => [])
             )
           })
         ),
-        Either.chain(archive =>
-          archive.writeNewNarrative({
+        Either.chain(result =>
+          makeArchive(result.rawArchive).writeNewNarrative({
             description: "walking",
             timeSelection: {
               start: oneHundredTwentyMinutesAgo
             }
           })
         ),
-        Either.chain(archive =>
-          archive.writeNewNarrative({
+        Either.chain(result =>
+          makeArchive(result.rawArchive).writeNewNarrative({
             description: "walking with cathy",
             timeSelection: {
               start: oneHundredTenMinutesAgo
             }
           })
         ),
-        Either.fold(Error.throw_, archive => {
+        Either.fold(Error.throw_, result => {
+          const archive = makeArchive(result.rawArchive);
           expect(archive.raw.narratives[0]).toEqual(
             expect.objectContaining({
               description: "walking",
@@ -62,6 +63,7 @@ describe("main", () => {
               tags: []
             })
           );
+
           expect(archive.raw.narratives[1]).toEqual(
             expect.objectContaining({
               description: "walking with cathy",
@@ -96,7 +98,8 @@ describe("main", () => {
     test("that writeNewTag works for an empty tag", () => {
       pipe(
         makeArchive(emptyArchive).writeNewTag({}),
-        Either.fold(fail, archive => {
+        Either.fold(fail, result => {
+          const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags.length).toBe(1);
           expect(archive.raw.tags[0]).toEqual(
             expect.objectContaining({
@@ -179,7 +182,8 @@ describe("main", () => {
           ...emptyArchive,
           tags: [{ id: "123", aliases: [], connections: [], name: "something" }]
         }).deleteTag("123"),
-        Either.fold(fail, archive => {
+        Either.fold(fail, result => {
+          const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags.filter(t => t.id === "123")).toEqual([]);
         })
       );
@@ -205,7 +209,8 @@ describe("main", () => {
             { id: "456", aliases: [], connections: ["234"], name: "something" }
           ]
         }).deleteTag("123"),
-        Either.fold(fail, archive => {
+        Either.fold(fail, result => {
+          const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags).toEqual([
             { id: "234", aliases: [], connections: [], name: "something" },
             { id: "345", aliases: [], connections: [], name: "something" },
@@ -347,11 +352,12 @@ describe("main", () => {
         makeArchive({
           ...emptyArchive,
           tags: [rawTag]
-        }).mutateTag("123", {
+        }).updateTag("123", {
           aliases: ["two"],
           name: "other"
         }),
-        Either.fold(fail, archive => {
+        Either.fold(fail, result => {
+          const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags[0]).toEqual({
             id: "123",
             aliases: ["two"],
@@ -364,7 +370,7 @@ describe("main", () => {
 
     test("should fail if tag does not exist", () => {
       pipe(
-        makeArchive(emptyArchive).mutateTag("123", {
+        makeArchive(emptyArchive).updateTag("123", {
           aliases: ["two"],
           name: "other"
         }),
@@ -387,10 +393,11 @@ describe("main", () => {
               name: "two name"
             }
           ]
-        }).mutateTag("234", {
+        }).updateTag("234", {
           connections: ["123"]
         }),
-        Either.fold(fail, archive => {
+        Either.fold(fail, result => {
+          const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags[1]).toEqual({
             id: "234",
             aliases: ["two"],
@@ -414,7 +421,7 @@ describe("main", () => {
               name: "other name"
             }
           ]
-        }).mutateTag("234", {
+        }).updateTag("234", {
           connections: ["nop"]
         }),
         result => {
