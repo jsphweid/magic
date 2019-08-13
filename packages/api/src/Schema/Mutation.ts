@@ -1,4 +1,6 @@
 import gql from "graphql-tag";
+import { Resolvers } from "../../GeneratedTypes";
+import { passThroughResolver } from "../Utility";
 
 export const typeDefs = gql`
   type Mutation {
@@ -7,3 +9,9 @@ export const typeDefs = gql`
 `;
 
 // Narrative: Narrative__Mutation!
+
+export const resolvers: Resolvers = {
+  Mutation: {
+    Tag: passThroughResolver
+  }
+};

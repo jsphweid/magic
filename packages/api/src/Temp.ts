@@ -1,6 +1,7 @@
 import * as FS from "fs";
 import * as Path from "path";
 
+import { RawNarrative } from "~/raw-archive";
 import * as Local from "./Local";
 import { makeRandomUniqueID } from "./Utility";
 
@@ -12,15 +13,17 @@ const getJSON = (backupPath: string) =>
     )
   );
 
-const originalTagsJSON = getJSON("/magic/tags.json");
+// const originalTagsJSON = getJSON("/magic/tags.json");
 
-const _tags = Object.entries(originalTagsJSON).map(([legacyID, item]: any) => ({
-  name: item.name,
-  id: makeRandomUniqueID(),
-  legacyConnections: item.connections,
-  legacyID,
-  aliases: item.aliases
-}));
+const _tags: any[] = []; // originalTagsJSON
+// ? Object.entries(originalTagsJSON).map(([legacyID, item]: any) => ({
+//     name: item.name,
+//     id: makeRandomUniqueID(),
+//     legacyConnections: item.connections,
+//     legacyID,
+//     aliases: item.aliases
+//   }))
+// : [];
 
 const mapping = _tags.reduce(
   (previous: any, current: any) => ({
@@ -37,11 +40,32 @@ const tags = _tags.map(tag => ({
   connections: tag.legacyConnections.map((c: any) => mapping[c])
 }));
 
-const entries: any = getJSON("/toggl/entries.json").map((entry: any) => ({
-  start: new Date(entry.start).getTime(),
-  end: entry.stop ? new Date(entry.stop).getTime() : undefined,
-  tags: [],
-  description: entry.description
-}));
+interface RawTogglEntry {
+  id: number;
+  guid: string;
+  wid: number;
+  billable: boolean;
+  start: string;
+  stop?: string;
+  duration: number;
+  description: string;
+  duronly: boolean;
+  at: string;
+  uid: number;
+}
 
-Local.saveNewArchive({ tags, entries });
+const narratives: RawNarrative[] = getJSON("/toggl/entries.json").map(
+  (entry: RawTogglEntry) => ({
+    id: makeRandomUniqueID(),
+    start: new Date(entry.start).getTime(),
+    stop: entry.stop ? new Date(entry.stop).getTime() : undefined,
+    tags: [],
+    meta: {
+      created: new Date(entry.start).getTime(),
+      updated: new Date(entry.at).getTime()
+    },
+    description: entry.description
+  })
+);
+
+Local.saveNewArchive({ tags, narratives });

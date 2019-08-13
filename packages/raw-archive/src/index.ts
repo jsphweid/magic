@@ -39,6 +39,10 @@ export interface RawNarrative {
   stop?: number;
   tags: string[];
   description: string;
+  meta: {
+    created: number;
+    updated: number;
+  };
 }
 
 export interface RawArchive {
@@ -173,11 +177,17 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         );
       }
 
+      const now = new Date().getTime();
+
       const newEntry: RawNarrative = {
         id: ID.makeUnique(),
         description,
         start: time.start.valueOf(),
-        tags: matchingTags.map(tag => tag.id)
+        tags: matchingTags.map(tag => tag.id),
+        meta: {
+          created: now,
+          updated: now
+        }
       };
 
       return Either.right(

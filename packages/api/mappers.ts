@@ -1,6 +1,7 @@
-import { RawTag } from "./src/Schema/Context/Archive";
-import { PersistenceMetadata } from "./src/Schema/Node";
+import { RawTag } from "~/raw-archive";
+
+import { PersistenceMeta } from "./src/Schema/Node";
 
 export type TagTag = RawTag;
 
-export type NodeMetadata = PersistenceMetadata;
+export type NodeMeta = PersistenceMeta;

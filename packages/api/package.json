@@ -6,15 +6,18 @@
   },
   "scripts": {
     "backup": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Backup.ts",
-    "generate:code": "TS_NODE_TRANSPILE_ONLY=true gql-gen"
+    "generate:code": "DEBUG=1 VERBOSE=1 TS_NODE_TRANSPILE_ONLY=true gql-gen",
+    "temp": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Temp.ts"
   },
   "dependencies": {
+    "@grapheng/time": "^2.0.1",
     "apollo-server": "^2.6.9",
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "cross-fetch": "^2.2.2",
     "dataloader": "^1.4.0",
+    "dotenv": "^8.0.0",
     "express": "^4.16.3",
     "express-basic-auth": "^1.1.5",
     "fp-ts": "^1.8.0",
@@ -29,10 +32,11 @@
   },
   "devDependencies": {
     "@grapheng/prelude": "^10.0.0",
-    "@graphql-codegen/add": "^1.5.0",
-    "@graphql-codegen/cli": "^1.5.0",
-    "@graphql-codegen/typescript": "^1.5.0",
-    "@graphql-codegen/typescript-resolvers": "^1.5.0",
+    "@graphql-codegen/add": "^1.4.0",
+    "@graphql-codegen/cli": "^1.4.0",
+    "@graphql-codegen/typescript": "^1.4.0",
+    "@graphql-codegen/typescript-resolvers": "^1.4.0",
+    "@types/dotenv": "^6.1.1",
     "@types/graphql": "^14.2.2",
     "@types/lodash": "^4.14.116",
     "@types/moment-timezone": "^0.5.8",

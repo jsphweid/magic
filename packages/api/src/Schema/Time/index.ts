@@ -1,8 +1,8 @@
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import * as Date from "./Date";
-import * as Duration from "./Duration";
+// import * as Date from "./Date";
+// import * as Duration from "./Duration";
 
 export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 
@@ -151,35 +151,31 @@ export const duration = (time: Time): Duration =>
   ).abs();
 
 export const resolvers = {
-  ...Date.resolvers,
-  ...Duration.resolvers,
-
-  Time__Timed: { __resolveType: () => "Time__Timed" },
-  Time__Occurrence: {
-    __resolveType: (time: Time): string => `Time__${time.kind}`
-  },
-
-  Time__Interval: { __resolveType: () => "Time__Interval" },
-  Time__OngoingInterval: { duration },
-  Time__StoppedInterval: { duration },
-
-  Time__FormattedDate: {
-    unix: (date: Date): Duration => Moment.duration(date.valueOf(), "ms"),
-    iso: (date: Date): string => date.toISOString(),
-    humanized: (date: Date): string => duration(instant(date)).humanize(true),
-    formatted: (date: Date, args: { template: string }): string =>
-      date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
-  },
-
-  Time__FormattedDuration: {
-    humanized: (duration: Duration): string => duration.humanize(),
-    milliseconds: (duration: Duration): number => duration.asMilliseconds(),
-    seconds: (duration: Duration): number => duration.asSeconds(),
-    minutes: (duration: Duration): number => duration.asMinutes(),
-    hours: (duration: Duration): number => duration.asHours(),
-    days: (duration: Duration): number => duration.asDays(),
-    weeks: (duration: Duration): number => duration.asWeeks(),
-    months: (duration: Duration): number => duration.asMonths(),
-    years: (duration: Duration): number => duration.asYears()
-  }
+  // ...Date.resolvers,
+  // ...Duration.resolvers,
+  // Time__Timed: { __resolveType: () => "Time__Timed" },
+  // Time__Occurrence: {
+  //   __resolveType: (time: Time): string => `Time__${time.kind}`
+  // },
+  // Time__Interval: { __resolveType: () => "Time__Interval" },
+  // Time__OngoingInterval: { duration },
+  // Time__StoppedInterval: { duration },
+  // Time__FormattedDate: {
+  //   unix: (date: Date): Duration => Moment.duration(date.valueOf(), "ms"),
+  //   iso: (date: Date): string => date.toISOString(),
+  //   humanized: (date: Date): string => duration(instant(date)).humanize(true),
+  //   formatted: (date: Date, args: { template: string }): string =>
+  //     date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
+  // },
+  // Time__FormattedDuration: {
+  //   humanized: (duration: Duration): string => duration.humanize(),
+  //   milliseconds: (duration: Duration): number => duration.asMilliseconds(),
+  //   seconds: (duration: Duration): number => duration.asSeconds(),
+  //   minutes: (duration: Duration): number => duration.asMinutes(),
+  //   hours: (duration: Duration): number => duration.asHours(),
+  //   days: (duration: Duration): number => duration.asDays(),
+  //   weeks: (duration: Duration): number => duration.asWeeks(),
+  //   months: (duration: Duration): number => duration.asMonths(),
+  //   years: (duration: Duration): number => duration.asYears()
+  // }
 };

@@ -1,4 +1,5 @@
-import * as Result from "../Result";
+import { Either } from "@grapheng/prelude";
+
 import * as Request from "./Request";
 
 export {
@@ -36,10 +37,12 @@ export interface Project {
   at?: string;
 }
 
-export const getProject = async (ID: string): Promise<Result.Result<Project>> =>
+export const getProject = async (
+  ID: string
+): Promise<Either.ErrorOr<Project>> =>
   Request.workspace<Project>(`/projects/${ID}`);
 
-export const getProjects = async (): Promise<Result.Result<Project[]>> =>
+export const getProjects = async (): Promise<Either.ErrorOr<Project[]>> =>
   Request.workspace<Project[]>("/projects");
 
 // https://github.com/toggl/toggl_api_docs/blob/master/chapters/tags.md
@@ -49,5 +52,5 @@ export interface Tag {
   name: string;
 }
 
-export const getTags = async (): Promise<Result.Result<Tag[]>> =>
+export const getTags = async (): Promise<Either.ErrorOr<Tag[]>> =>
   Request.workspace<Tag[]>("/tags");

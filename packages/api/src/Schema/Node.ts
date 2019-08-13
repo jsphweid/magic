@@ -8,10 +8,10 @@ export const typeDefs = gql`
   }
 
   interface Node__Persisted {
-    metadata: Node__Metadata!
+    meta: Node__Meta!
   }
 
-  type Node__Metadata {
+  type Node__Meta {
     created: Time__FormattedDate!
     updated: Time__FormattedDate!
   }
@@ -22,10 +22,10 @@ export interface Identifiable {
 }
 
 export interface Persisted {
-  metadata: PersistenceMetadata;
+  meta: PersistenceMeta;
 }
 
-export interface PersistenceMetadata {
+export interface PersistenceMeta {
   created: Time.Date;
   updated: Time.Date;
 }

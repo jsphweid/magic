@@ -1,13 +1,15 @@
+import { Array, Fn, pipe } from "@grapheng/prelude";
 import gql from "graphql-tag";
-import Moment from "moment";
+
+// import { RawTag } from "~/raw-archive";
 
 import { Resolvers } from "../../GeneratedTypes";
-import * as Utility from "../Utility";
+// import * as Utility from "../Utility";
 
 export const typeDefs = gql`
   type Tag__Tag implements Node__Identifiable & Node__Persisted {
     ID: ID!
-    metadata: Node__Metadata!
+    meta: Node__Meta!
     name: String!
     aliases: [String!]!
     connections: [Tag__Tag!]!
@@ -49,28 +51,30 @@ export const typeDefs = gql`
   }
 `;
 
+// const getOrElseBlowUp = <T>(op: Option.Option<T>): T =>
+
+// pipe(
+//   context.archive.getRawTagsByIDs(source.connections),
+//   possibleTags => possibleTags.map(Option.(() => null))
+// )
+
 export const resolvers: Resolvers = {
   Tag__Tag: {
-    metadata: () => ({
-      created: Moment(),
-      updated: Moment()
-    }),
+    ID: source => source.id,
 
-    connections: async (tag, _args, context) =>
-      context.archive
-        .getRawTagsByIDs(tag.connections)
-        .map(tag => tag.getOrElseL(Utility.throwError))
+    connections: (source, _args, context) =>
+      pipe(
+        context.archive.getRawTagsByIDs(source.connections),
+        Array.filterMap(Fn.identity)
+      )
   },
 
   Tag__Query: {
-    tags: async (_, _args, context) =>
-      void console.log("-------", context.archive.getAllTags()) ||
-      context.archive.getAllTags()
+    tags: async (_, __, context) => context.archive.getAllTags()
   },
 
   Tag__Mutation: {
-    create: async (_, _args, context) => {
-      return context.archive.writeNewTag(_args);
-    }
+    create: async (_, _args, context) =>
+      pipe(context.archive.writeNewTag(_args))
   }
 };

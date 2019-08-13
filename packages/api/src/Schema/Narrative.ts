@@ -14,7 +14,7 @@ import * as Time from "./Time";
 export const typeDefs = gql`
   type Narrative__Narrative implements Node__Identifiable & Node__Persisted & Time__Timed & Tag__Tagged {
     ID: ID!
-    metadata: Node__Metadata!
+    meta: Node__Meta!
     time: Time__Occurrence!
     tags: [Tag__Tag!]!
     description: String!
@@ -57,12 +57,12 @@ export const fromTogglEntry = async (
       : Time.ongoingInterval(start);
 
     const ID = `${entry.id}`;
-    const metadata = {
+    const meta = {
       created: start,
       updated: Moment(entry.at)
     };
 
-    return { ID, metadata, time, description, tags };
+    return { ID, meta, time, description, tags };
   });
 
 export const descriptionFromTags = (tags: Tag.Tag[]): string =>
@@ -234,10 +234,10 @@ export const resolvers = {
         }
       }
 
-      const metadata = { created: context.now, updated: context.now };
+      const meta = { created: context.now, updated: context.now };
       return {
         ID: `${id}`,
-        metadata,
+        meta,
         time,
         description: args.description || "TODO",
         tags

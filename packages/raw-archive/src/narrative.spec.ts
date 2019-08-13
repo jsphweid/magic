@@ -3,6 +3,13 @@ import * as Narrative from "./narrative";
 import { createHoursAgo } from "./test-helpers";
 import * as Time from "./time";
 
+// TODO: write better code here by making a default narrative and then overwriting values
+
+const meta = {
+  created: 123,
+  updated: 123
+};
+
 describe("narrative", () => {
   describe("addNarrative", () => {
     const oldOldNarrative = {
@@ -10,7 +17,8 @@ describe("narrative", () => {
       start: createHoursAgo(400).valueOf(),
       stop: createHoursAgo(300).valueOf(),
       tags: [],
-      description: ""
+      description: "",
+      meta
     };
 
     test("that adding a narrative to empty array works without hitch", () => {
@@ -25,7 +33,8 @@ describe("narrative", () => {
         start: createHoursAgo(2).valueOf(),
         stop: createHoursAgo(1).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       expect(Narrative.addNarrative(newNarrative, [oldOldNarrative])).toEqual([
         oldOldNarrative,
@@ -38,7 +47,8 @@ describe("narrative", () => {
         id: "234",
         start: createHoursAgo(2).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       expect(Narrative.addNarrative(newNarrative, [oldOldNarrative])).toEqual([
         oldOldNarrative,
@@ -52,7 +62,8 @@ describe("narrative", () => {
         start: createHoursAgo(4).valueOf(),
         stop: createHoursAgo(3).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
 
       const newNarrative = {
@@ -60,7 +71,8 @@ describe("narrative", () => {
         start: createHoursAgo(5).valueOf(),
         stop: createHoursAgo(1).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       expect(
         Narrative.addNarrative(newNarrative, [oldOldNarrative, narrative])
@@ -74,7 +86,8 @@ describe("narrative", () => {
         start: createHoursAgo(5).valueOf(),
         stop: createHoursAgo(3).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
 
       const newNarrative = {
@@ -82,7 +95,8 @@ describe("narrative", () => {
         start: newStart,
         stop: createHoursAgo(1).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       expect(
         Narrative.addNarrative(newNarrative, [oldOldNarrative, narrative])
@@ -100,7 +114,8 @@ describe("narrative", () => {
         start: createHoursAgo(5).valueOf(),
         stop: createHoursAgo(3).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
 
       const newNarrative = {
@@ -108,7 +123,8 @@ describe("narrative", () => {
         start: createHoursAgo(6).valueOf(),
         stop: fourHoursAgo,
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       expect(
         Narrative.addNarrative(newNarrative, [oldOldNarrative, narrative])
@@ -127,7 +143,8 @@ describe("narrative", () => {
         start: createHoursAgo(6).valueOf(),
         stop: createHoursAgo(2).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
 
       const newNarrative = {
@@ -135,7 +152,8 @@ describe("narrative", () => {
         start: fiveHoursAgo,
         stop: threeHoursAgo,
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       const result = Narrative.addNarrative(newNarrative, [
         oldOldNarrative,
@@ -169,7 +187,8 @@ describe("narrative", () => {
         id: "123",
         start: createHoursAgo(3).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
       expect(
         Narrative.getNarrativesFromInterval(
@@ -184,7 +203,8 @@ describe("narrative", () => {
         id: "123",
         start: createHoursAgo(8).valueOf(),
         tags: [],
-        description: ""
+        description: "",
+        meta
       };
 
       expect(
@@ -211,7 +231,8 @@ describe("narrative", () => {
             start: createHoursAgo(startHoursAgo).valueOf(),
             stop: createHoursAgo(stopHoursAgo).valueOf(),
             tags: [],
-            description: ""
+            description: "",
+            meta
           };
 
           expect(

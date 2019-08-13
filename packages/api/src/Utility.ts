@@ -25,3 +25,5 @@ export const trim = (strings: TemplateStringsArray, ...args: any[]): string => {
 };
 
 export const makeRandomUniqueID = (): string => UUID.v4();
+
+export const passThroughResolver = () => ({} as any);

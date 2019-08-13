@@ -3,6 +3,11 @@ import * as FS from "fs";
 import Moment from "moment";
 import * as Path from "path";
 
+// tslint:disable-next-line:no-var-requires
+require("dotenv").config({
+  path: Path.resolve(__dirname, "../local.env")
+});
+
 import * as Time from "./Schema/Time";
 import * as Toggl from "./Toggl";
 
@@ -28,11 +33,6 @@ const saveJson = (filePath: string, contents: object): void =>
   if (__dirname.includes("functions")) return;
 
   // Grab every entry since tracking began
-
-  // const entries = (await Toggl.getEntriesFromTime(
-  //   Time.ongoingInterval(MAGIC_START)
-  // )).getOrElseL(Utility.throwError);
-
   pipe(
     await Toggl.getEntriesFromTime(Time.ongoingInterval(MAGIC_START)),
     Either.map(entries => {

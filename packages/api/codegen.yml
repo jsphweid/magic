@@ -16,4 +16,4 @@ generates:
       skipTypename: true
       mappers:
         Tag__Tag: ./mappers#TagTag
-        Node__Metadata: ./mappers#NodeMetadata
+        Node__Meta: ./mappers#NodeMeta
