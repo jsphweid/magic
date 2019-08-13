@@ -1,4 +1,5 @@
 import { Either, Error, Option, pipe } from "@grapheng/prelude";
+import Moment from "moment-timezone";
 
 import * as ID from "./id";
 import * as Narrative from "./narrative";
@@ -35,6 +36,10 @@ export interface RawTag {
   name: string;
   aliases: string[];
   connections: string[];
+  meta: {
+    created: number;
+    updated: number;
+  };
 }
 
 export interface RawNarrative {
@@ -105,6 +110,7 @@ interface NarrativeMutateResult {
 
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
+  const now = Moment().valueOf();
   const getTag = (id: string): Option.Option<RawTag> =>
     Option.fromNullable(rawArchive.tags.find(tag => tag.id === id));
 
@@ -157,7 +163,11 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           name: "", // it will get overridden since name is ultimately required
           aliases: [],
           ...tag,
-          connections: tag.connections || []
+          connections: tag.connections || [],
+          meta: {
+            created: now,
+            updated: now
+          }
         },
         proposedTag => validateTag(proposedTag, rawArchive),
         Either.map(newTag => ({

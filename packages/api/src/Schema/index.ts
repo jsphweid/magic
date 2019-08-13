@@ -1,4 +1,3 @@
-import { FormattedDate, FormattedDuration } from "@grapheng/time";
 import gql from "graphql-tag";
 
 import { Resolvers } from "../../GeneratedTypes";
@@ -27,8 +26,6 @@ export const typeDefs = gql`
 export const schema = typeDefs;
 
 export const resolvers: Resolvers = {
-  FormattedDate: FormattedDate.resolvers,
-  FormattedDuration: FormattedDuration.resolvers,
   // Query: {
   // Tag: () => Tag.resolvers.Tag__Query
   // History: () => History.resolvers.History__Query
@@ -39,7 +36,8 @@ export const resolvers: Resolvers = {
   // ...Time.resolvers,
   ...Mutation.resolvers,
   ...Query.resolvers,
-  ...Tag.resolvers
+  ...Tag.resolvers,
+  ...External.resolvers
   // ...History.resolvers
   // ...Narrative.resolvers
 };

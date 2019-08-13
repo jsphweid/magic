@@ -12,8 +12,8 @@ export const typeDefs = gql`
   }
 
   type Node__Meta {
-    created: Time__FormattedDate!
-    updated: Time__FormattedDate!
+    created: FormattedDate!
+    updated: FormattedDate!
   }
 `;
 

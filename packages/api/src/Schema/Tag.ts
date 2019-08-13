@@ -1,4 +1,4 @@
-import { Array, Fn, pipe } from "@grapheng/prelude";
+import { Array, Either, Error, Fn, pipe } from "@grapheng/prelude";
 import gql from "graphql-tag";
 
 // import { RawTag } from "~/raw-archive";
@@ -64,17 +64,35 @@ export const resolvers: Resolvers = {
 
     connections: (source, _args, context) =>
       pipe(
-        context.archive.getRawTagsByIDs(source.connections),
+        context.archiveModel.getRawTagsByIDs(source.connections),
         Array.filterMap(Fn.identity)
       )
   },
 
   Tag__Query: {
-    tags: async (_, __, context) => context.archive.getAllTags()
+    tags: async (_, __, context) => context.archiveModel.getAllTags()
   },
 
   Tag__Mutation: {
-    create: async (_, _args, context) =>
-      pipe(context.archive.writeNewTag(_args))
+    create: (_, args, context) =>
+      pipe(
+        context.archiveModel.writeNewTag(args),
+        Either.fold(Error.throw, Fn.identity)
+      ),
+    update: (_, args, context) =>
+      pipe(
+        context.archiveModel.updateTag(args.ID, {
+          ...args,
+          name: args.name || undefined,
+          aliases: args.aliases || undefined,
+          connections: args.connections || undefined
+        }),
+        Either.fold(Error.throw, Fn.identity)
+      ),
+    delete: (_, args, context) =>
+      pipe(
+        context.archiveModel.deleteTag(args.ID),
+        Either.fold(Error.throw, Fn.identity)
+      )
   }
 };
