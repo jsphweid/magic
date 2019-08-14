@@ -17,8 +17,9 @@ export interface Archive {
   deleteTag: (id: string) => Either.ErrorOr<DeleteResult>;
   getRawTagByID: (id: string) => Option.Option<RawTag>;
   getRawTagsByIDs: (ids: string[]) => Array<Option.Option<RawTag>>;
-  getAllTags: () => RawTag[];
+  getAllRawTags: () => RawTag[];
   getRawTagByName: (name: string) => Option.Option<RawTag>;
+  getRawTagsByNames: (names: string[]) => Array<Option.Option<RawTag>>;
 
   writeNewNarrative: (
     narrative: NarrativeInput
@@ -111,8 +112,18 @@ interface NarrativeMutateResult {
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
   const now = Moment().valueOf();
+
+  // TODO: make some sort of hashmap that allows finding to be more efficient
   const getTag = (id: string): Option.Option<RawTag> =>
     Option.fromNullable(rawArchive.tags.find(tag => tag.id === id));
+
+  const getTagByName = (name: string): Option.Option<RawTag> =>
+    pipe(
+      rawArchive.tags.find(tag =>
+        Tag.getAllNamesInTagLowerCase(tag).includes(name.toLowerCase())
+      ),
+      Option.fromNullable
+    );
 
   return {
     raw: rawArchive,
@@ -180,15 +191,10 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
       ),
 
     getRawTagByID: getTag,
+    getRawTagByName: getTagByName,
     getRawTagsByIDs: ids => ids.map(getTag),
-    getAllTags: () => rawArchive.tags,
-    getRawTagByName: name =>
-      pipe(
-        rawArchive.tags.find(tag =>
-          Tag.getAllNamesInTagLowerCase(tag).includes(name.toLowerCase())
-        ),
-        Option.fromNullable
-      ),
+    getRawTagsByNames: names => names.map(getTagByName),
+    getAllRawTags: () => rawArchive.tags,
     writeNewNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
         tagsFilter || {},

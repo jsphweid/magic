@@ -117,7 +117,15 @@ describe("main", () => {
       pipe(
         makeArchive({
           ...emptyArchive,
-          tags: [{ id: "123", aliases: [], connections: [], name: "one" }]
+          tags: [
+            {
+              id: "123",
+              aliases: [],
+              connections: [],
+              name: "one",
+              meta: { created: 123, updated: 123 }
+            }
+          ]
         }),
         archive => archive.writeNewTag({ name: "one" }),
         newArchive => {
@@ -130,7 +138,15 @@ describe("main", () => {
       pipe(
         makeArchive({
           ...emptyArchive,
-          tags: [{ id: "123", aliases: ["onE"], connections: [], name: "" }]
+          tags: [
+            {
+              id: "123",
+              aliases: ["onE"],
+              connections: [],
+              name: "",
+              meta: { created: 123, updated: 123 }
+            }
+          ]
         }),
         archive => archive.writeNewTag({ name: "One" }),
         newArchive => {
@@ -144,7 +160,13 @@ describe("main", () => {
         makeArchive({
           ...emptyArchive,
           tags: [
-            { id: "123", aliases: ["One"], connections: [], name: "something" }
+            {
+              id: "123",
+              aliases: ["One"],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            }
           ]
         }),
         archive => archive.writeNewTag({ name: "different", aliases: ["oNe"] }),
@@ -159,7 +181,13 @@ describe("main", () => {
         makeArchive({
           ...emptyArchive,
           tags: [
-            { id: "123", aliases: ["One"], connections: [], name: "something" }
+            {
+              id: "123",
+              aliases: ["One"],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            }
           ]
         }),
         archive =>
@@ -180,7 +208,15 @@ describe("main", () => {
       pipe(
         makeArchive({
           ...emptyArchive,
-          tags: [{ id: "123", aliases: [], connections: [], name: "something" }]
+          tags: [
+            {
+              id: "123",
+              aliases: [],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            }
+          ]
         }).deleteTag("123"),
         Either.fold(fail, result => {
           const archive = makeArchive(result.rawArchive);
@@ -203,18 +239,60 @@ describe("main", () => {
         makeArchive({
           ...emptyArchive,
           tags: [
-            { id: "123", aliases: [], connections: [], name: "something" },
-            { id: "234", aliases: [], connections: ["123"], name: "something" },
-            { id: "345", aliases: [], connections: ["123"], name: "something" },
-            { id: "456", aliases: [], connections: ["234"], name: "something" }
+            {
+              id: "123",
+              aliases: [],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            },
+            {
+              id: "234",
+              aliases: [],
+              connections: ["123"],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            },
+            {
+              id: "345",
+              aliases: [],
+              connections: ["123"],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            },
+            {
+              id: "456",
+              aliases: [],
+              connections: ["234"],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            }
           ]
         }).deleteTag("123"),
         Either.fold(fail, result => {
           const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags).toEqual([
-            { id: "234", aliases: [], connections: [], name: "something" },
-            { id: "345", aliases: [], connections: [], name: "something" },
-            { id: "456", aliases: [], connections: ["234"], name: "something" }
+            {
+              id: "234",
+              aliases: [],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            },
+            {
+              id: "345",
+              aliases: [],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            },
+            {
+              id: "456",
+              aliases: [],
+              connections: ["234"],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            }
           ]);
         })
       );
@@ -233,7 +311,13 @@ describe("main", () => {
     });
 
     test("that it gets a raw tag if it exists", () => {
-      const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -262,7 +346,13 @@ describe("main", () => {
     });
 
     test("that it gets some rawTags if they exist", () => {
-      const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -284,23 +374,35 @@ describe("main", () => {
 
   describe("getAllTags", () => {
     test("should get an empty array when there are no tags", () => {
-      const result = makeArchive(emptyArchive).getAllTags();
+      const result = makeArchive(emptyArchive).getAllRawTags();
       expect(result).toEqual([]);
     });
 
     test("should get items back when they exist", () => {
-      const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
       const archive = makeArchive({
         ...emptyArchive,
         tags: [rawTag]
       });
-      expect(archive.getAllTags()).toEqual([rawTag]);
+      expect(archive.getAllRawTags()).toEqual([rawTag]);
     });
   });
 
   describe("getRawTagByName", () => {
     test("should get a none option when rawTag does not exist", () => {
-      const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -314,7 +416,13 @@ describe("main", () => {
     });
 
     test("should find the tag if it exists in aliases", () => {
-      const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -331,7 +439,8 @@ describe("main", () => {
         id: "123",
         aliases: ["one"],
         connections: [],
-        name: "lol"
+        name: "lol",
+        meta: { created: 123, updated: 123 }
       };
       pipe(
         makeArchive({
@@ -345,9 +454,65 @@ describe("main", () => {
     });
   });
 
+  describe("getRawTagsByNames", () => {
+    test("that it should find a few by name successfully", () => {
+      const rawTag1 = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
+      const rawTag2 = {
+        id: "234",
+        aliases: [],
+        connections: [],
+        name: "two",
+        meta: { created: 123, updated: 123 }
+      };
+      const rawTag3 = {
+        id: "345",
+        aliases: ["three"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [rawTag1, rawTag2, rawTag3]
+        }).getRawTagsByNames(["two", "three", "four"]),
+        result => {
+          expect(Option.isSome(result[0])).toBe(true);
+          expect(Option.isSome(result[1])).toBe(true);
+          expect(Option.isNone(result[2])).toBe(true);
+          pipe(
+            result[0],
+            Option.fold(fail, tag => {
+              expect(tag).toEqual(rawTag2);
+            })
+          );
+          pipe(
+            result[1],
+            Option.fold(fail, tag => {
+              expect(tag).toEqual(rawTag3);
+            })
+          );
+        }
+      );
+    });
+  });
+
+  // TODO: updating a tag should change the meta's updated date
   describe("mutateTag", () => {
     test("that a basic update should work", () => {
-      const rawTag = { id: "123", aliases: ["one"], connections: [], name: "" };
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: [],
+        name: "",
+        meta: { created: 123, updated: 123 }
+      };
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -362,7 +527,8 @@ describe("main", () => {
             id: "123",
             aliases: ["two"],
             name: "other",
-            connections: []
+            connections: [],
+            meta: { created: 123, updated: 123 }
           });
         })
       );
@@ -385,12 +551,19 @@ describe("main", () => {
         makeArchive({
           ...emptyArchive,
           tags: [
-            { id: "123", aliases: ["one"], connections: [], name: "one name" },
+            {
+              id: "123",
+              aliases: ["one"],
+              connections: [],
+              name: "one name",
+              meta: { created: 123, updated: 123 }
+            },
             {
               id: "234",
               aliases: ["two"],
               connections: [],
-              name: "two name"
+              name: "two name",
+              meta: { created: 123, updated: 123 }
             }
           ]
         }).updateTag("234", {
@@ -402,7 +575,8 @@ describe("main", () => {
             id: "234",
             aliases: ["two"],
             connections: ["123"],
-            name: "two name"
+            name: "two name",
+            meta: { created: 123, updated: 123 }
           });
         })
       );
@@ -413,12 +587,19 @@ describe("main", () => {
         makeArchive({
           ...emptyArchive,
           tags: [
-            { id: "123", aliases: ["one"], connections: [], name: "one name" },
+            {
+              id: "123",
+              aliases: ["one"],
+              connections: [],
+              name: "one name",
+              meta: { created: 123, updated: 123 }
+            },
             {
               id: "234",
               aliases: ["other"],
               connections: [],
-              name: "other name"
+              name: "other name",
+              meta: { created: 123, updated: 123 }
             }
           ]
         }).updateTag("234", {

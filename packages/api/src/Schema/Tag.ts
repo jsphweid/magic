@@ -70,7 +70,8 @@ export const resolvers: Resolvers = {
   },
 
   Tag__Query: {
-    tags: async (_, __, context) => context.archiveModel.getAllTags()
+    // TODO: add back in filter
+    tags: async (_, __, context) => context.archiveModel.getAllRawTags()
   },
 
   Tag__Mutation: {
