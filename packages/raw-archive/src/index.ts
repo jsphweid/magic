@@ -109,6 +109,8 @@ interface NarrativeMutateResult {
   rawArchive: RawArchive;
 }
 
+const removeUndefineds = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
   const now = Moment().valueOf();
@@ -133,7 +135,11 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         Either.fromOption(
           Error.fromL("The tag you're trying to change does not exist")
         ),
-        Either.map(foundTag => ({ ...foundTag, ...updates, id: foundTag.id })),
+        Either.map(foundTag => ({
+          ...foundTag,
+          ...removeUndefineds(updates),
+          id: foundTag.id
+        })),
         Either.chain(proposedTag => validateTag(proposedTag, rawArchive)),
         Either.map(validatedTag =>
           pipe(

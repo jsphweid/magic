@@ -546,6 +546,39 @@ describe("main", () => {
       );
     });
 
+    test("that providing partial objects does not override stuff", () => {
+      const rawTag = {
+        id: "123",
+        aliases: ["one"],
+        connections: ["234"],
+        name: "that",
+        meta: { created: 123, updated: 123 }
+      };
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [
+            {
+              id: "234",
+              aliases: [],
+              connections: [],
+              name: "this",
+              meta: { created: 123, updated: 123 }
+            },
+            rawTag
+          ]
+        }).updateTag("123", {
+          aliases: undefined,
+          connections: undefined,
+          name: undefined
+        }),
+        Either.fold(fail, result => {
+          const archive = makeArchive(result.rawArchive);
+          expect(archive.raw.tags[1]).toEqual(rawTag);
+        })
+      );
+    });
+
     test("that modifying a connection that exists works successfully", () => {
       pipe(
         makeArchive({

@@ -1,22 +1,8 @@
+import { Either, pipe } from "@grapheng/prelude";
 import * as FS from "fs";
 import * as Path from "path";
 
 import * as Archive from "../../raw-archive/src";
-
-// import { BACKUP_DIR } from './Backup'
-// import { RawArchive } from "./Schema/Context/Archive";
-
-// export const save = (filePath: string, contents: string): void => {
-//   const backupPath = `${BACKUP_DIR}/${filePath}`;
-//   FS.writeFileSync(backupPath, contents);
-
-//   // tslint:disable-next-line:no-console
-//   console.log(`Saved \`${backupPath}\``);
-// };
-
-// Write a JSON file
-// const saveJson = (filePath: string, contents: object): void =>
-//   save(filePath, JSON.stringify(contents, null, 2));
 
 const backupArchiveDir = Path.resolve(
   Path.join(__dirname, "..", "data/backup")
@@ -41,14 +27,13 @@ export const getMostRecentArchive = (): Promise<Archive.RawArchive> => {
   );
 };
 
-export const saveNewArchive = (archive: Archive.RawArchive): Promise<void> =>
-  Promise.resolve(
-    FS.writeFileSync(
-      backupArchiveDir + `archive_${new Date().toISOString()}`,
-      JSON.stringify(archive)
+export const saveNewArchive = (archive: Archive.RawArchive) =>
+  Either.tryCatchError(() =>
+    pipe(
+      FS.writeFileSync(
+        backupArchiveDir + `/archive_${new Date().toISOString()}`,
+        JSON.stringify(archive)
+      ),
+      () => true
     )
   );
-
-// console.log(getMostRecentLocalArchive());
-
-// export const saveNewRawArchiveVersion = (rawArchive: RawArchive) void => FS
