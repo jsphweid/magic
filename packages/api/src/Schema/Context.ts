@@ -48,14 +48,10 @@ export const context = async (): Promise<Context> => {
           )
           .return(({ result }) => result.tag),
       updateTag: (id, updates) =>
-        void console.log("---updates", updates) ||
         Either.chained
           .bind("result", archive.updateTag(id, updates))
-          .bindL(
-            "writeResult",
-            ({ result }) =>
-              void console.log("---result", result.rawArchive.tags) ||
-              writeNewArchive(result.rawArchive)
+          .bindL("writeResult", ({ result }) =>
+            writeNewArchive(result.rawArchive)
           )
           .return(({ result }) => result.tag),
       deleteTag: id =>
