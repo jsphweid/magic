@@ -15,7 +15,7 @@ const getJSON = (backupPath: string) =>
 
 // const originalTagsJSON = getJSON("/magic/tags.json");
 
-const _tags: any[] = []; // originalTagsJSON
+const tags: any[] = []; // originalTagsJSON
 // ? Object.entries(originalTagsJSON).map(([legacyID, item]: any) => ({
 //     name: item.name,
 //     id: makeRandomUniqueID(),
@@ -25,20 +25,20 @@ const _tags: any[] = []; // originalTagsJSON
 //   }))
 // : [];
 
-const mapping = _tags.reduce(
-  (previous: any, current: any) => ({
-    ...previous,
-    [current.legacyID]: current.id
-  }),
-  {}
-);
+// const mapping = _tags.reduce(
+//   (previous: any, current: any) => ({
+//     ...previous,
+//     [current.legacyID]: current.id
+//   }),
+//   {}
+// );
 
-const tags = _tags.map(tag => ({
-  name: tag.name,
-  id: tag.id,
-  aliases: tag.aliases,
-  connections: tag.legacyConnections.map((c: any) => mapping[c])
-}));
+// const tags = _tags.map(tag => ({
+//   name: tag.name,
+//   id: tag.id,
+//   aliases: tag.aliases,
+//   connections: tag.legacyConnections.map((c: any) => mapping[c])
+// }));
 
 interface RawTogglEntry {
   id: number;
@@ -64,7 +64,7 @@ const narratives: RawNarrative[] = getJSON("/toggl/entries.json").map(
       created: new Date(entry.start).getTime(),
       updated: new Date(entry.at).getTime()
     },
-    description: entry.description
+    description: entry.description || `[unknown]`
   })
 );
 

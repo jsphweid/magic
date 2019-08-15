@@ -3,6 +3,7 @@ import gql from "graphql-tag";
 import { Resolvers } from "../../GeneratedTypes";
 import * as External from "./External";
 import * as Mutation from "./Mutation";
+import * as Narrative from "./Narrative";
 import * as Node from "./Node";
 import * as Query from "./Query";
 import * as Tag from "./Tag";
@@ -16,6 +17,7 @@ export const typeDefs = gql`
   ${Time.typeDefs}
   ${Node.typeDefs}
   ${Query.typeDefs}
+  ${Narrative.typeDefs}
 
   ${Tag.typeDefs}
 `;
@@ -33,11 +35,11 @@ export const resolvers: Resolvers = {
   // },
 
   // ...Node.resolvers,
-  // ...Time.resolvers,
+  ...Time.resolvers,
   ...Mutation.resolvers,
   ...Query.resolvers,
   ...Tag.resolvers,
-  ...External.resolvers
+  ...External.resolvers,
+  ...Narrative.resolvers
   // ...History.resolvers
-  // ...Narrative.resolvers
 };

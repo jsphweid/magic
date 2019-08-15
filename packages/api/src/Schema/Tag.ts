@@ -1,10 +1,7 @@
 import { Array, Either, Error, Fn, pipe } from "@grapheng/prelude";
 import gql from "graphql-tag";
 
-// import { RawTag } from "~/raw-archive";
-
 import { Resolvers } from "../../GeneratedTypes";
-// import * as Utility from "../Utility";
 
 export const typeDefs = gql`
   type Tag__Tag implements Node__Identifiable & Node__Persisted {
@@ -50,13 +47,6 @@ export const typeDefs = gql`
     names: [String!]
   }
 `;
-
-// const getOrElseBlowUp = <T>(op: Option.Option<T>): T =>
-
-// pipe(
-//   context.archive.getRawTagsByIDs(source.connections),
-//   possibleTags => possibleTags.map(Option.(() => null))
-// )
 
 export const resolvers: Resolvers = {
   Tag__Tag: {

@@ -12,7 +12,8 @@ export interface Context {
 type FieldsOnArchiveThatArePassedThrough =
   | "getRawTagsByIDs"
   | "getRawTagsByNames"
-  | "getAllRawTags";
+  | "getAllRawTags"
+  | "getAllRawNarratives";
 
 export interface ArchiveModel
   extends Pick<Archive.Archive, FieldsOnArchiveThatArePassedThrough> {
@@ -62,7 +63,8 @@ export const context = async (): Promise<Context> => {
 
       getRawTagsByIDs: archive.getRawTagsByIDs,
       getRawTagsByNames: archive.getRawTagsByNames,
-      getAllRawTags: archive.getAllRawTags
+      getAllRawTags: archive.getAllRawTags,
+      getAllRawNarratives: archive.getAllRawNarratives
     }
   };
 };

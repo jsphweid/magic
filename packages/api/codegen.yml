@@ -17,3 +17,6 @@ generates:
       mappers:
         Tag__Tag: ./mappers#TagTag
         Node__Meta: ./mappers#NodeMeta
+        Narrative__Narrative: ./mappers#NarrativeNarrative
+        FormattedDate: ./mappers#FormattedDate
+        FormattedDuration: ./mappers#FormattedDuration

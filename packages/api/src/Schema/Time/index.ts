@@ -1,8 +1,10 @@
+import { pipe } from "@grapheng/prelude";
 import gql from "graphql-tag";
 import Moment from "moment";
 
 // import * as Date from "./Date";
 // import * as Duration from "./Duration";
+import { Resolvers } from "../../../GeneratedTypes";
 
 export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 
@@ -16,51 +18,33 @@ export const typeDefs = gql`
   }
 
   interface Time__Occurrence {
-    start: Time__FormattedDate!
+    start: FormattedDate!
   }
 
+  # TODO: is this ever really used?
   type Time__Instant implements Time__Occurrence {
-    start: Time__FormattedDate!
+    start: FormattedDate!
   }
 
   interface Time__Interval {
-    duration: Time__FormattedDuration!
+    duration: FormattedDuration!
   }
 
   type Time__OngoingInterval implements Time__Occurrence & Time__Interval {
-    start: Time__FormattedDate!
-    duration: Time__FormattedDuration!
+    start: FormattedDate!
+    duration: FormattedDuration!
   }
 
   type Time__StoppedInterval implements Time__Occurrence & Time__Interval {
-    start: Time__FormattedDate!
-    duration: Time__FormattedDuration!
-    stop: Time__FormattedDate!
+    start: FormattedDate!
+    duration: FormattedDuration!
+    stop: FormattedDate!
   }
 
   input Time__Selection {
     start: Time__Date
     duration: Time__Duration
     stop: Time__Date
-  }
-
-  type Time__FormattedDate {
-    unix: Time__FormattedDuration!
-    iso: String!
-    humanized: String!
-    formatted(template: String = "h:mm A, dddd, MMMM Do, YYYY"): String!
-  }
-
-  type Time__FormattedDuration {
-    humanized: String!
-    milliseconds: Time__MS!
-    seconds: Float!
-    minutes: Float!
-    hours: Float!
-    days: Float!
-    weeks: Float!
-    months: Float!
-    years: Float!
   }
 `;
 
@@ -145,37 +129,35 @@ export const fromSelection = (selection: Selection): Time =>
     ? ongoingInterval(selection.start)
     : instant();
 
+export const convertToFormattedBaseType = (
+  time: Time
+): { kind: OccurrenceKind; start: number; stop?: number } =>
+  pipe(
+    { start: time.start.valueOf(), kind: time.kind },
+    base =>
+      isStoppedInterval(time) ? { ...base, stop: time.stop.valueOf() } : base
+  );
+
 export const duration = (time: Time): Duration =>
   Moment.duration(
     (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
   ).abs();
 
-export const resolvers = {
+export const resolvers: Resolvers = {
   // ...Date.resolvers,
   // ...Duration.resolvers,
   // Time__Timed: { __resolveType: () => "Time__Timed" },
   // Time__Occurrence: {
-  //   __resolveType: (time: Time): string => `Time__${time.kind}`
-  // },
+  //   __resolveType: () => "Time__Instant"
+  // }
+  Time__Occurrence: {
+    __resolveType: (time: any) =>
+      `Time__${time.kind}` as
+        | "Time__Instant"
+        | "Time__OngoingInterval"
+        | "Time__StoppedInterval"
+  }
   // Time__Interval: { __resolveType: () => "Time__Interval" },
   // Time__OngoingInterval: { duration },
   // Time__StoppedInterval: { duration },
-  // Time__FormattedDate: {
-  //   unix: (date: Date): Duration => Moment.duration(date.valueOf(), "ms"),
-  //   iso: (date: Date): string => date.toISOString(),
-  //   humanized: (date: Date): string => duration(instant(date)).humanize(true),
-  //   formatted: (date: Date, args: { template: string }): string =>
-  //     date.tz(`${process.env.MAGIC_TIME_ZONE}`).format(args.template)
-  // },
-  // Time__FormattedDuration: {
-  //   humanized: (duration: Duration): string => duration.humanize(),
-  //   milliseconds: (duration: Duration): number => duration.asMilliseconds(),
-  //   seconds: (duration: Duration): number => duration.asSeconds(),
-  //   minutes: (duration: Duration): number => duration.asMinutes(),
-  //   hours: (duration: Duration): number => duration.asHours(),
-  //   days: (duration: Duration): number => duration.asDays(),
-  //   weeks: (duration: Duration): number => duration.asWeeks(),
-  //   months: (duration: Duration): number => duration.asMonths(),
-  //   years: (duration: Duration): number => duration.asYears()
-  // }
 };

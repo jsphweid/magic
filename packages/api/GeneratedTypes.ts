@@ -5,7 +5,7 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig
 } from "graphql";
-import { TagTag, NodeMeta } from "./mappers";
+import { TagTag, NodeMeta, NarrativeNarrative } from "./mappers";
 import { Context } from "./src/Schema/Context";
 export type Maybe<T> = T | null;
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
@@ -20,10 +20,10 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  Time__MS: any;
   GraphengMS: any;
   Time__Date: any;
   Time__Duration: any;
+  Time__MS: any;
 };
 
 export type FormattedDate = {
@@ -54,13 +54,44 @@ export type Mutation = {
   Tag: Tag__Mutation;
 };
 
+export type Narrative__Mutation = {
+  new: Narrative__Narrative;
+};
+
+export type Narrative__MutationNewArgs = {
+  description?: Maybe<Scalars["String"]>;
+  time?: Maybe<Time__Selection>;
+  tags?: Maybe<Tag__Filter>;
+};
+
+export type Narrative__Narrative = Node__Identifiable &
+  Node__Persisted &
+  Time__Timed &
+  Tag__Tagged & {
+    ID: Scalars["ID"];
+    meta: Node__Meta;
+    time: Time__Occurrence;
+    tags: Array<Tag__Tag>;
+    description: Scalars["String"];
+  };
+
+export type Narrative__Query = {
+  narratives: Array<Narrative__Narrative>;
+};
+
+export type Narrative__QueryNarrativesArgs = {
+  search?: Maybe<Scalars["String"]>;
+  time?: Maybe<Time__Selection>;
+  tags?: Maybe<Tag__Filter>;
+};
+
 export type Node__Identifiable = {
   ID: Scalars["ID"];
 };
 
 export type Node__Meta = {
-  created: Time__FormattedDate;
-  updated: Time__FormattedDate;
+  created: FormattedDate;
+  updated: FormattedDate;
 };
 
 export type Node__Persisted = {
@@ -69,6 +100,7 @@ export type Node__Persisted = {
 
 export type Query = {
   Tag: Tag__Query;
+  Narrative: Narrative__Query;
 };
 
 export type Tag__Filter = {
@@ -126,45 +158,22 @@ export type Tag__Tagged = {
   tags: Array<Tag__Tag>;
 };
 
-export type Time__FormattedDate = {
-  unix: Time__FormattedDuration;
-  iso: Scalars["String"];
-  humanized: Scalars["String"];
-  formatted: Scalars["String"];
-};
-
-export type Time__FormattedDateFormattedArgs = {
-  template?: Maybe<Scalars["String"]>;
-};
-
-export type Time__FormattedDuration = {
-  humanized: Scalars["String"];
-  milliseconds: Scalars["Time__MS"];
-  seconds: Scalars["Float"];
-  minutes: Scalars["Float"];
-  hours: Scalars["Float"];
-  days: Scalars["Float"];
-  weeks: Scalars["Float"];
-  months: Scalars["Float"];
-  years: Scalars["Float"];
-};
-
 export type Time__Instant = Time__Occurrence & {
-  start: Time__FormattedDate;
+  start: FormattedDate;
 };
 
 export type Time__Interval = {
-  duration: Time__FormattedDuration;
+  duration: FormattedDuration;
 };
 
 export type Time__Occurrence = {
-  start: Time__FormattedDate;
+  start: FormattedDate;
 };
 
 export type Time__OngoingInterval = Time__Occurrence &
   Time__Interval & {
-    start: Time__FormattedDate;
-    duration: Time__FormattedDuration;
+    start: FormattedDate;
+    duration: FormattedDuration;
   };
 
 export type Time__Selection = {
@@ -175,9 +184,9 @@ export type Time__Selection = {
 
 export type Time__StoppedInterval = Time__Occurrence &
   Time__Interval & {
-    start: Time__FormattedDate;
-    duration: Time__FormattedDuration;
-    stop: Time__FormattedDate;
+    start: FormattedDate;
+    duration: FormattedDuration;
+    stop: FormattedDate;
   };
 
 export type Time__Timed = {
@@ -270,10 +279,29 @@ export type ResolversTypes = ResolversObject<{
     Omit<Node__Persisted, "meta"> & { meta: ResolversTypes["Node__Meta"] }
   >;
   Node__Meta: ResolverTypeWrapper<NodeMeta>;
-  Time__FormattedDate: ResolverTypeWrapper<Time__FormattedDate>;
-  Time__FormattedDuration: ResolverTypeWrapper<Time__FormattedDuration>;
-  Time__MS: ResolverTypeWrapper<Scalars["Time__MS"]>;
+  FormattedDate: ResolverTypeWrapper<number>;
+  FormattedDuration: ResolverTypeWrapper<number>;
+  GraphengMS: ResolverTypeWrapper<Scalars["GraphengMS"]>;
   Float: ResolverTypeWrapper<Scalars["Float"]>;
+  Narrative__Query: ResolverTypeWrapper<
+    Omit<Narrative__Query, "narratives"> & {
+      narratives: Array<ResolversTypes["Narrative__Narrative"]>;
+    }
+  >;
+  Time__Selection: Time__Selection;
+  Time__Date: ResolverTypeWrapper<Scalars["Time__Date"]>;
+  Time__Duration: ResolverTypeWrapper<Scalars["Time__Duration"]>;
+  Tag__Filter: Tag__Filter;
+  Narrative__Narrative: ResolverTypeWrapper<NarrativeNarrative>;
+  Time__Timed: ResolverTypeWrapper<
+    Omit<Time__Timed, "time"> & { time: ResolversTypes["Time__Occurrence"] }
+  >;
+  Time__Occurrence: ResolverTypeWrapper<
+    Omit<Time__Occurrence, "start"> & { start: ResolversTypes["FormattedDate"] }
+  >;
+  Tag__Tagged: ResolverTypeWrapper<
+    Omit<Tag__Tagged, "tags"> & { tags: Array<ResolversTypes["Tag__Tag"]> }
+  >;
   Mutation: ResolverTypeWrapper<{}>;
   Tag__Mutation: ResolverTypeWrapper<
     Omit<Tag__Mutation, "create" | "update"> & {
@@ -282,22 +310,33 @@ export type ResolversTypes = ResolversObject<{
     }
   >;
   Boolean: ResolverTypeWrapper<Scalars["Boolean"]>;
-  GraphengMS: ResolverTypeWrapper<Scalars["GraphengMS"]>;
-  FormattedDate: ResolverTypeWrapper<FormattedDate>;
-  FormattedDuration: ResolverTypeWrapper<FormattedDuration>;
-  Time__Date: ResolverTypeWrapper<Scalars["Time__Date"]>;
-  Time__Duration: ResolverTypeWrapper<Scalars["Time__Duration"]>;
-  Time__Timed: ResolverTypeWrapper<Time__Timed>;
-  Time__Occurrence: ResolverTypeWrapper<Time__Occurrence>;
-  Time__Instant: ResolverTypeWrapper<Time__Instant>;
-  Time__Interval: ResolverTypeWrapper<Time__Interval>;
-  Time__OngoingInterval: ResolverTypeWrapper<Time__OngoingInterval>;
-  Time__StoppedInterval: ResolverTypeWrapper<Time__StoppedInterval>;
-  Time__Selection: Time__Selection;
-  Tag__Tagged: ResolverTypeWrapper<
-    Omit<Tag__Tagged, "tags"> & { tags: Array<ResolversTypes["Tag__Tag"]> }
+  Time__MS: ResolverTypeWrapper<Scalars["Time__MS"]>;
+  Time__Instant: ResolverTypeWrapper<
+    Omit<Time__Instant, "start"> & { start: ResolversTypes["FormattedDate"] }
   >;
-  Tag__Filter: Tag__Filter;
+  Time__Interval: ResolverTypeWrapper<
+    Omit<Time__Interval, "duration"> & {
+      duration: ResolversTypes["FormattedDuration"];
+    }
+  >;
+  Time__OngoingInterval: ResolverTypeWrapper<
+    Omit<Time__OngoingInterval, "start" | "duration"> & {
+      start: ResolversTypes["FormattedDate"];
+      duration: ResolversTypes["FormattedDuration"];
+    }
+  >;
+  Time__StoppedInterval: ResolverTypeWrapper<
+    Omit<Time__StoppedInterval, "start" | "duration" | "stop"> & {
+      start: ResolversTypes["FormattedDate"];
+      duration: ResolversTypes["FormattedDuration"];
+      stop: ResolversTypes["FormattedDate"];
+    }
+  >;
+  Narrative__Mutation: ResolverTypeWrapper<
+    Omit<Narrative__Mutation, "new"> & {
+      new: ResolversTypes["Narrative__Narrative"];
+    }
+  >;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -315,32 +354,55 @@ export type ResolversParentTypes = ResolversObject<{
     meta: ResolversTypes["Node__Meta"];
   };
   Node__Meta: NodeMeta;
-  Time__FormattedDate: Time__FormattedDate;
-  Time__FormattedDuration: Time__FormattedDuration;
-  Time__MS: Scalars["Time__MS"];
+  FormattedDate: number;
+  FormattedDuration: number;
+  GraphengMS: Scalars["GraphengMS"];
   Float: Scalars["Float"];
+  Narrative__Query: Omit<Narrative__Query, "narratives"> & {
+    narratives: Array<ResolversTypes["Narrative__Narrative"]>;
+  };
+  Time__Selection: Time__Selection;
+  Time__Date: Scalars["Time__Date"];
+  Time__Duration: Scalars["Time__Duration"];
+  Tag__Filter: Tag__Filter;
+  Narrative__Narrative: NarrativeNarrative;
+  Time__Timed: Omit<Time__Timed, "time"> & {
+    time: ResolversTypes["Time__Occurrence"];
+  };
+  Time__Occurrence: Omit<Time__Occurrence, "start"> & {
+    start: ResolversTypes["FormattedDate"];
+  };
+  Tag__Tagged: Omit<Tag__Tagged, "tags"> & {
+    tags: Array<ResolversTypes["Tag__Tag"]>;
+  };
   Mutation: {};
   Tag__Mutation: Omit<Tag__Mutation, "create" | "update"> & {
     create?: Maybe<ResolversTypes["Tag__Tag"]>;
     update: ResolversTypes["Tag__Tag"];
   };
   Boolean: Scalars["Boolean"];
-  GraphengMS: Scalars["GraphengMS"];
-  FormattedDate: FormattedDate;
-  FormattedDuration: FormattedDuration;
-  Time__Date: Scalars["Time__Date"];
-  Time__Duration: Scalars["Time__Duration"];
-  Time__Timed: Time__Timed;
-  Time__Occurrence: Time__Occurrence;
-  Time__Instant: Time__Instant;
-  Time__Interval: Time__Interval;
-  Time__OngoingInterval: Time__OngoingInterval;
-  Time__StoppedInterval: Time__StoppedInterval;
-  Time__Selection: Time__Selection;
-  Tag__Tagged: Omit<Tag__Tagged, "tags"> & {
-    tags: Array<ResolversTypes["Tag__Tag"]>;
+  Time__MS: Scalars["Time__MS"];
+  Time__Instant: Omit<Time__Instant, "start"> & {
+    start: ResolversTypes["FormattedDate"];
   };
-  Tag__Filter: Tag__Filter;
+  Time__Interval: Omit<Time__Interval, "duration"> & {
+    duration: ResolversTypes["FormattedDuration"];
+  };
+  Time__OngoingInterval: Omit<Time__OngoingInterval, "start" | "duration"> & {
+    start: ResolversTypes["FormattedDate"];
+    duration: ResolversTypes["FormattedDuration"];
+  };
+  Time__StoppedInterval: Omit<
+    Time__StoppedInterval,
+    "start" | "duration" | "stop"
+  > & {
+    start: ResolversTypes["FormattedDate"];
+    duration: ResolversTypes["FormattedDuration"];
+    stop: ResolversTypes["FormattedDate"];
+  };
+  Narrative__Mutation: Omit<Narrative__Mutation, "new"> & {
+    new: ResolversTypes["Narrative__Narrative"];
+  };
 }>;
 
 export type FormattedDateResolvers<
@@ -389,11 +451,50 @@ export type MutationResolvers<
   Tag?: Resolver<ResolversTypes["Tag__Mutation"], ParentType, ContextType>;
 }>;
 
+export type Narrative__MutationResolvers<
+  ContextType = Context,
+  ParentType extends ResolversParentTypes["Narrative__Mutation"] = ResolversParentTypes["Narrative__Mutation"]
+> = ResolversObject<{
+  new?: Resolver<
+    ResolversTypes["Narrative__Narrative"],
+    ParentType,
+    ContextType,
+    Narrative__MutationNewArgs
+  >;
+}>;
+
+export type Narrative__NarrativeResolvers<
+  ContextType = Context,
+  ParentType extends ResolversParentTypes["Narrative__Narrative"] = ResolversParentTypes["Narrative__Narrative"]
+> = ResolversObject<{
+  ID?: Resolver<ResolversTypes["ID"], ParentType, ContextType>;
+  meta?: Resolver<ResolversTypes["Node__Meta"], ParentType, ContextType>;
+  time?: Resolver<ResolversTypes["Time__Occurrence"], ParentType, ContextType>;
+  tags?: Resolver<Array<ResolversTypes["Tag__Tag"]>, ParentType, ContextType>;
+  description?: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+}>;
+
+export type Narrative__QueryResolvers<
+  ContextType = Context,
+  ParentType extends ResolversParentTypes["Narrative__Query"] = ResolversParentTypes["Narrative__Query"]
+> = ResolversObject<{
+  narratives?: Resolver<
+    Array<ResolversTypes["Narrative__Narrative"]>,
+    ParentType,
+    ContextType,
+    Narrative__QueryNarrativesArgs
+  >;
+}>;
+
 export type Node__IdentifiableResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Node__Identifiable"] = ResolversParentTypes["Node__Identifiable"]
 > = ResolversObject<{
-  __resolveType: TypeResolveFn<"Tag__Tag", ParentType, ContextType>;
+  __resolveType: TypeResolveFn<
+    "Tag__Tag" | "Narrative__Narrative",
+    ParentType,
+    ContextType
+  >;
   ID?: Resolver<ResolversTypes["ID"], ParentType, ContextType>;
 }>;
 
@@ -401,23 +502,19 @@ export type Node__MetaResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Node__Meta"] = ResolversParentTypes["Node__Meta"]
 > = ResolversObject<{
-  created?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
-  updated?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
+  created?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
+  updated?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
 }>;
 
 export type Node__PersistedResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Node__Persisted"] = ResolversParentTypes["Node__Persisted"]
 > = ResolversObject<{
-  __resolveType: TypeResolveFn<"Tag__Tag", ParentType, ContextType>;
+  __resolveType: TypeResolveFn<
+    "Tag__Tag" | "Narrative__Narrative",
+    ParentType,
+    ContextType
+  >;
   meta?: Resolver<ResolversTypes["Node__Meta"], ParentType, ContextType>;
 }>;
 
@@ -426,6 +523,11 @@ export type QueryResolvers<
   ParentType extends ResolversParentTypes["Query"] = ResolversParentTypes["Query"]
 > = ResolversObject<{
   Tag?: Resolver<ResolversTypes["Tag__Query"], ParentType, ContextType>;
+  Narrative?: Resolver<
+    ResolversTypes["Narrative__Query"],
+    ParentType,
+    ContextType
+  >;
 }>;
 
 export type Tag__MutationResolvers<
@@ -483,7 +585,7 @@ export type Tag__TaggedResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Tag__Tagged"] = ResolversParentTypes["Tag__Tagged"]
 > = ResolversObject<{
-  __resolveType: TypeResolveFn<null, ParentType, ContextType>;
+  __resolveType: TypeResolveFn<"Narrative__Narrative", ParentType, ContextType>;
   tags?: Resolver<Array<ResolversTypes["Tag__Tag"]>, ParentType, ContextType>;
 }>;
 
@@ -497,49 +599,11 @@ export interface Time__DurationScalarConfig
   name: "Time__Duration";
 }
 
-export type Time__FormattedDateResolvers<
-  ContextType = Context,
-  ParentType extends ResolversParentTypes["Time__FormattedDate"] = ResolversParentTypes["Time__FormattedDate"]
-> = ResolversObject<{
-  unix?: Resolver<
-    ResolversTypes["Time__FormattedDuration"],
-    ParentType,
-    ContextType
-  >;
-  iso?: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  humanized?: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  formatted?: Resolver<
-    ResolversTypes["String"],
-    ParentType,
-    ContextType,
-    RequireFields<Time__FormattedDateFormattedArgs, "template">
-  >;
-}>;
-
-export type Time__FormattedDurationResolvers<
-  ContextType = Context,
-  ParentType extends ResolversParentTypes["Time__FormattedDuration"] = ResolversParentTypes["Time__FormattedDuration"]
-> = ResolversObject<{
-  humanized?: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  milliseconds?: Resolver<ResolversTypes["Time__MS"], ParentType, ContextType>;
-  seconds?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-  minutes?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-  hours?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-  days?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-  weeks?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-  months?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-  years?: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
-}>;
-
 export type Time__InstantResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Time__Instant"] = ResolversParentTypes["Time__Instant"]
 > = ResolversObject<{
-  start?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
+  start?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
 }>;
 
 export type Time__IntervalResolvers<
@@ -552,7 +616,7 @@ export type Time__IntervalResolvers<
     ContextType
   >;
   duration?: Resolver<
-    ResolversTypes["Time__FormattedDuration"],
+    ResolversTypes["FormattedDuration"],
     ParentType,
     ContextType
   >;
@@ -572,24 +636,16 @@ export type Time__OccurrenceResolvers<
     ParentType,
     ContextType
   >;
-  start?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
+  start?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
 }>;
 
 export type Time__OngoingIntervalResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Time__OngoingInterval"] = ResolversParentTypes["Time__OngoingInterval"]
 > = ResolversObject<{
-  start?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
+  start?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
   duration?: Resolver<
-    ResolversTypes["Time__FormattedDuration"],
+    ResolversTypes["FormattedDuration"],
     ParentType,
     ContextType
   >;
@@ -599,28 +655,20 @@ export type Time__StoppedIntervalResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Time__StoppedInterval"] = ResolversParentTypes["Time__StoppedInterval"]
 > = ResolversObject<{
-  start?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
+  start?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
   duration?: Resolver<
-    ResolversTypes["Time__FormattedDuration"],
+    ResolversTypes["FormattedDuration"],
     ParentType,
     ContextType
   >;
-  stop?: Resolver<
-    ResolversTypes["Time__FormattedDate"],
-    ParentType,
-    ContextType
-  >;
+  stop?: Resolver<ResolversTypes["FormattedDate"], ParentType, ContextType>;
 }>;
 
 export type Time__TimedResolvers<
   ContextType = Context,
   ParentType extends ResolversParentTypes["Time__Timed"] = ResolversParentTypes["Time__Timed"]
 > = ResolversObject<{
-  __resolveType: TypeResolveFn<null, ParentType, ContextType>;
+  __resolveType: TypeResolveFn<"Narrative__Narrative", ParentType, ContextType>;
   time?: Resolver<ResolversTypes["Time__Occurrence"], ParentType, ContextType>;
 }>;
 
@@ -629,6 +677,9 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   FormattedDuration?: FormattedDurationResolvers<ContextType>;
   GraphengMS?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
+  Narrative__Mutation?: Narrative__MutationResolvers<ContextType>;
+  Narrative__Narrative?: Narrative__NarrativeResolvers<ContextType>;
+  Narrative__Query?: Narrative__QueryResolvers<ContextType>;
   Node__Identifiable?: Node__IdentifiableResolvers;
   Node__Meta?: Node__MetaResolvers<ContextType>;
   Node__Persisted?: Node__PersistedResolvers;
@@ -639,8 +690,6 @@ export type Resolvers<ContextType = Context> = ResolversObject<{
   Tag__Tagged?: Tag__TaggedResolvers;
   Time__Date?: GraphQLScalarType;
   Time__Duration?: GraphQLScalarType;
-  Time__FormattedDate?: Time__FormattedDateResolvers<ContextType>;
-  Time__FormattedDuration?: Time__FormattedDurationResolvers<ContextType>;
   Time__Instant?: Time__InstantResolvers<ContextType>;
   Time__Interval?: Time__IntervalResolvers;
   Time__MS?: GraphQLScalarType;
