@@ -18,6 +18,7 @@ export interface Archive {
   getRawTagByID: (id: string) => Option.Option<RawTag>;
   getRawTagsByIDs: (ids: string[]) => Array<Option.Option<RawTag>>;
   getAllRawTags: () => RawTag[];
+  getAllRawNarratives: () => RawNarrative[];
   getRawTagByName: (name: string) => Option.Option<RawTag>;
   getRawTagsByNames: (names: string[]) => Array<Option.Option<RawTag>>;
 
@@ -201,6 +202,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
     getRawTagsByIDs: ids => ids.map(getTag),
     getRawTagsByNames: names => names.map(getTagByName),
     getAllRawTags: () => rawArchive.tags,
+    getAllRawNarratives: () => rawArchive.narratives,
     writeNewNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
         tagsFilter || {},
