@@ -3,8 +3,6 @@ import Moment from "moment";
 import * as Date from "./Date";
 import * as Duration from "./Duration";
 
-export { Batches, fromInterval as batchesFromInterval } from "./Batches";
-
 export type Date = Moment.Moment;
 export type Duration = Moment.Duration;
 export type Interval = OngoingInterval | StoppedInterval;

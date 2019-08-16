@@ -211,7 +211,6 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
       );
 
       // just iterate through the entire thing....
-      console.log("--timeSelection", timeSelection);
       const time = timeSelection
         ? Time.fromSelection(timeSelection)
         : Time.ongoingInterval();
