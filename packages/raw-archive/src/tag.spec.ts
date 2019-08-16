@@ -16,7 +16,11 @@ describe("tag", () => {
       id: "123",
       name: "lol",
       aliases: ["test"],
-      connections: []
+      connections: [],
+      meta: {
+        created: 123,
+        updated: 123
+      }
     };
     expect(
       Tag.getMatchingTags({ include: { names: ["test"] } }, "a sentence", [
@@ -30,7 +34,11 @@ describe("tag", () => {
       id: "123",
       name: "lol",
       aliases: ["test"],
-      connections: []
+      connections: [],
+      meta: {
+        created: 123,
+        updated: 123
+      }
     };
     expect(Tag.getMatchingTags({}, "a sentence lol", [targetTag])).toEqual([
       targetTag
