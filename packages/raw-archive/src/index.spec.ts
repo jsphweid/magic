@@ -23,12 +23,12 @@ describe("main", () => {
       const oneHundredTwentyMinutesAgo = Moment().subtract(120, "minutes");
       const oneHundredTenMinutesAgo = Moment().subtract(110, "minutes");
       pipe(
-        makeArchive(emptyArchive).writeNewTag({
+        makeArchive(emptyArchive).createNewTag({
           name: "cats",
           aliases: ["kittens"]
         }),
         Either.chain(result =>
-          makeArchive(result.rawArchive).writeNewTag({
+          makeArchive(result.rawArchive).createNewTag({
             name: "cathy",
             connections: pipe(
               makeArchive(result.rawArchive).getRawTagByName("cats"),
@@ -38,19 +38,21 @@ describe("main", () => {
           })
         ),
         Either.chain(result =>
-          makeArchive(result.rawArchive).writeNewNarrative({
+          makeArchive(result.rawArchive).createNewNarrative({
             description: "walking",
             timeSelection: {
               start: oneHundredTwentyMinutesAgo
-            }
+            },
+            tagsFilter: null
           })
         ),
         Either.chain(result =>
-          makeArchive(result.rawArchive).writeNewNarrative({
+          makeArchive(result.rawArchive).createNewNarrative({
             description: "walking with cathy",
             timeSelection: {
               start: oneHundredTenMinutesAgo
-            }
+            },
+            tagsFilter: null
           })
         ),
         Either.fold(Error.throw_, result => {
@@ -94,10 +96,10 @@ describe("main", () => {
     });
   });
 
-  describe("writeNewTag", () => {
-    test("that writeNewTag works for an empty tag", () => {
+  describe("createNewTag", () => {
+    test("that createNewTag works for an empty tag", () => {
       pipe(
-        makeArchive(emptyArchive).writeNewTag({}),
+        makeArchive(emptyArchive).createNewTag({}),
         Either.fold(fail, result => {
           const archive = makeArchive(result.rawArchive);
           expect(archive.raw.tags.length).toBe(1);
@@ -113,7 +115,7 @@ describe("main", () => {
       );
     });
 
-    test("that writeNewTag fails if name already exists", () => {
+    test("that createNewTag fails if name already exists", () => {
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -127,14 +129,14 @@ describe("main", () => {
             }
           ]
         }),
-        archive => archive.writeNewTag({ name: "one" }),
+        archive => archive.createNewTag({ name: "one" }),
         newArchive => {
           expect(Either.isLeft(newArchive)).toBe(true);
         }
       );
     });
 
-    test("that writeNewTag fails if name already exists in an alias with different casing", () => {
+    test("that createNewTag fails if name already exists in an alias with different casing", () => {
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -148,35 +150,14 @@ describe("main", () => {
             }
           ]
         }),
-        archive => archive.writeNewTag({ name: "One" }),
+        archive => archive.createNewTag({ name: "One" }),
         newArchive => {
           expect(Either.isLeft(newArchive)).toBe(true);
         }
       );
     });
 
-    test("that writeNewTag fails if an alias already exists in an alias with different casing", () => {
-      pipe(
-        makeArchive({
-          ...emptyArchive,
-          tags: [
-            {
-              id: "123",
-              aliases: ["One"],
-              connections: [],
-              name: "something",
-              meta: { created: 123, updated: 123 }
-            }
-          ]
-        }),
-        archive => archive.writeNewTag({ name: "different", aliases: ["oNe"] }),
-        result => {
-          expect(Either.isLeft(result)).toBe(true);
-        }
-      );
-    });
-
-    test("that writeNewTag fails if it cannot result a connection", () => {
+    test("that createNewTag fails if an alias already exists in an alias with different casing", () => {
       pipe(
         makeArchive({
           ...emptyArchive,
@@ -191,7 +172,29 @@ describe("main", () => {
           ]
         }),
         archive =>
-          archive.writeNewTag({
+          archive.createNewTag({ name: "different", aliases: ["oNe"] }),
+        result => {
+          expect(Either.isLeft(result)).toBe(true);
+        }
+      );
+    });
+
+    test("that createNewTag fails if it cannot result a connection", () => {
+      pipe(
+        makeArchive({
+          ...emptyArchive,
+          tags: [
+            {
+              id: "123",
+              aliases: ["One"],
+              connections: [],
+              name: "something",
+              meta: { created: 123, updated: 123 }
+            }
+          ]
+        }),
+        archive =>
+          archive.createNewTag({
             name: "different",
             aliases: ["another"],
             connections: ["does not exist"]

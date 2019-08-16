@@ -5,7 +5,13 @@ import {
   GraphQLScalarType,
   GraphQLScalarTypeConfig
 } from "graphql";
-import { TagTag, NodeMeta, NarrativeNarrative } from "./mappers";
+import {
+  TagTag,
+  NodeMeta,
+  NarrativeNarrative,
+  FormattedDate,
+  FormattedDuration
+} from "./mappers";
 import { Context } from "./src/Schema/Context";
 export type Maybe<T> = T | null;
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
@@ -52,6 +58,7 @@ export type FormattedDuration = {
 
 export type Mutation = {
   Tag: Tag__Mutation;
+  Narrative: Narrative__Mutation;
 };
 
 export type Narrative__Mutation = {
@@ -59,7 +66,7 @@ export type Narrative__Mutation = {
 };
 
 export type Narrative__MutationNewArgs = {
-  description?: Maybe<Scalars["String"]>;
+  description: Scalars["String"];
   time?: Maybe<Time__Selection>;
   tags?: Maybe<Tag__Filter>;
 };
@@ -279,8 +286,8 @@ export type ResolversTypes = ResolversObject<{
     Omit<Node__Persisted, "meta"> & { meta: ResolversTypes["Node__Meta"] }
   >;
   Node__Meta: ResolverTypeWrapper<NodeMeta>;
-  FormattedDate: ResolverTypeWrapper<number>;
-  FormattedDuration: ResolverTypeWrapper<number>;
+  FormattedDate: ResolverTypeWrapper<FormattedDate>;
+  FormattedDuration: ResolverTypeWrapper<FormattedDuration>;
   GraphengMS: ResolverTypeWrapper<Scalars["GraphengMS"]>;
   Float: ResolverTypeWrapper<Scalars["Float"]>;
   Narrative__Query: ResolverTypeWrapper<
@@ -310,6 +317,11 @@ export type ResolversTypes = ResolversObject<{
     }
   >;
   Boolean: ResolverTypeWrapper<Scalars["Boolean"]>;
+  Narrative__Mutation: ResolverTypeWrapper<
+    Omit<Narrative__Mutation, "new"> & {
+      new: ResolversTypes["Narrative__Narrative"];
+    }
+  >;
   Time__MS: ResolverTypeWrapper<Scalars["Time__MS"]>;
   Time__Instant: ResolverTypeWrapper<
     Omit<Time__Instant, "start"> & { start: ResolversTypes["FormattedDate"] }
@@ -332,11 +344,6 @@ export type ResolversTypes = ResolversObject<{
       stop: ResolversTypes["FormattedDate"];
     }
   >;
-  Narrative__Mutation: ResolverTypeWrapper<
-    Omit<Narrative__Mutation, "new"> & {
-      new: ResolversTypes["Narrative__Narrative"];
-    }
-  >;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -354,8 +361,8 @@ export type ResolversParentTypes = ResolversObject<{
     meta: ResolversTypes["Node__Meta"];
   };
   Node__Meta: NodeMeta;
-  FormattedDate: number;
-  FormattedDuration: number;
+  FormattedDate: FormattedDate;
+  FormattedDuration: FormattedDuration;
   GraphengMS: Scalars["GraphengMS"];
   Float: Scalars["Float"];
   Narrative__Query: Omit<Narrative__Query, "narratives"> & {
@@ -381,6 +388,9 @@ export type ResolversParentTypes = ResolversObject<{
     update: ResolversTypes["Tag__Tag"];
   };
   Boolean: Scalars["Boolean"];
+  Narrative__Mutation: Omit<Narrative__Mutation, "new"> & {
+    new: ResolversTypes["Narrative__Narrative"];
+  };
   Time__MS: Scalars["Time__MS"];
   Time__Instant: Omit<Time__Instant, "start"> & {
     start: ResolversTypes["FormattedDate"];
@@ -399,9 +409,6 @@ export type ResolversParentTypes = ResolversObject<{
     start: ResolversTypes["FormattedDate"];
     duration: ResolversTypes["FormattedDuration"];
     stop: ResolversTypes["FormattedDate"];
-  };
-  Narrative__Mutation: Omit<Narrative__Mutation, "new"> & {
-    new: ResolversTypes["Narrative__Narrative"];
   };
 }>;
 
@@ -449,6 +456,11 @@ export type MutationResolvers<
   ParentType extends ResolversParentTypes["Mutation"] = ResolversParentTypes["Mutation"]
 > = ResolversObject<{
   Tag?: Resolver<ResolversTypes["Tag__Mutation"], ParentType, ContextType>;
+  Narrative?: Resolver<
+    ResolversTypes["Narrative__Mutation"],
+    ParentType,
+    ContextType
+  >;
 }>;
 
 export type Narrative__MutationResolvers<

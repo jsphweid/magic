@@ -9,6 +9,8 @@ export interface Context {
   archiveModel: ArchiveModel;
 }
 
+// TODO: revisit RawTag exposed here? Maybe something better similar to NarrativeInput
+
 type FieldsOnArchiveThatArePassedThrough =
   | "getRawTagsByIDs"
   | "getRawTagsByNames"
@@ -17,7 +19,7 @@ type FieldsOnArchiveThatArePassedThrough =
 
 export interface ArchiveModel
   extends Pick<Archive.Archive, FieldsOnArchiveThatArePassedThrough> {
-  writeNewTag: (
+  createNewTag: (
     newTag: Partial<Archive.RawTag>
   ) => Either.ErrorOr<Archive.RawTag>;
 
@@ -27,6 +29,10 @@ export interface ArchiveModel
   ) => Either.ErrorOr<Archive.RawTag>;
 
   deleteTag: (id: string) => Either.ErrorOr<boolean>;
+
+  createNewNarrative: (
+    newNarrative: Archive.NarrativeInput
+  ) => Either.ErrorOr<Archive.RawNarrative>;
 }
 
 const writeNewArchive = (
@@ -39,11 +45,11 @@ export const context = async (): Promise<Context> => {
   return {
     now: Moment(),
     archiveModel: {
-      writeNewTag: newTag =>
+      createNewTag: newTag =>
         // TODO: ask Conner if we are wasting a step here...
         // TODO: clean up redundant parts
         Either.chained
-          .bind("result", archive.writeNewTag(newTag))
+          .bind("result", archive.createNewTag(newTag))
           .bindL("writeResult", ({ result }) =>
             writeNewArchive(result.rawArchive)
           )
@@ -60,6 +66,14 @@ export const context = async (): Promise<Context> => {
           archive.deleteTag(id),
           Either.chain(result => writeNewArchive(result.rawArchive))
         ),
+
+      createNewNarrative: newNarrative =>
+        Either.chained
+          .bind("result", archive.createNewNarrative(newNarrative))
+          .bindL("writeResult", ({ result }) =>
+            writeNewArchive(result.rawArchive)
+          )
+          .return(({ result }) => result.narrative),
 
       getRawTagsByIDs: archive.getRawTagsByIDs,
       getRawTagsByNames: archive.getRawTagsByNames,

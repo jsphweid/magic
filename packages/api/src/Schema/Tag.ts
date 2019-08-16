@@ -67,7 +67,7 @@ export const resolvers: Resolvers = {
   Tag__Mutation: {
     create: (_, args, context) =>
       pipe(
-        context.archiveModel.writeNewTag(args),
+        context.archiveModel.createNewTag(args),
         Either.fold(Error.throw, Fn.identity)
       ),
     update: (_, args, context) =>

@@ -9,7 +9,7 @@ import * as Time from "./time";
 export interface Archive {
   raw: RawArchive;
 
-  writeNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<TagMutateResult>;
+  createNewTag: (rawTag: Partial<RawTag>) => Either.ErrorOr<TagMutateResult>;
   updateTag: (
     id: string,
     updates: Partial<RawTag>
@@ -22,15 +22,15 @@ export interface Archive {
   getRawTagByName: (name: string) => Option.Option<RawTag>;
   getRawTagsByNames: (names: string[]) => Array<Option.Option<RawTag>>;
 
-  writeNewNarrative: (
+  createNewNarrative: (
     narrative: NarrativeInput
   ) => Either.ErrorOr<NarrativeMutateResult>;
 }
 
 export interface NarrativeInput {
   description: string;
-  timeSelection?: Time.Selection;
-  tagsFilter?: Tag.DeepPartial<Tag.Filter>;
+  timeSelection: Time.Selection | null;
+  tagsFilter: Partial<Tag.Filter> | null;
 }
 
 export interface RawTag {
@@ -174,7 +174,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           result: true
         }))
       ),
-    writeNewTag: tag =>
+    createNewTag: tag =>
       pipe(
         {
           id: ID.makeUnique(),
@@ -203,7 +203,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
     getRawTagsByNames: names => names.map(getTagByName),
     getAllRawTags: () => rawArchive.tags,
     getAllRawNarratives: () => rawArchive.narratives,
-    writeNewNarrative: ({ tagsFilter, timeSelection, description }) => {
+    createNewNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
         tagsFilter || {},
         description,
@@ -211,7 +211,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
       );
 
       // just iterate through the entire thing....
-
+      console.log("--timeSelection", timeSelection);
       const time = timeSelection
         ? Time.fromSelection(timeSelection)
         : Time.ongoingInterval();

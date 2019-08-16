@@ -1,4 +1,4 @@
-import { pipe } from "@grapheng/prelude";
+import { Either, Error, Fn, pipe } from "@grapheng/prelude";
 import gql from "graphql-tag";
 import Moment from "moment-timezone";
 
@@ -24,7 +24,7 @@ export const typeDefs = gql`
 
   type Narrative__Mutation {
     new(
-      description: String
+      description: String!
       time: Time__Selection
       tags: Tag__Filter
     ): Narrative__Narrative!
@@ -50,7 +50,17 @@ export const typeDefs = gql`
 
 export const resolvers: Resolvers = {
   Narrative__Query: {
-    narratives: (_, __, context) => context.archiveModel.getAllRawNarratives()
+    narratives: (_, __, context) =>
+      void console.log(
+        context.archiveModel
+          .getAllRawNarratives()
+          .sort((a, b) => b.start - a.start)
+          .slice(0, 20)
+      ) ||
+      context.archiveModel
+        .getAllRawNarratives()
+        .sort((a, b) => b.start - a.start)
+        .slice(0, 20)
   },
 
   Narrative__Narrative: {
@@ -64,8 +74,17 @@ export const resolvers: Resolvers = {
         time => Time.convertToFormattedBaseType(time)
       )
   },
-
-  Narrative__Mutation: {}
+  Narrative__Mutation: {
+    new: (_, args, context) =>
+      pipe(
+        context.archiveModel.createNewNarrative({
+          description: args.description,
+          timeSelection: args.time || null,
+          tagsFilter: args.tags as any
+        }),
+        Either.fold(Error.throw, Fn.identity)
+      )
+  }
 };
 
 // const startCurrentEntry = async (

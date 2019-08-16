@@ -5,13 +5,13 @@ import { passThroughResolver } from "../Utility";
 export const typeDefs = gql`
   type Mutation {
     Tag: Tag__Mutation!
+    Narrative: Narrative__Mutation!
   }
 `;
 
-// Narrative: Narrative__Mutation!
-
 export const resolvers: Resolvers = {
   Mutation: {
-    Tag: passThroughResolver
+    Tag: passThroughResolver,
+    Narrative: passThroughResolver
   }
 };
