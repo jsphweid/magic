@@ -1,10 +1,9 @@
-import { pipe } from "@grapheng/prelude";
 import gql from "graphql-tag";
 import Moment from "moment";
 
-// import * as Date from "./Date";
-// import * as Duration from "./Duration";
 import { Resolvers } from "../../../GeneratedTypes";
+import * as Date from "./Date";
+import * as Duration from "./Duration";
 
 export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 
@@ -129,35 +128,38 @@ export const fromSelection = (selection: Selection): Time =>
     ? ongoingInterval(selection.start)
     : instant();
 
-export const convertToFormattedBaseType = (
-  time: Time
-): { kind: OccurrenceKind; start: number; stop?: number } =>
-  pipe(
-    { start: time.start.valueOf(), kind: time.kind },
-    base =>
-      isStoppedInterval(time) ? { ...base, stop: time.stop.valueOf() } : base
-  );
-
-export const duration = (time: Time): Duration =>
-  Moment.duration(
-    (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
-  ).abs();
-
 export const resolvers: Resolvers = {
-  // ...Date.resolvers,
-  // ...Duration.resolvers,
-  // Time__Timed: { __resolveType: () => "Time__Timed" },
-  // Time__Occurrence: {
-  //   __resolveType: () => "Time__Instant"
-  // }
+  ...Date.resolvers,
+  ...Duration.resolvers,
+  Time__Timed: {
+    __resolveType: () => "Narrative__Narrative"
+  },
   Time__Occurrence: {
-    __resolveType: (time: any) =>
+    __resolveType: time =>
       `Time__${time.kind}` as
         | "Time__Instant"
         | "Time__OngoingInterval"
         | "Time__StoppedInterval"
+  },
+  Time__Interval: {
+    __resolveType: source =>
+      isStoppedInterval(source)
+        ? "Time__StoppedInterval"
+        : "Time__OngoingInterval"
+  },
+  Time__OngoingInterval: {
+    start: time => time.start.valueOf(),
+    duration: time =>
+      Moment.duration(Moment().diff(time.start))
+        .abs()
+        .asMilliseconds()
+  },
+  Time__StoppedInterval: {
+    start: time => time.start.valueOf(),
+    stop: time => time.stop.valueOf(),
+    duration: time =>
+      Moment.duration(time.stop.diff(time.start))
+        .abs()
+        .asMilliseconds()
   }
-  // Time__Interval: { __resolveType: () => "Time__Interval" },
-  // Time__OngoingInterval: { duration },
-  // Time__StoppedInterval: { duration },
 };

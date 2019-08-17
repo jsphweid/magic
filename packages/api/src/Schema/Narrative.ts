@@ -51,16 +51,10 @@ export const typeDefs = gql`
 export const resolvers: Resolvers = {
   Narrative__Query: {
     narratives: (_, __, context) =>
-      void console.log(
-        context.archiveModel
-          .getAllRawNarratives()
-          .sort((a, b) => b.start - a.start)
-          .slice(0, 20)
-      ) ||
       context.archiveModel
         .getAllRawNarratives()
         .sort((a, b) => b.start - a.start)
-        .slice(0, 20)
+        .slice(0, 5)
   },
 
   Narrative__Narrative: {
@@ -69,9 +63,8 @@ export const resolvers: Resolvers = {
       pipe(
         Time.fromSelection({
           start: Moment(source.start),
-          stop: Moment(source.stop)
-        }),
-        time => Time.convertToFormattedBaseType(time)
+          stop: source.stop ? Moment(source.stop) : undefined
+        })
       )
   },
   Narrative__Mutation: {

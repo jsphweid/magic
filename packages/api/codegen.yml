@@ -20,3 +20,7 @@ generates:
         Narrative__Narrative: ./mappers#NarrativeNarrative
         FormattedDate: ./mappers#FormattedDate
         FormattedDuration: ./mappers#FormattedDuration
+        Time__Occurrence: ./mappers#TimeOccurrence
+        Time__StoppedInterval: ./mappers#TimeStoppedInterval
+        Time__OngoingInterval: ./mappers#TimeOngoingInterval
+        Time__Interval: ./mappers#TimeInterval

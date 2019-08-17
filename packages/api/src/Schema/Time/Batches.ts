@@ -1,7 +1,7 @@
 import _ from "lodash/fp";
 import Moment from "moment";
 
-import * as Time from "./index";
+import * as Time from ".";
 
 export type Batches = Time.StoppedInterval[];
 

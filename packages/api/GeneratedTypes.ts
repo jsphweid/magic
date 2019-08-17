@@ -10,7 +10,11 @@ import {
   NodeMeta,
   NarrativeNarrative,
   FormattedDate,
-  FormattedDuration
+  FormattedDuration,
+  TimeOccurrence,
+  TimeStoppedInterval,
+  TimeOngoingInterval,
+  TimeInterval
 } from "./mappers";
 import { Context } from "./src/Schema/Context";
 export type Maybe<T> = T | null;
@@ -303,9 +307,7 @@ export type ResolversTypes = ResolversObject<{
   Time__Timed: ResolverTypeWrapper<
     Omit<Time__Timed, "time"> & { time: ResolversTypes["Time__Occurrence"] }
   >;
-  Time__Occurrence: ResolverTypeWrapper<
-    Omit<Time__Occurrence, "start"> & { start: ResolversTypes["FormattedDate"] }
-  >;
+  Time__Occurrence: ResolverTypeWrapper<TimeOccurrence>;
   Tag__Tagged: ResolverTypeWrapper<
     Omit<Tag__Tagged, "tags"> & { tags: Array<ResolversTypes["Tag__Tag"]> }
   >;
@@ -326,24 +328,9 @@ export type ResolversTypes = ResolversObject<{
   Time__Instant: ResolverTypeWrapper<
     Omit<Time__Instant, "start"> & { start: ResolversTypes["FormattedDate"] }
   >;
-  Time__Interval: ResolverTypeWrapper<
-    Omit<Time__Interval, "duration"> & {
-      duration: ResolversTypes["FormattedDuration"];
-    }
-  >;
-  Time__OngoingInterval: ResolverTypeWrapper<
-    Omit<Time__OngoingInterval, "start" | "duration"> & {
-      start: ResolversTypes["FormattedDate"];
-      duration: ResolversTypes["FormattedDuration"];
-    }
-  >;
-  Time__StoppedInterval: ResolverTypeWrapper<
-    Omit<Time__StoppedInterval, "start" | "duration" | "stop"> & {
-      start: ResolversTypes["FormattedDate"];
-      duration: ResolversTypes["FormattedDuration"];
-      stop: ResolversTypes["FormattedDate"];
-    }
-  >;
+  Time__Interval: ResolverTypeWrapper<TimeInterval>;
+  Time__OngoingInterval: ResolverTypeWrapper<TimeOngoingInterval>;
+  Time__StoppedInterval: ResolverTypeWrapper<TimeStoppedInterval>;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -376,9 +363,7 @@ export type ResolversParentTypes = ResolversObject<{
   Time__Timed: Omit<Time__Timed, "time"> & {
     time: ResolversTypes["Time__Occurrence"];
   };
-  Time__Occurrence: Omit<Time__Occurrence, "start"> & {
-    start: ResolversTypes["FormattedDate"];
-  };
+  Time__Occurrence: TimeOccurrence;
   Tag__Tagged: Omit<Tag__Tagged, "tags"> & {
     tags: Array<ResolversTypes["Tag__Tag"]>;
   };
@@ -395,21 +380,9 @@ export type ResolversParentTypes = ResolversObject<{
   Time__Instant: Omit<Time__Instant, "start"> & {
     start: ResolversTypes["FormattedDate"];
   };
-  Time__Interval: Omit<Time__Interval, "duration"> & {
-    duration: ResolversTypes["FormattedDuration"];
-  };
-  Time__OngoingInterval: Omit<Time__OngoingInterval, "start" | "duration"> & {
-    start: ResolversTypes["FormattedDate"];
-    duration: ResolversTypes["FormattedDuration"];
-  };
-  Time__StoppedInterval: Omit<
-    Time__StoppedInterval,
-    "start" | "duration" | "stop"
-  > & {
-    start: ResolversTypes["FormattedDate"];
-    duration: ResolversTypes["FormattedDuration"];
-    stop: ResolversTypes["FormattedDate"];
-  };
+  Time__Interval: TimeInterval;
+  Time__OngoingInterval: TimeOngoingInterval;
+  Time__StoppedInterval: TimeStoppedInterval;
 }>;
 
 export type FormattedDateResolvers<
