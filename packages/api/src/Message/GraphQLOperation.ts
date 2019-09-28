@@ -22,25 +22,6 @@ const source = gql`
     }
   }
 
-  query history(
-    $start: Time__Date
-    $duration: Time__Duration
-    $stop: Time__Date
-    $include: [String!]
-    $exclude: [String!]
-  ) {
-    History {
-      all(
-        time: { start: $start, duration: $duration, stop: $stop }
-        tags: { include: { names: $include }, exclude: { names: $exclude } }
-      ) {
-        narratives {
-          ...narrative
-        }
-      }
-    }
-  }
-
   fragment narrative on Narrative__Narrative {
     description
     tags {

@@ -1,4 +1,4 @@
-import { Array, Either, Error, Fn, pipe } from "@grapheng/prelude";
+import { Array, Fn, pipe, TaskEither } from "@grapheng/prelude";
 import gql from "graphql-tag";
 
 import { Resolvers } from "../../GeneratedTypes";
@@ -68,7 +68,7 @@ export const resolvers: Resolvers = {
     create: (_, args, context) =>
       pipe(
         context.archiveModel.createNewTag(args),
-        Either.fold(Error.throw, Fn.identity)
+        TaskEither.runUnsafe
       ),
     update: (_, args, context) =>
       pipe(
@@ -78,12 +78,12 @@ export const resolvers: Resolvers = {
           aliases: args.aliases || undefined,
           connections: args.connections || undefined
         }),
-        Either.fold(Error.throw, Fn.identity)
+        TaskEither.runUnsafe
       ),
     delete: (_, args, context) =>
       pipe(
         context.archiveModel.deleteTag(args.ID),
-        Either.fold(Error.throw, Fn.identity)
+        TaskEither.runUnsafe
       )
   }
 };

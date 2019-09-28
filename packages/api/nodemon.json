@@ -1,0 +1,7 @@
+{
+  "watch": ["src/**"],
+  "ext": "ts json",
+  "ignore": ["src/**/*.test.ts"],
+  "exec": "NODE_ENV=dev node dist/api/src/index.js",
+  "verbose": true
+}

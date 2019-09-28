@@ -16,5 +16,3 @@ export const resolvers: Resolvers = {
     Narrative: passThroughResolver
   }
 };
-
-// History: History__Query!

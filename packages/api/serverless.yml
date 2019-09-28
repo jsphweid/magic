@@ -1,0 +1,49 @@
+service:
+  name: jsphweid-magic
+
+plugins:
+  - serverless-webpack
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+
+functions:
+  graphql:
+    handler: dist/api/src/Deployments/GraphQLLambda.handler
+    environment:
+      ARCHIVE_BUCKET_NAME: ${self:custom.archiveBucketName}
+    timeout: 60
+    events:
+      - http:
+          path: graphql
+          method: post
+          cors:
+            origin: "*"
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - Cache-Control
+              - Startlower
+              - Text
+              - Access-Control-Allow-Headers
+              - Access-Control-Allow-Origin
+            allowCredentials: false
+
+custom:
+  archiveBucketName: jsphweid-magic-archive
+  webpack:
+    webpackConfig: ./webpack.config.js
+
+resources:
+  Resources:
+    S3BucketArchive:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.archiveBucketName}
+        VersioningConfiguration:
+          Status: Enabled

@@ -7,11 +7,17 @@
   "scripts": {
     "backup": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Backup.ts",
     "generate:code": "DEBUG=1 VERBOSE=1 TS_NODE_TRANSPILE_ONLY=true gql-gen",
-    "temp": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Temp.ts"
+    "temp": "ts-node --project ../../tsconfig.json --require tsconfig-paths/register src/Temp.ts",
+    "start": "cp -R data/backup dist/api/data && NODE_ENV=dev tsc -w & nodemon --config ./nodemon.json",
+    "build": "tsc",
+    "deploy": "npm run build && serverless deploy"
   },
   "dependencies": {
     "@grapheng/time": "^2.0.1",
-    "apollo-server": "^2.6.9",
+    "apollo-server": "^2.8.1",
+    "apollo-server-express": "^2.8.1",
+    "apollo-server-lambda": "^2.8.1",
+    "aws-sdk": "^2.512.0",
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
@@ -27,6 +33,7 @@
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
     "moment-timezone": "^0.5.21",
+    "raw-archive": "file:../raw-archive",
     "twilio": "^3.23.2",
     "word-wrap": "^1.2.3"
   },
@@ -36,15 +43,20 @@
     "@graphql-codegen/cli": "^1.4.0",
     "@graphql-codegen/typescript": "^1.4.0",
     "@graphql-codegen/typescript-resolvers": "^1.4.0",
+    "@types/cors": "^2.8.5",
     "@types/dotenv": "^6.1.1",
     "@types/graphql": "^14.2.2",
     "@types/lodash": "^4.14.116",
     "@types/moment-timezone": "^0.5.8",
     "@types/stringify-object": "^3.2.0",
     "@types/uuid": "^3.4.5",
-    "parcel-bundler": "^1.9.4",
-    "parcel-plugin-typescript": "^1.0.0",
+    "nodemon": "^1.19.1",
+    "serverless": "^1.50.0",
+    "serverless-webpack": "^5.3.1",
+    "source-map-support": "^0.5.13",
+    "ts-loader": "^6.0.4",
     "typescript": "^3.5.3",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "webpack": "^4.39.2"
   }
 }

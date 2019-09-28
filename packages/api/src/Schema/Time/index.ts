@@ -128,6 +128,11 @@ export const fromSelection = (selection: Selection): Time =>
     ? ongoingInterval(selection.start)
     : instant();
 
+export const duration = (time: Time): Duration =>
+  Moment.duration(
+    (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
+  ).abs();
+
 export const resolvers: Resolvers = {
   ...Date.resolvers,
   ...Duration.resolvers,

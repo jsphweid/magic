@@ -1,8 +1,9 @@
-import { Either, Error, Fn, pipe } from "@grapheng/prelude";
+import { pipe, TaskEither } from "@grapheng/prelude";
 import gql from "graphql-tag";
 import Moment from "moment-timezone";
 
 import { Resolvers } from "../../GeneratedTypes";
+import * as Node from "./Node";
 import * as Time from "./Time";
 
 export const typeDefs = gql`
@@ -31,22 +32,12 @@ export const typeDefs = gql`
   }
 `;
 
-// export interface Narrative
-//   extends Node.Identifiable,
-//     Node.Persisted,
-//     Time.Timed,
-//     Tag.Tagged {
-//   description: string;
-// }
-
-// export const descriptionFromTags = (tags: Tag.Tag[]): string =>
-//   tags.reduce((previous, tag, i) => {
-//     const name = tag.name.replace(/-/g, " ");
-//     if (i === 0) return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-//     if (i === 1 && tags.length === 1) return `${previous} and ${name}`;
-//     if (i === tags.length - 1) return `${previous}, and ${name}`;
-//     return `${previous}, ${name}`;
-//   }, "");
+export interface Narrative
+  extends Node.Identifiable,
+    Node.Persisted,
+    Time.Timed {
+  description: string;
+}
 
 export const resolvers: Resolvers = {
   Narrative__Query: {
@@ -75,7 +66,7 @@ export const resolvers: Resolvers = {
           timeSelection: args.time || null,
           tagsFilter: args.tags as any
         }),
-        Either.fold(Error.throw, Fn.identity)
+        TaskEither.runUnsafe
       )
   }
 };

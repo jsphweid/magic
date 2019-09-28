@@ -8,12 +8,19 @@ import * as GraphQLTools from "graphql-tools";
 import * as Message from "./Message";
 import * as Schema from "./Schema";
 
+// tslint:disable-next-line:no-var-requires
+require("source-map-support").install();
+process.on("unhandledRejection", console.log);
+
 export const schema = GraphQLTools.makeExecutableSchema({
   typeDefs: Schema.typeDefs,
   resolvers: Schema.resolvers
 });
 
-const server = new ApolloServer({ schema, context: () => Schema.context() });
+const server = new ApolloServer({
+  schema,
+  context: () => Schema.context()
+});
 
 const app = express();
 

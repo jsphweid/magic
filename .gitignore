@@ -24,3 +24,6 @@ firestore.rules
 *.iml
 *.log
 *.env
+*.tgz
+.DS_STORE
+.serverless

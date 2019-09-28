@@ -1,8 +1,8 @@
-import { Either, pipe } from "@grapheng/prelude";
+import { pipe, TaskEither } from "@grapheng/prelude";
 import Moment from "moment";
+import * as RawArchive from "raw-archive";
 
-import * as Archive from "../../../raw-archive/src";
-import * as Local from "../Local";
+import * as ArchiveStorage from "../ArchiveStorage";
 
 export interface Context {
   now: Moment.Moment;
@@ -18,67 +18,82 @@ type FieldsOnArchiveThatArePassedThrough =
   | "getAllRawNarratives";
 
 export interface ArchiveModel
-  extends Pick<Archive.Archive, FieldsOnArchiveThatArePassedThrough> {
-  createNewTag: (
-    newTag: Partial<Archive.RawTag>
-  ) => Either.ErrorOr<Archive.RawTag>;
-
+  extends Pick<RawArchive.Archive, FieldsOnArchiveThatArePassedThrough> {
+  deleteTag: (id: string) => TaskEither.ErrorOr<boolean>;
   updateTag: (
     id: string,
-    updates: Partial<Archive.RawTag>
-  ) => Either.ErrorOr<Archive.RawTag>;
-
-  deleteTag: (id: string) => Either.ErrorOr<boolean>;
-
+    updates: Partial<RawArchive.RawTag>
+  ) => TaskEither.ErrorOr<RawArchive.RawTag>;
+  createNewTag: (
+    newTag: Partial<RawArchive.RawTag>
+  ) => TaskEither.ErrorOr<RawArchive.RawTag>;
   createNewNarrative: (
-    newNarrative: Archive.NarrativeInput
-  ) => Either.ErrorOr<Archive.RawNarrative>;
+    newNarrative: RawArchive.NarrativeInput
+  ) => TaskEither.ErrorOr<RawArchive.RawNarrative>;
 }
 
-const writeNewArchive = (
-  newArchive: Archive.RawArchive
-): Either.ErrorOr<boolean> => Local.saveNewArchive(newArchive);
+export const context = async (): Promise<Context> =>
+  pipe(
+    ArchiveStorage.get(),
+    TaskEither.map(RawArchive.makeArchive),
+    TaskEither.map(archive => ({
+      now: Moment(),
+      archiveModel: {
+        createNewTag: (newTag: Partial<RawArchive.RawTag>) =>
+          // TODO: ask Conner if we are wasting a step here...
+          // TODO: clean up redundant parts
+          TaskEither.chained
+            .bind(
+              "result",
+              pipe(
+                archive.createNewTag(newTag),
+                TaskEither.fromEither
+              )
+            )
+            .bindL("writeResult", ({ result }) =>
+              ArchiveStorage.writeNew(result.rawArchive)
+            )
+            .return(({ result }) => result.tag),
+        updateTag: (id: string, updates: Partial<RawArchive.RawTag>) =>
+          TaskEither.chained
+            .bind(
+              "result",
+              pipe(
+                archive.updateTag(id, updates),
+                TaskEither.fromEither
+              )
+            )
+            .bindL("writeResult", ({ result }) =>
+              ArchiveStorage.writeNew(result.rawArchive)
+            )
+            .return(({ result }) => result.tag),
 
-export const context = async (): Promise<Context> => {
-  const archive = Archive.makeArchive(await Local.getMostRecentArchive());
-
-  return {
-    now: Moment(),
-    archiveModel: {
-      createNewTag: newTag =>
-        // TODO: ask Conner if we are wasting a step here...
-        // TODO: clean up redundant parts
-        Either.chained
-          .bind("result", archive.createNewTag(newTag))
-          .bindL("writeResult", ({ result }) =>
-            writeNewArchive(result.rawArchive)
-          )
-          .return(({ result }) => result.tag),
-      updateTag: (id, updates) =>
-        Either.chained
-          .bind("result", archive.updateTag(id, updates))
-          .bindL("writeResult", ({ result }) =>
-            writeNewArchive(result.rawArchive)
-          )
-          .return(({ result }) => result.tag),
-      deleteTag: id =>
-        pipe(
-          archive.deleteTag(id),
-          Either.chain(result => writeNewArchive(result.rawArchive))
-        ),
-
-      createNewNarrative: newNarrative =>
-        Either.chained
-          .bind("result", archive.createNewNarrative(newNarrative))
-          .bindL("writeResult", ({ result }) =>
-            writeNewArchive(result.rawArchive)
-          )
-          .return(({ result }) => result.narrative),
-
-      getRawTagsByIDs: archive.getRawTagsByIDs,
-      getRawTagsByNames: archive.getRawTagsByNames,
-      getAllRawTags: archive.getAllRawTags,
-      getAllRawNarratives: archive.getAllRawNarratives
-    }
-  };
-};
+        deleteTag: (id: string) =>
+          pipe(
+            archive.deleteTag(id),
+            TaskEither.fromEither,
+            TaskEither.chain(result =>
+              ArchiveStorage.writeNew(result.rawArchive)
+            )
+          ),
+        createNewNarrative: (newNarrative: RawArchive.NarrativeInput) =>
+          TaskEither.chained
+            .bind(
+              "result",
+              pipe(
+                archive.createNewNarrative(newNarrative),
+                TaskEither.fromEither
+              )
+            )
+            .bindL("writeResult", ({ result }) =>
+              ArchiveStorage.writeNew(result.rawArchive)
+            )
+            .return(({ result }) => result.narrative),
+        getRawTagsByIDs: archive.getRawTagsByIDs,
+        getRawTagsByNames: archive.getRawTagsByNames,
+        getAllRawTags: archive.getAllRawTags,
+        getAllRawNarratives: archive.getAllRawNarratives
+      }
+    })),
+    TaskEither.runUnsafe
+  );
