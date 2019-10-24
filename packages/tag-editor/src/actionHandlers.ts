@@ -6,7 +6,7 @@ import {
   DeleteTagVariables,
   UpdateTag,
   UpdateTagVariables
-} from "../__generatedTypes__";
+} from "../__GeneratedCode__";
 import client from "./graphql/client";
 
 import CreateTagMutation from "./graphql/queries/CreateTag";

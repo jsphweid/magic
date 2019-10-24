@@ -1,3 +1,4 @@
+import { Date, Duration } from "@grapheng/units";
 import { RawNarrative, RawTag } from "~/raw-archive";
 
 import { PersistenceMeta } from "./src/Schema/Node";
@@ -12,5 +13,5 @@ export type TimeInterval = TimeStoppedInterval | TimeOngoingInterval;
 
 export type NodeMeta = PersistenceMeta;
 
-export type FormattedDate = number;
-export type FormattedDuration = number;
+export type DateOutputMapper = Date.DateInput;
+export type DurationOutputMapper = Duration.DurationInput;

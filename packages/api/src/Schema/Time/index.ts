@@ -1,7 +1,7 @@
 import gql from "graphql-tag";
 import Moment from "moment";
 
-import { Resolvers } from "../../../GeneratedTypes";
+import { Resolvers } from "../../../GeneratedCode";
 import * as Date from "./Date";
 import * as Duration from "./Duration";
 
@@ -10,45 +10,45 @@ export { Batches, fromInterval as batchesFromInterval } from "./Batches";
 export const typeDefs = gql`
   scalar Time__Date
   scalar Time__Duration
-  scalar Time__MS
 
   interface Time__Timed {
     time: Time__Occurrence!
   }
 
   interface Time__Occurrence {
-    start: FormattedDate!
+    start: DateOutput!
   }
 
   # TODO: is this ever really used?
   type Time__Instant implements Time__Occurrence {
-    start: FormattedDate!
+    start: DateOutput!
   }
 
   interface Time__Interval {
-    duration: FormattedDuration!
+    duration: DurationOutput!
   }
 
   type Time__OngoingInterval implements Time__Occurrence & Time__Interval {
-    start: FormattedDate!
-    duration: FormattedDuration!
+    start: DateOutput!
+    duration: DurationOutput!
   }
 
   type Time__StoppedInterval implements Time__Occurrence & Time__Interval {
-    start: FormattedDate!
-    duration: FormattedDuration!
-    stop: FormattedDate!
+    start: DateOutput!
+    duration: DurationOutput!
+    stop: DateOutput!
   }
 
   input Time__Selection {
-    start: Time__Date
-    duration: Time__Duration
-    stop: Time__Date
+    start: DateInput
+    duration: DurationInput
+    stop: DateInput
   }
 `;
 
 export type Date = Moment.Moment;
 export type Duration = Moment.Duration;
+export type Interval = OngoingInterval | StoppedInterval;
 export type Time = Instant | OngoingInterval | StoppedInterval;
 
 export interface Timed {
@@ -83,6 +83,9 @@ export const isInstant = (time: Time): time is Instant =>
 
 export const isOngoingInterval = (time: Time): time is OngoingInterval =>
   time.kind === "OngoingInterval";
+
+export const isInterval = (time: Time): time is Interval =>
+  isOngoingInterval(time) || isStoppedInterval(time);
 
 export const isStoppedInterval = (time: Time): time is StoppedInterval =>
   time.kind === "StoppedInterval";
@@ -133,6 +136,13 @@ export const duration = (time: Time): Duration =>
     (isStoppedInterval(time) ? time.stop : Moment()).diff(time.start)
   ).abs();
 
+export const instantIsInInterval = (
+  instant: Instant,
+  interval: Interval
+): boolean =>
+  instant.start.valueOf() > toStoppedInterval(interval).start.valueOf() &&
+  instant.start.valueOf() <= toStoppedInterval(interval).stop.valueOf();
+
 export const resolvers: Resolvers = {
   ...Date.resolvers,
   ...Duration.resolvers,
@@ -153,18 +163,20 @@ export const resolvers: Resolvers = {
         : "Time__OngoingInterval"
   },
   Time__OngoingInterval: {
-    start: time => time.start.valueOf(),
-    duration: time =>
-      Moment.duration(Moment().diff(time.start))
+    start: time => ({ unix: { milliseconds: time.start.valueOf() } }),
+    duration: time => ({
+      milliseconds: Moment.duration(Moment().diff(time.start))
         .abs()
         .asMilliseconds()
+    })
   },
   Time__StoppedInterval: {
-    start: time => time.start.valueOf(),
-    stop: time => time.stop.valueOf(),
-    duration: time =>
-      Moment.duration(time.stop.diff(time.start))
+    start: time => ({ unix: { milliseconds: time.start.valueOf() } }),
+    stop: time => ({ unix: { milliseconds: time.stop.valueOf() } }),
+    duration: time => ({
+      milliseconds: Moment.duration(time.stop.diff(time.start))
         .abs()
         .asMilliseconds()
+    })
   }
 };

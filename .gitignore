@@ -27,3 +27,5 @@ firestore.rules
 *.tgz
 .DS_STORE
 .serverless
+
+GeneratedCode.ts

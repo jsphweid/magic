@@ -3,7 +3,7 @@ import * as React from "react";
 import GraphEditor, { NodeWithConnections } from "react-graph-db-editor";
 import "../node_modules/react-graph-db-editor/dist/index.css";
 
-import { AllTags } from "../__generatedTypes__";
+import { AllTags } from "../__GeneratedCode__";
 import client from "./graphql/client";
 import AllTagsQuery from "./graphql/queries/AllTags";
 

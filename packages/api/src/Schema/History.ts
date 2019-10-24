@@ -1,7 +1,7 @@
 import gql from "graphql-tag";
 import _ from "lodash/fp";
 
-import { Resolvers } from "../../GeneratedTypes";
+import { Resolvers } from "../../GeneratedCode";
 // import * as Toggl from "../Toggl";
 // import * as Utility from "../Utility";
 import * as Narrative from "./Narrative";

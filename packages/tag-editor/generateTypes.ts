@@ -13,9 +13,9 @@ function executeBashCommand(command: string): Promise<void> {
   });
 }
 
-const removeOldTypesCommand = `rm -rf ./__generatedTypes__`;
+const removeOldTypesCommand = `rm -rf ./__GeneratedCode__`;
 const codegenCommand = `
-apollo codegen:generate ./__generatedTypes__.ts --outputFlat \
+apollo codegen:generate ./__GeneratedCode__.ts --outputFlat \
     --queries=./src/graphql/queries/**/*.ts \
     --endpoint=${apiUrl} \
     --header="Authorization: ${authHeader}" \

@@ -1,7 +1,7 @@
 import { Array, Fn, pipe, TaskEither } from "@grapheng/prelude";
 import gql from "graphql-tag";
 
-import { Resolvers } from "../../GeneratedTypes";
+import { Resolvers } from "../../GeneratedCode";
 
 export const typeDefs = gql`
   type Tag__Tag implements Node__Identifiable & Node__Persisted {

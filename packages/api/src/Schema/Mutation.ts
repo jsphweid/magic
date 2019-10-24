@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { Resolvers } from "../../GeneratedTypes";
+import { Resolvers } from "../../GeneratedCode";
 import { passThroughResolver } from "../Utility";
 
 export const typeDefs = gql`

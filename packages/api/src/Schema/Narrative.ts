@@ -1,8 +1,9 @@
-import { pipe, TaskEither } from "@grapheng/prelude";
+import { pipe } from "@grapheng/prelude";
+import { Date, Duration } from "@grapheng/units";
 import gql from "graphql-tag";
 import Moment from "moment-timezone";
 
-import { Resolvers } from "../../GeneratedTypes";
+import { Resolvers } from "../../GeneratedCode";
 import * as Node from "./Node";
 import * as Time from "./Time";
 
@@ -41,13 +42,38 @@ export interface Narrative
 
 export const resolvers: Resolvers = {
   Narrative__Query: {
-    narratives: (_, __, context) =>
+    narratives: (_, args, context) =>
       context.archiveModel
         .getAllRawNarratives()
         .sort((a, b) => b.start - a.start)
-        .slice(0, 5)
-  },
+        .filter(narrative => {
+          if (args.time) {
+            const start = args.time.start
+              ? Moment(Date.convertInput(args.time.start).unix.milliseconds)
+              : undefined;
 
+            const stop = args.time.stop
+              ? Moment(Date.convertInput(args.time.stop).unix.milliseconds)
+              : undefined;
+
+            const duration = args.time.duration
+              ? Moment.duration(
+                  Duration.convertInput(args.time.duration).milliseconds
+                )
+              : undefined;
+
+            const timeSelection = Time.fromSelection({ start, stop, duration });
+
+            if (Time.isInterval(timeSelection)) {
+              return Time.instantIsInInterval(
+                Time.instant(Moment(narrative.start)),
+                timeSelection
+              );
+            }
+          }
+        })
+    // .slice(0, 5)
+  },
   Narrative__Narrative: {
     ID: source => source.id,
     time: source =>
@@ -57,18 +83,18 @@ export const resolvers: Resolvers = {
           stop: source.stop ? Moment(source.stop) : undefined
         })
       )
-  },
-  Narrative__Mutation: {
-    new: (_, args, context) =>
-      pipe(
-        context.archiveModel.createNewNarrative({
-          description: args.description,
-          timeSelection: args.time || null,
-          tagsFilter: args.tags as any
-        }),
-        TaskEither.runUnsafe
-      )
   }
+  // Narrative__Mutation: {
+  //   new: (_, args, context) =>
+  //     pipe(
+  //       context.archiveModel.createNewNarrative({
+  //         description: args.description,
+  //         timeSelection: args.time || null,
+  //         tagsFilter: args.tags as any
+  //       }),
+  //       TaskEither.runUnsafe
+  //     )
+  // }
 };
 
 // const startCurrentEntry = async (

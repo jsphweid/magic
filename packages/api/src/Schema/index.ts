@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 
-import { Resolvers } from "../../GeneratedTypes";
+import { Resolvers } from "../../GeneratedCode";
 import * as External from "./External";
 import * as History from "./History";
 import * as Mutation from "./Mutation";

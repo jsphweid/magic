@@ -3,7 +3,7 @@ require:
   - ts-node/register
 overwrite: true
 generates:
-  GeneratedTypes.ts:
+  GeneratedCode.ts:
     plugins:
       - add: "// THIS IS A GENERATED FILE, DO NOT MODIFY"
       - add: "// tslint:disable"
@@ -18,9 +18,9 @@ generates:
         Tag__Tag: ./mappers#TagTag
         Node__Meta: ./mappers#NodeMeta
         Narrative__Narrative: ./mappers#NarrativeNarrative
-        FormattedDate: ./mappers#FormattedDate
-        FormattedDuration: ./mappers#FormattedDuration
         Time__Occurrence: ./mappers#TimeOccurrence
         Time__StoppedInterval: ./mappers#TimeStoppedInterval
         Time__OngoingInterval: ./mappers#TimeOngoingInterval
         Time__Interval: ./mappers#TimeInterval
+        DateOutput: ./mappers#DateOutputMapper
+        DurationOutput: ./mappers#DurationOutputMapper
