@@ -1,9 +1,10 @@
 import { pipe } from "@grapheng/prelude";
-import { Date, Duration } from "@grapheng/units";
 import gql from "graphql-tag";
 import Moment from "moment-timezone";
 
-import { Resolvers } from "../../GeneratedCode";
+import { RawNarrative } from "~/raw-archive";
+import { Narrative__QueryNarrativesArgs, Resolvers } from "../../GeneratedCode";
+import { timeUnitToMoment } from "../Utility";
 import * as Node from "./Node";
 import * as Time from "./Time";
 
@@ -40,39 +41,37 @@ export interface Narrative
   description: string;
 }
 
+export const timeBasedFilter = (selection: any) => (narrative: RawNarrative) =>
+  pipe(
+    Time.fromSelection(timeUnitToMoment(selection)),
+    timeSelection =>
+      Time.isInterval(timeSelection)
+        ? Time.instantIsInInterval(
+            Time.instant(Moment(narrative.start)),
+            timeSelection
+          )
+        : true
+  );
+
+export const stringBasedFilter = (str?: string | null) => (
+  narrative: RawNarrative
+) =>
+  str ? narrative.description.toLowerCase().includes(str.toLowerCase()) : true;
+
+export const filterNarratives = (args: Narrative__QueryNarrativesArgs) => (
+  narrative: RawNarrative
+) =>
+  timeBasedFilter(args.time)(narrative) &&
+  stringBasedFilter(args.search)(narrative);
+// TODO: add tag based filter
+
 export const resolvers: Resolvers = {
   Narrative__Query: {
     narratives: (_, args, context) =>
       context.archiveModel
         .getAllRawNarratives()
         .sort((a, b) => b.start - a.start)
-        .filter(narrative => {
-          if (args.time) {
-            const start = args.time.start
-              ? Moment(Date.convertInput(args.time.start).unix.milliseconds)
-              : undefined;
-
-            const stop = args.time.stop
-              ? Moment(Date.convertInput(args.time.stop).unix.milliseconds)
-              : undefined;
-
-            const duration = args.time.duration
-              ? Moment.duration(
-                  Duration.convertInput(args.time.duration).milliseconds
-                )
-              : undefined;
-
-            const timeSelection = Time.fromSelection({ start, stop, duration });
-
-            if (Time.isInterval(timeSelection)) {
-              return Time.instantIsInInterval(
-                Time.instant(Moment(narrative.start)),
-                timeSelection
-              );
-            }
-          }
-        })
-    // .slice(0, 5)
+        .filter(filterNarratives(args)) // how do you flow
   },
   Narrative__Narrative: {
     ID: source => source.id,
