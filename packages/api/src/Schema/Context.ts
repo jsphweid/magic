@@ -30,9 +30,12 @@ export interface ArchiveModel
   createNewNarrative: (
     newNarrative: RawArchive.NarrativeInput
   ) => TaskEither.ErrorOr<RawArchive.RawNarrative>;
+  updateNarrative: (
+    updates: RawArchive.UpdateNarrativeInput
+  ) => TaskEither.ErrorOr<RawArchive.RawNarrative>;
 }
 
-const takeMutateResultAndSave = (
+const makeTagMutateResultAndSave = (
   tagMutateResult: Either.ErrorOr<RawArchive.TagMutateResult>
 ): TaskEither.TaskEither<Error, RawArchive.RawTag> =>
   pipe(
@@ -44,6 +47,21 @@ const takeMutateResultAndSave = (
         TaskEither.chain(result => ArchiveStorage.writeNew(result.rawArchive)),
         TaskEither.chain(() => result),
         TaskEither.map(result => result.tag)
+      )
+  );
+
+const makeNarrativeMutateResultAndSave = (
+  narrativeMutateResult: Either.ErrorOr<RawArchive.NarrativeMutateResult>
+): TaskEither.ErrorOr<RawArchive.RawNarrative> =>
+  pipe(
+    narrativeMutateResult,
+    TaskEither.fromEither,
+    result =>
+      pipe(
+        result,
+        TaskEither.chain(result => ArchiveStorage.writeNew(result.rawArchive)),
+        TaskEither.chain(() => result),
+        TaskEither.map(result => result.narrative)
       )
   );
 
@@ -59,7 +77,7 @@ export const context = async (): Promise<Context> =>
         ): TaskEither.TaskEither<Error, RawArchive.RawTag> =>
           pipe(
             archive.createNewTag(newTag),
-            takeMutateResultAndSave
+            makeTagMutateResultAndSave
           ),
         updateTag: (
           id: string,
@@ -67,7 +85,7 @@ export const context = async (): Promise<Context> =>
         ): TaskEither.TaskEither<Error, RawArchive.RawTag> =>
           pipe(
             archive.updateTag(id, updates),
-            takeMutateResultAndSave
+            makeTagMutateResultAndSave
           ),
         deleteTag: (id: string): TaskEither.TaskEither<Error, boolean> =>
           pipe(
@@ -80,16 +98,12 @@ export const context = async (): Promise<Context> =>
         createNewNarrative: (newNarrative: RawArchive.NarrativeInput) =>
           pipe(
             archive.createNewNarrative(newNarrative),
-            TaskEither.fromEither,
-            result =>
-              pipe(
-                result,
-                TaskEither.chain(result =>
-                  ArchiveStorage.writeNew(result.rawArchive)
-                ),
-                TaskEither.chain(() => result),
-                TaskEither.map(result => result.narrative)
-              )
+            makeNarrativeMutateResultAndSave
+          ),
+        updateNarrative: (updates: RawArchive.UpdateNarrativeInput) =>
+          pipe(
+            archive.updateNarrative(updates),
+            makeNarrativeMutateResultAndSave
           ),
         getRawTagsByIDs: archive.getRawTagsByIDs,
         getRawTagsByNames: archive.getRawTagsByNames,

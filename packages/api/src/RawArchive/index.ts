@@ -1,10 +1,11 @@
 import { Either, Error, Maybe, Option, pipe } from "@grapheng/prelude";
 import Moment from "moment-timezone";
 
-import { removeNullsAndUndefineds } from "../Utility";
+import { copyObject, removeNullsAndUndefineds } from "../Utility";
 import * as ID from "./id";
 import * as Narrative from "./narrative";
 import * as Tag from "./tag";
+import { PartialOrNull } from "./tag";
 import * as Time from "./time";
 
 export interface Archive {
@@ -22,11 +23,19 @@ export interface Archive {
   getAllRawNarratives: () => RawNarrative[];
   getRawTagByName: (name: string) => Option.Option<RawTag>;
   getRawTagsByNames: (names: string[]) => Array<Option.Option<RawTag>>;
-
+  updateNarrative: (
+    updates: UpdateNarrativeInput
+  ) => Either.ErrorOr<NarrativeMutateResult>;
   createNewNarrative: (
     narrative: NarrativeInput
   ) => Either.ErrorOr<NarrativeMutateResult>;
 }
+
+export type UpdateNarrativeInput = PartialOrNull<
+  Omit<NarrativeInput, "timeSelection">
+> & {
+  id: string;
+};
 
 export interface NarrativeInput {
   description: string;
@@ -106,12 +115,12 @@ export interface TagMutateResult {
   rawArchive: RawArchive;
 }
 
-interface NarrativeMutateResult {
+export interface NarrativeMutateResult {
   narrative: RawNarrative;
   rawArchive: RawArchive;
 }
 
-const removeUndefineds = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+const removeUndefineds = <T>(obj: T): T => copyObject(obj);
 
 export type TagLoader = ReturnType<typeof makeTagLoader>;
 
@@ -231,6 +240,45 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
     getRawTagsByNames: tagLoader.loadManyF,
     getAllRawTags: () => rawArchive.tags,
     getAllRawNarratives: () => rawArchive.narratives,
+    updateNarrative: ({ id, tagsFilter, description }) =>
+      pipe(
+        rawArchive.narratives.findIndex(n => n.id === id),
+        index => Option.fromNullable(index === -1 ? null : index),
+        Either.fromOption(
+          Error.fromL("The Narrative you are trying to update does not exist.")
+        ),
+        Either.chain(index => {
+          const updatedNarrative = copyObject(rawArchive.narratives[index]);
+
+          if (
+            tagsFilter ||
+            (description && description !== updatedNarrative.description)
+          ) {
+            const matchingTags = Tag.getMatchingTags(
+              tagsFilter || {},
+              description || updatedNarrative.description,
+              tagLoader
+            );
+
+            updatedNarrative.tags = matchingTags.map(t => t.id);
+          }
+
+          if (description) {
+            updatedNarrative.description = description;
+          }
+
+          const narrativesCopy = copyObject(rawArchive.narratives);
+          narrativesCopy[index] = updatedNarrative;
+
+          return Either.right({
+            rawArchive: makeArchive({
+              narratives: narrativesCopy,
+              tags: rawArchive.tags
+            }).raw,
+            narrative: updatedNarrative
+          });
+        })
+      ),
     createNewNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
         tagsFilter || {},

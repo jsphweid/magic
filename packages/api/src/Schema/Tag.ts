@@ -50,7 +50,7 @@ export const typeDefs = gql`
 
 export const resolvers: Resolvers = {
   Tag__Tag: {
-    ID: source => void console.log("source", source) || source.id,
+    ID: source => source.id,
     connections: (source, _args, context) =>
       pipe(
         context.archiveModel.getRawTagsByIDs(source.connections),

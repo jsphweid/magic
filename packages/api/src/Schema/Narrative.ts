@@ -95,10 +95,15 @@ export const resolvers: Resolvers = {
           tagsFilter: args.tags,
           timeSelection: args.time ? Time.fromInputArgs(args.time) : null
         })
+      ),
+    update: (_, args, context) =>
+      TaskEither.runUnsafe(
+        context.archiveModel.updateNarrative({
+          id: args.id,
+          description: args.description,
+          tagsFilter: args.tags
+        })
       )
-
-    // update: (_, args, context) =>
-    //   TaskEither.runUnsafe(context.archiveModel.updateNarrative)
   },
 
   Narrative__Narrative: {
@@ -118,52 +123,3 @@ export const resolvers: Resolvers = {
       )
   }
 };
-
-// const startCurrentEntry = async (
-//   now: Time.Date,
-//   start: Time.Date,
-//   newEntry: Toggl.NewEntry
-// ): Promise<Result.Result<Toggl.Entry>> =>
-//   (await Toggl.getOngoingEntry()).fold(
-//     Utility.throwError,
-//     async ongoingEntry => {
-//       // If there is an existing current entry, stop it
-//       ongoingEntry.map(async ongoingEntry => {
-//         (await Toggl.stopEntry(ongoingEntry)).getOrElseL(Utility.throwError);
-
-//         /*
-//           If we're starting the current time entry in the future, the old
-//           entry's stop needs to be set to the new entry's start
-//         */
-//         if (now.valueOf() < start.valueOf()) {
-//           (await Toggl.putEntry({
-//             ...ongoingEntry,
-//             stop: start.toISOString()
-//           })).getOrElseL(Utility.throwError);
-//         }
-//       });
-
-//       // Start the new entry
-//       const currentEntry = await Toggl.startEntry(newEntry);
-
-//       // If the current entry starts now, we're done, otherwise update the start
-//       return start === now
-//         ? currentEntry
-//         : Toggl.putEntry({
-//             ...currentEntry.getOrElseL(Utility.throwError),
-//             start: start.toISOString()
-//           });
-//     }
-//   );
-
-/*
-  If any of the tags or their connections has a name which matches a project,
-  return that match. This is primarily used to get the nice colored timeline
-  view in Toggl's web interface.
-*/
-// const projectFromTags = async (
-//   tags: Tag.Tag[]
-// ): Promise<Either.Either<Error, Toggl.Project | undefined>> =>
-//   (await Toggl.getProjects()).map(projects =>
-//     projects.find(({ name }) => tags.map(({ name }) => name).includes(name))
-//   );

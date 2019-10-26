@@ -43,3 +43,5 @@ export const removeDuplicates = <T extends { id: string }>(objs: T[]): T[] => {
     }
   });
 };
+
+export const copyObject = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
