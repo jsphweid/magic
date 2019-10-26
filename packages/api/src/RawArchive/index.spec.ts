@@ -38,7 +38,12 @@ describe("main", () => {
           })
         ),
         Either.chain(result =>
-          makeArchive(result.rawArchive).createNewNarrative({
+          makeArchive(result.rawArchive).createNewTag({
+            name: "extra"
+          })
+        ),
+        Either.chain(result =>
+          makeArchive(result.rawArchive).createNarrative({
             description: "walking",
             timeSelection: {
               start: oneHundredTwentyMinutesAgo
@@ -47,11 +52,18 @@ describe("main", () => {
           })
         ),
         Either.chain(result =>
-          makeArchive(result.rawArchive).createNewNarrative({
+          makeArchive(result.rawArchive).createNarrative({
             description: "walking with cathy",
             timeSelection: {
               start: oneHundredTenMinutesAgo
             },
+            tagsFilter: null
+          })
+        ),
+        Either.chain(result =>
+          makeArchive(result.rawArchive).updateNarrative({
+            id: result.narrative.id,
+            description: "walking with cathy extra",
             tagsFilter: null
           })
         ),
@@ -68,12 +80,13 @@ describe("main", () => {
 
           expect(archive.raw.narratives[1]).toEqual(
             expect.objectContaining({
-              description: "walking with cathy",
+              description: "walking with cathy extra",
               start: oneHundredTenMinutesAgo.valueOf()
             })
           );
           expect(archive.raw.narratives[1].tags).toEqual([
-            archive.raw.tags[1].id
+            archive.raw.tags[1].id,
+            archive.raw.tags[2].id
           ]);
           expect(archive.raw.tags[0]).toEqual(
             expect.objectContaining({

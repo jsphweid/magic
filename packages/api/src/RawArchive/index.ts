@@ -26,7 +26,7 @@ export interface Archive {
   updateNarrative: (
     updates: UpdateNarrativeInput
   ) => Either.ErrorOr<NarrativeMutateResult>;
-  createNewNarrative: (
+  createNarrative: (
     narrative: NarrativeInput
   ) => Either.ErrorOr<NarrativeMutateResult>;
 }
@@ -279,7 +279,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
           });
         })
       ),
-    createNewNarrative: ({ tagsFilter, timeSelection, description }) => {
+    createNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
         tagsFilter || {},
         description,

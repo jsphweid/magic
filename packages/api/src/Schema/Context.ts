@@ -27,7 +27,7 @@ export interface ArchiveModel
   createNewTag: (
     newTag: Partial<RawArchive.RawTag>
   ) => TaskEither.ErrorOr<RawArchive.RawTag>;
-  createNewNarrative: (
+  createNarrative: (
     newNarrative: RawArchive.NarrativeInput
   ) => TaskEither.ErrorOr<RawArchive.RawNarrative>;
   updateNarrative: (
@@ -95,9 +95,9 @@ export const context = async (): Promise<Context> =>
               ArchiveStorage.writeNew(result.rawArchive)
             )
           ),
-        createNewNarrative: (newNarrative: RawArchive.NarrativeInput) =>
+        createNarrative: (newNarrative: RawArchive.NarrativeInput) =>
           pipe(
-            archive.createNewNarrative(newNarrative),
+            archive.createNarrative(newNarrative),
             makeNarrativeMutateResultAndSave
           ),
         updateNarrative: (updates: RawArchive.UpdateNarrativeInput) =>

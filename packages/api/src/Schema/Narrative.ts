@@ -90,7 +90,7 @@ export const resolvers: Resolvers = {
   Narrative__Mutation: {
     new: (_, args, context) =>
       TaskEither.runUnsafe(
-        context.archiveModel.createNewNarrative({
+        context.archiveModel.createNarrative({
           description: args.description,
           tagsFilter: args.tags,
           timeSelection: args.time ? Time.fromInputArgs(args.time) : null
