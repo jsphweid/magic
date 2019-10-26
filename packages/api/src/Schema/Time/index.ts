@@ -1,3 +1,4 @@
+import { Date as UnitsDate, Duration as UnitsDuration } from "@grapheng/units";
 import gql from "graphql-tag";
 import Moment from "moment";
 
@@ -180,3 +181,20 @@ export const resolvers: Resolvers = {
     })
   }
 };
+
+export const fromInputArgs = (input: {
+  start?: UnitsDate.DateInput | null;
+  duration?: UnitsDuration.DurationInput | null;
+  stop?: UnitsDate.DateInput | null;
+}): Time =>
+  fromSelection({
+    start: input.start
+      ? Moment(UnitsDate.convertInput(input.start).unix.milliseconds)
+      : undefined,
+    stop: input.stop
+      ? Moment(UnitsDate.convertInput(input.stop).unix.milliseconds)
+      : undefined,
+    duration: input.duration
+      ? Moment.duration(UnitsDuration.convertInput(input.duration).milliseconds)
+      : undefined
+  });

@@ -1,13 +1,21 @@
-import { Either, Error, Fn, pipe } from "@grapheng/prelude";
+import { Either, Error, Fn, Maybe, pipe } from "@grapheng/prelude";
 
-import { RawTag } from ".";
+import { RawTag, TagLoader } from ".";
+import { removeDuplicates } from "../Utility";
 
+export type PartialOrNull<T> = { [P in keyof T]?: T[P] | null };
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+export type DeepPartialOrNull<T> = { [P in keyof T]?: Partial<T[P]> | null };
 
 export interface Selection {
   names: string[];
   ids: string[];
 }
+
+export type TagFilterInput = Partial<{
+  include: Maybe<PartialOrNull<Selection>>;
+  exclude: Maybe<PartialOrNull<Selection>>;
+}>;
 
 export interface Filter {
   include: Selection;
@@ -43,25 +51,25 @@ export const getAllNamesInTagLowerCase = (
   ...(rawTag.name ? [rawTag.name.toLowerCase()] : [])
 ];
 
-export const defaultSelection = (
-  overrides?: DeepPartial<Selection>
+const defaultSelection = (
+  overrides?: Maybe<PartialOrNull<Selection>>
 ): Selection =>
-  !overrides
-    ? { names: [], ids: [] }
-    : {
-        names: (overrides.names as string[]) || [],
-        ids: (overrides.ids as string[]) || []
-      };
+  overrides
+    ? {
+        names: overrides.names || [],
+        ids: overrides.ids || []
+      }
+    : { names: [], ids: [] };
 
 export const defaultFilter = (
-  overrides?: DeepPartial<Filter>
+  overrides?: TagFilterInput
 ): Either.ErrorOr<Filter> => {
-  const filter: Filter = !overrides
-    ? { include: defaultSelection(), exclude: defaultSelection() }
-    : {
+  const filter: Filter = overrides
+    ? {
         include: defaultSelection(overrides.include),
         exclude: defaultSelection(overrides.exclude)
-      };
+      }
+    : { include: defaultSelection(), exclude: defaultSelection() };
 
   // Tags can't be both included and excluded
   const conflicts = [
@@ -83,40 +91,39 @@ export const defaultFilter = (
       );
 };
 
-export const findMatch = (
-  word: string,
-  rawTags: RawTag[]
-): RawTag | undefined =>
-  rawTags.find(tag =>
-    getAllNamesInTagLowerCase(tag).includes(word.toLowerCase())
-  );
-
-export const removeNullsAndUndefineds = <T>(
-  items: Array<T | null | undefined>
-) => items.filter((x): x is T => x !== null && x !== undefined);
-
-export const findMatches = (words: string[], rawTags: RawTag[]) =>
-  removeNullsAndUndefineds(words.map(word => findMatch(word, rawTags)));
-
-export const getTagNamesToMatch = (
-  tagsFilter: DeepPartial<Filter>,
+const getTagNamesToMatch = (
+  tagsFilter: Filter,
   description: string = ""
-): Either.ErrorOr<string[]> =>
-  pipe(
-    defaultFilter(tagsFilter),
-    Either.map(defaultFilter => [
-      ...defaultFilter.include.names,
-      ...(description ? [...description.split(" ")] : [])
-    ])
-  );
+): string[] => [
+  ...tagsFilter.include.names,
+  ...(description ? [...description.split(" ")] : [])
+];
 
 export const getMatchingTags = (
-  tagsFilter: DeepPartial<Filter>,
+  tagsFilter: TagFilterInput,
   description: string = "",
-  rawTags: RawTag[]
+  tagLoader: TagLoader
 ): RawTag[] =>
   pipe(
-    getTagNamesToMatch(tagsFilter, description),
-    Either.map(tagNamesToMatch => findMatches(tagNamesToMatch, rawTags)),
+    defaultFilter(tagsFilter),
+    Either.map(filter =>
+      pipe(
+        tagLoader.loadManyWithoutMisses([
+          ...getTagNamesToMatch(filter, description),
+          ...filter.include.ids
+        ]),
+        includes =>
+          pipe(
+            tagLoader.loadManyWithoutMisses([
+              ...filter.exclude.ids,
+              ...filter.exclude.names
+            ]),
+            excludes => includes.filter(tag => !excludes.includes(tag))
+          ),
+        removeDuplicates,
+        matchingTags =>
+          matchingTags.filter(tag => !filter.exclude.ids.includes(tag.id))
+      )
+    ),
     Either.fold(() => [], Fn.identity)
   );

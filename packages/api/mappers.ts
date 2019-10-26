@@ -1,5 +1,5 @@
 import { Date, Duration } from "@grapheng/units";
-import { RawNarrative, RawTag } from "~/raw-archive";
+import { RawNarrative, RawTag } from "./src/RawArchive";
 
 import { PersistenceMeta } from "./src/Schema/Node";
 import * as Time from "./src/Schema/Time";

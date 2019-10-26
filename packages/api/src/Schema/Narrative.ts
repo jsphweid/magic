@@ -1,10 +1,14 @@
-import { pipe } from "@grapheng/prelude";
+import { Fn, Option, pipe, TaskEither } from "@grapheng/prelude";
 import gql from "graphql-tag";
 import Moment from "moment-timezone";
 
-import { RawNarrative } from "~/raw-archive";
-import { Narrative__QueryNarrativesArgs, Resolvers } from "../../GeneratedCode";
-import { timeUnitToMoment } from "../Utility";
+import {
+  Narrative__QueryNarrativesArgs,
+  Resolvers,
+  Time__Selection
+} from "../../GeneratedCode";
+import { RawNarrative } from "../RawArchive";
+import { removeNullsAndUndefineds } from "../Utility";
 import * as Node from "./Node";
 import * as Time from "./Time";
 
@@ -31,6 +35,12 @@ export const typeDefs = gql`
       time: Time__Selection
       tags: Tag__Filter
     ): Narrative__Narrative!
+    update(
+      id: ID!
+      description: String
+      # time: Time__Selection
+      tags: Tag__Filter
+    ): Narrative__Narrative!
   }
 `;
 
@@ -41,17 +51,21 @@ export interface Narrative
   description: string;
 }
 
-export const timeBasedFilter = (selection: any) => (narrative: RawNarrative) =>
-  pipe(
-    Time.fromSelection(timeUnitToMoment(selection)),
-    timeSelection =>
-      Time.isInterval(timeSelection)
-        ? Time.instantIsInInterval(
-            Time.instant(Moment(narrative.start)),
-            timeSelection
-          )
-        : true
-  );
+export const timeBasedFilter = (selection?: Time__Selection | null) => (
+  narrative: RawNarrative
+) =>
+  selection
+    ? pipe(
+        Time.fromInputArgs(selection),
+        timeSelection =>
+          Time.isInterval(timeSelection)
+            ? Time.instantIsInInterval(
+                Time.instant(Moment(narrative.start)),
+                timeSelection
+              )
+            : true
+      )
+    : true;
 
 export const stringBasedFilter = (str?: string | null) => (
   narrative: RawNarrative
@@ -71,10 +85,30 @@ export const resolvers: Resolvers = {
       context.archiveModel
         .getAllRawNarratives()
         .sort((a, b) => b.start - a.start)
-        .filter(filterNarratives(args)) // how do you flow
+        .filter(filterNarratives(args))
   },
+  Narrative__Mutation: {
+    new: (_, args, context) =>
+      TaskEither.runUnsafe(
+        context.archiveModel.createNewNarrative({
+          description: args.description,
+          tagsFilter: args.tags,
+          timeSelection: args.time ? Time.fromInputArgs(args.time) : null
+        })
+      )
+
+    // update: (_, args, context) =>
+    //   TaskEither.runUnsafe(context.archiveModel.updateNarrative)
+  },
+
   Narrative__Narrative: {
     ID: source => source.id,
+    tags: (source, _, context) =>
+      pipe(
+        context.archiveModel.getRawTagsByIDs(source.tags),
+        results => results.map(Option.fold(Fn.constNull, Fn.identity)),
+        removeNullsAndUndefineds
+      ),
     time: source =>
       pipe(
         Time.fromSelection({
@@ -83,17 +117,6 @@ export const resolvers: Resolvers = {
         })
       )
   }
-  // Narrative__Mutation: {
-  //   new: (_, args, context) =>
-  //     pipe(
-  //       context.archiveModel.createNewNarrative({
-  //         description: args.description,
-  //         timeSelection: args.time || null,
-  //         tagsFilter: args.tags as any
-  //       }),
-  //       TaskEither.runUnsafe
-  //     )
-  // }
 };
 
 // const startCurrentEntry = async (

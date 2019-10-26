@@ -55,7 +55,7 @@ describe("main", () => {
             tagsFilter: null
           })
         ),
-        Either.fold(Error.throw_, result => {
+        Either.fold(Error.throw, result => {
           const archive = makeArchive(result.rawArchive);
           expect(archive.raw.narratives[0]).toEqual(
             expect.objectContaining({

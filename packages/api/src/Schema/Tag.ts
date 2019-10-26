@@ -24,14 +24,14 @@ export const typeDefs = gql`
     create(
       name: String!
       aliases: [String!] = []
-      connections: [String!] = []
+      connections: [ID!] = []
     ): Tag__Tag
 
     update(
       ID: ID!
       name: String
       aliases: [String!]
-      connections: [String!]
+      connections: [ID!]
     ): Tag__Tag!
 
     delete(ID: ID!): Boolean!
@@ -50,8 +50,7 @@ export const typeDefs = gql`
 
 export const resolvers: Resolvers = {
   Tag__Tag: {
-    ID: source => source.id,
-
+    ID: source => void console.log("source", source) || source.id,
     connections: (source, _args, context) =>
       pipe(
         context.archiveModel.getRawTagsByIDs(source.connections),

@@ -1,6 +1,7 @@
-import { Either, Error, Option, pipe } from "@grapheng/prelude";
+import { Either, Error, Maybe, Option, pipe } from "@grapheng/prelude";
 import Moment from "moment-timezone";
 
+import { removeNullsAndUndefineds } from "../Utility";
 import * as ID from "./id";
 import * as Narrative from "./narrative";
 import * as Tag from "./tag";
@@ -30,7 +31,7 @@ export interface Archive {
 export interface NarrativeInput {
   description: string;
   timeSelection: Time.Selection | null;
-  tagsFilter: Partial<Tag.Filter> | null;
+  tagsFilter: Maybe<Tag.TagFilterInput>;
 }
 
 export interface RawTag {
@@ -100,7 +101,7 @@ interface DeleteResult {
   rawArchive: RawArchive;
 }
 
-interface TagMutateResult {
+export interface TagMutateResult {
   tag: RawTag;
   rawArchive: RawArchive;
 }
@@ -112,27 +113,54 @@ interface NarrativeMutateResult {
 
 const removeUndefineds = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
+export type TagLoader = ReturnType<typeof makeTagLoader>;
+
+export const makeTagLoader = (tags: RawTag[]) =>
+  pipe(
+    tags.reduce(
+      (previous, current) => ({
+        ...previous,
+        [current.id]: current,
+        [current.name.toLowerCase()]: current,
+        ...current.aliases.reduce(
+          (previous, alias) => ({
+            ...previous,
+            [alias.toLowerCase()]: current
+          }),
+          {}
+        )
+      }),
+      // tslint:disable-next-line:no-object-literal-type-assertion
+      {} as { [key: string]: RawTag }
+    ),
+    tagMap => ({
+      loadF: (idOrName: string): Option.Option<RawTag> =>
+        Option.fromNullable(tagMap[idOrName.toLowerCase()]),
+      load: (idOrName: string): RawTag | null =>
+        tagMap[idOrName.toLowerCase()] || null,
+      loadManyF: (idsOrNames: string[]): Array<Option.Option<RawTag>> =>
+        idsOrNames.map(key => Option.fromNullable(tagMap[key.toLowerCase()])),
+      loadMany: (idsOrNames: string[]): Array<RawTag | null> =>
+        idsOrNames.map(key => tagMap[key.toLowerCase()] || null),
+      loadManyWithoutMisses: (idsOrNames: string[]): RawTag[] =>
+        removeNullsAndUndefineds(
+          idsOrNames.map(key => tagMap[key.toLowerCase()])
+        ),
+      getAll: () => tags
+    })
+  );
+
 export const makeArchive = (_rawArchive: RawArchive): Archive => {
   const rawArchive = getClonedArchive(_rawArchive);
   const now = Moment().valueOf();
 
-  // TODO: make some sort of hashmap that allows finding to be more efficient
-  const getTag = (id: string): Option.Option<RawTag> =>
-    Option.fromNullable(rawArchive.tags.find(tag => tag.id === id));
-
-  const getTagByName = (name: string): Option.Option<RawTag> =>
-    pipe(
-      rawArchive.tags.find(tag =>
-        Tag.getAllNamesInTagLowerCase(tag).includes(name.toLowerCase())
-      ),
-      Option.fromNullable
-    );
+  const tagLoader = makeTagLoader(_rawArchive.tags);
 
   return {
     raw: rawArchive,
     updateTag: (id, updates) =>
       pipe(
-        getTag(id),
+        tagLoader.loadF(id),
         Either.fromOption(
           Error.fromL("The tag you're trying to change does not exist")
         ),
@@ -155,7 +183,7 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
       ),
     deleteTag: id =>
       pipe(
-        getTag(id),
+        tagLoader.loadF(id),
         Either.fromOption(
           Error.fromL("The tag you're trying to delete does not exist")
         ),
@@ -197,17 +225,17 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
         }))
       ),
 
-    getRawTagByID: getTag,
-    getRawTagByName: getTagByName,
-    getRawTagsByIDs: ids => ids.map(getTag),
-    getRawTagsByNames: names => names.map(getTagByName),
+    getRawTagByID: tagLoader.loadF,
+    getRawTagByName: tagLoader.loadF,
+    getRawTagsByIDs: tagLoader.loadManyF,
+    getRawTagsByNames: tagLoader.loadManyF,
     getAllRawTags: () => rawArchive.tags,
     getAllRawNarratives: () => rawArchive.narratives,
     createNewNarrative: ({ tagsFilter, timeSelection, description }) => {
       const matchingTags = Tag.getMatchingTags(
         tagsFilter || {},
         description,
-        rawArchive.tags
+        tagLoader
       );
 
       // just iterate through the entire thing....
@@ -218,10 +246,8 @@ export const makeArchive = (_rawArchive: RawArchive): Archive => {
       const interval = Time.toStoppedInterval(time);
 
       // Protect against mass data-deletion
-      if (Time.duration(interval).asHours() > 3) {
-        return Either.left(
-          Error.from("You cannot select more than three hours")
-        );
+      if (Time.duration(interval).asHours() > 10) {
+        return Either.left(Error.from("You cannot select more than ten hours"));
       }
 
       const now = new Date().getTime();

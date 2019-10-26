@@ -2,8 +2,8 @@ import { pipe, TaskEither } from "@grapheng/prelude";
 import * as FS from "fs";
 import * as Path from "path";
 
-import { RawNarrative } from "~/raw-archive";
 import * as Local from "./ArchiveStorage/Local";
+import { RawNarrative } from "./RawArchive";
 import { makeRandomUniqueID } from "./Utility";
 
 const getJSON = (backupPath: string) =>

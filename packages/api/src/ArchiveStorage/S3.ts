@@ -1,8 +1,8 @@
 import { TaskEither } from "@grapheng/prelude";
 import * as AWS from "aws-sdk";
-import * as Archive from "raw-archive";
 
 import { ArchiveStorage } from ".";
+import * as Archive from "../RawArchive";
 
 const s3 = new AWS.S3();
 

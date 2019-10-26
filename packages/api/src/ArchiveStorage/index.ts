@@ -1,6 +1,6 @@
 import { TaskEither } from "@grapheng/prelude";
-import * as Archive from "raw-archive";
 
+import * as Archive from "../RawArchive";
 import * as Local from "./Local";
 import * as S3 from "./S3";
 

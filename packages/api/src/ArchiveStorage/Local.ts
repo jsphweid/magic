@@ -1,9 +1,9 @@
 import { pipe, TaskEither } from "@grapheng/prelude";
 import * as FS from "fs";
 import * as Path from "path";
-import * as Archive from "raw-archive";
 
 import { ArchiveStorage } from ".";
+import * as Archive from "../RawArchive";
 
 const backupArchiveDir = Path.resolve(
   Path.join(__dirname, "../..", "data/backup")
