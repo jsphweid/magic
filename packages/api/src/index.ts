@@ -22,11 +22,11 @@ const server = new ApolloServer({
   context: () => Schema.context()
 });
 
-const app = express();
+export const app = express();
 
 app
   .options("*", Cors())
-  .post("/messages", BodyParser.json(), Message.handler(schema));
+  .post("/messages", BodyParser.json(), Message.generateMessageHandler(schema));
 
 // Disable authentication for local testing
 if (process.env.NODE_ENV !== "dev") {

@@ -4,10 +4,10 @@ import gql from "graphql-tag";
 
 const source = gql`
   mutation default(
-    $description: String
-    $start: Time__Date
-    $duration: Time__Duration
-    $stop: Time__Date
+    $description: String!
+    $start: DateInput
+    $duration: DurationInput
+    $stop: DateInput
     $include: [String!]
     $exclude: [String!]
   ) {

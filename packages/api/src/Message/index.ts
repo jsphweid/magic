@@ -1,5 +1,4 @@
-import * as Express from "express";
-import { either as Either, option as Option } from "fp-ts";
+import { Either, Fn, Option, pipe } from "@grapheng/prelude";
 import * as GraphQL from "graphql";
 import { twiml as Twiml } from "twilio";
 
@@ -42,16 +41,21 @@ const responses = {
   }
 };
 
-export const handler = (
-  schema: GraphQL.GraphQLSchema
-): Express.Handler => async (request, response) => {
-  const validatedRequest = validateRequest(request);
-  if (validatedRequest.isLeft()) {
-    return respond(response, validatedRequest.value);
+interface RequestBody {
+  From: string;
+  Body: string;
+}
+
+export const generateMessageHandler = (schema: GraphQL.GraphQLSchema) => async (
+  requestBody: RequestBody
+): Promise<Response> => {
+  const validatedRequest = validateRequest(requestBody);
+  if (Either.isLeft(validatedRequest)) {
+    return validatedRequest.left;
   }
 
   const {
-    value: { sender, message }
+    right: { sender, message }
   } = validatedRequest;
 
   const { document, variables } = GraphQLOperation.fromMessage(message);
@@ -59,14 +63,20 @@ export const handler = (
   const result = await GraphQL.graphql({
     source: GraphQL.print(document),
     variableValues: variables,
-    contextValue: Schema.context(),
+    contextValue: await Schema.context(),
     schema
   });
 
+  // Option.fromNullable<Reply.Json | null>(result.data).getOrElse(null),
+
   const reply = Reply.fromJson({
-    data: Option.fromNullable<Reply.Json | null>(result.data).getOrElse(null),
-    errors: Option.fromNullable(result.errors).fold(null, errors =>
-      errors.map(({ message }) => message)
+    data: pipe(
+      Option.fromNullable<Reply.Json | null>(result.data),
+      Option.fold(Fn.constNull, Fn.identity)
+    ),
+    errors: pipe(
+      Option.fromNullable(result.errors),
+      Option.fold(Fn.constNull, errors => errors.map(({ message }) => message))
     )
   });
 
@@ -74,37 +84,32 @@ export const handler = (
     .message({ to: sender }, reply)
     .toString();
 
-  respond(response, { ...responses.success, body });
+  return { ...responses.success, body };
 };
 
 const validateRequest = (
-  request: Express.Request
+  body: RequestBody
 ): Either.Either<Response, ValidRequest> =>
-  validateSender(request).chain(sender =>
-    validateMessage(request).map(message => ({ sender, message }))
+  pipe(
+    validateSender(body),
+    Either.chain(sender =>
+      pipe(
+        validateMessage(body),
+        Either.map(message => ({ sender, message }))
+      )
+    )
   );
 
-const validateSender = (
-  request: Express.Request
-): Either.Either<Response, string> =>
-  Either.fromNullable(responses.errors.senderIsMissing)(
-    request.body.From
-  ).chain(from =>
-    from !== process.env.TWILIO_NUMBERS_OWNER
-      ? Either.left(responses.errors.senderIsNotOwner)
-      : Either.right(from)
+const validateSender = (body: RequestBody): Either.Either<Response, string> =>
+  pipe(
+    body.From,
+    Either.fromNullable(responses.errors.senderIsMissing),
+    Either.chain(from =>
+      from !== process.env.TWILIO_NUMBERS_OWNER
+        ? Either.left(responses.errors.senderIsNotOwner)
+        : Either.right(from)
+    )
   );
 
-const validateMessage = (
-  request: Express.Request
-): Either.Either<Response, string> =>
-  Either.fromNullable(responses.errors.messageIsMissing)(request.body.Body);
-
-const respond = (
-  response: Express.Response,
-  { statusCode, contentType, body }: Response
-) =>
-  response
-    .status(statusCode)
-    .contentType(contentType)
-    .send(body);
+const validateMessage = (body: RequestBody): Either.Either<Response, string> =>
+  Either.fromNullable(responses.errors.messageIsMissing)(body.Body);
