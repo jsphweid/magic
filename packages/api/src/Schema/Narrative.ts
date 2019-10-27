@@ -30,7 +30,7 @@ export const typeDefs = gql`
   }
 
   type Narrative__Mutation {
-    new(
+    create(
       description: String!
       time: Time__Selection
       tags: Tag__Filter
@@ -88,7 +88,7 @@ export const resolvers: Resolvers = {
         .filter(filterNarratives(args))
   },
   Narrative__Mutation: {
-    new: (_, args, context) =>
+    create: (_, args, context) =>
       TaskEither.runUnsafe(
         context.archiveModel.createNarrative({
           description: args.description,

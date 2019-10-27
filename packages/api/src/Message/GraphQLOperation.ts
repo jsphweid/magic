@@ -12,7 +12,7 @@ const source = gql`
     $exclude: [String!]
   ) {
     Narrative {
-      new(
+      create(
         description: $description
         time: { start: $start, duration: $duration, stop: $stop }
         tags: { include: { names: $include }, exclude: { names: $exclude } }

@@ -111,5 +111,8 @@ export const context = async (): Promise<Context> =>
         getAllRawNarratives: archive.getAllRawNarratives
       }
     })),
+    TaskEither.mapLeft(
+      e => void console.log("Error creating context.", e) || e
+    ),
     TaskEither.runUnsafe
   );

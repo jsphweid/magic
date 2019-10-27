@@ -7,10 +7,16 @@ plugins:
 provider:
   name: aws
   runtime: nodejs8.10
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource:
+        - arn:aws:s3:::${self:custom.archiveBucketName}
 
 functions:
   graphql:
-    handler: dist/api/src/Deployments/GraphQLLambda.handler
+    handler: dist/src/Deployments/GraphQLLambda.handler
     environment:
       ARCHIVE_BUCKET_NAME: ${self:custom.archiveBucketName}
     timeout: 60
