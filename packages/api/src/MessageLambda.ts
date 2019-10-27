@@ -5,12 +5,8 @@ import { generateMessageHandler } from "./Message";
 import { resolvers, typeDefs } from "./Schema";
 
 exports.handler = async (event: any, _: any) => {
-  console.log("event", event);
-  console.log("making schema");
   const schema = makeExecutableSchema({ typeDefs, resolvers });
-  console.log("making handler");
   const handler = generateMessageHandler(schema);
-  console.log("executing");
 
   let body;
   try {

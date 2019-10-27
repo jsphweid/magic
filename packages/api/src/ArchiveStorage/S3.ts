@@ -14,10 +14,8 @@ export const archiveStorage: ArchiveStorage = {
       s3
         .getObject({ Bucket: archiveBucketName, Key: "archive.json" })
         .promise()
-        .then(
-          response =>
-            void console.log("response", response) ||
-            JSON.parse((response.Body as Buffer).toString("utf-8"))
+        .then(response =>
+          JSON.parse((response.Body as Buffer).toString("utf-8"))
         )
     ),
   writeNew: (newArchive: Archive.RawArchive) =>
