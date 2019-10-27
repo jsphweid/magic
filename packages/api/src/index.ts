@@ -1,11 +1,8 @@
 import { ApolloServer } from "apollo-server-express";
-import * as BodyParser from "body-parser";
-import Cors from "cors";
 import express from "express";
 import BasicAuth from "express-basic-auth";
 import * as GraphQLTools from "graphql-tools";
 
-import * as Message from "./Message";
 import * as Schema from "./Schema";
 
 // tslint:disable-next-line:no-var-requires
@@ -24,9 +21,9 @@ const server = new ApolloServer({
 
 export const app = express();
 
-app
-  .options("*", Cors())
-  .post("/messages", BodyParser.json(), Message.generateMessageHandler(schema));
+// app
+//   .options("*", Cors())
+//   .post("/messages", BodyParser.json(), Message.generateMessageHandler(schema));
 
 // Disable authentication for local testing
 if (process.env.NODE_ENV !== "dev") {

@@ -26,6 +26,7 @@ export const addNarrative = (
   narrative: RawNarrative,
   oldNarratives: RawNarrative[]
 ): RawNarrative[] => {
+  console.log("narrative", narrative);
   const newNarratives: RawNarrative[] = [];
   const now = Moment();
 

@@ -7,6 +7,7 @@ plugins:
 provider:
   name: aws
   runtime: nodejs8.10
+  memorySize: 3008
   # iamRoleStatements:
   #   - Effect: Allow
   #     Action:
@@ -23,6 +24,7 @@ functions:
     environment:
       ARCHIVE_BUCKET_NAME: ${self:custom.archiveBucketName}
       TWILIO_NUMBERS_OWNER: "+15737278110"
+      MAGIC_TIME_ZONE: "America/Chicago"
     timeout: 60
     events:
       - http:
@@ -47,6 +49,7 @@ functions:
     handler: dist/src/GraphQLLambda.handler
     environment:
       ARCHIVE_BUCKET_NAME: ${self:custom.archiveBucketName}
+      MAGIC_TIME_ZONE: "America/Chicago"
     timeout: 60
     events:
       - http:

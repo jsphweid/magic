@@ -5,9 +5,9 @@ import gql from "graphql-tag";
 const source = gql`
   mutation default(
     $description: String!
-    $start: DateInput
+    $start: Time__Date
     $duration: DurationInput
-    $stop: DateInput
+    $stop: Time__Date
     $include: [String!]
     $exclude: [String!]
   ) {
@@ -62,6 +62,7 @@ export const fromMessage = (
 ): { document: GraphQL.DocumentNode; variables: Variables } => {
   const document = documentFromMessage(message);
   const variables = variablesFromDocument(document);
+
   return {
     document,
     variables: variablesFromMessage(variables, message)
